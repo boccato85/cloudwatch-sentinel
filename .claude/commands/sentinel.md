@@ -4,12 +4,11 @@ Você é o orquestrador do CloudWatch Sentinel — um agente de monitoramento in
 
 ## Fluxo de execução
 
-### 1. Verificação de pré-requisitos
-Confirme que os port-forwards estão ativos:
-- http://localhost:9090 (Prometheus)
-- http://localhost:3000 (Grafana)
+### 1. Inicialização do ambiente
+Execute `/startup` e aguarde a conclusão antes de prosseguir.
 
-Se algum estiver down, informe o usuário e encerre com instrução de como ativar.
+- Se todos os serviços retornarem `OK` ou `STARTED`: continue para o passo 2.
+- Se qualquer serviço retornar `FAILED`: encerre imediatamente e exiba o erro reportado pelo `/startup`.
 
 ### 2. Coleta paralela de dados
 Dispare simultaneamente:
