@@ -2,7 +2,7 @@
 
 > Agente inteligente de monitoramento de clusters Kubernetes construído com Claude Code, sub-agents paralelos e MCP Servers.
 
-![Status](https://img.shields.io/badge/status-active-brightgreen)
+![Status](https://img.shields.io/badge/status-v1.1-brightgreen)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-2.1.76-orange)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Prometheus](https://img.shields.io/badge/Prometheus-kube--prometheus--stack-red)
@@ -24,7 +24,10 @@ O projeto demonstra na prática o uso de:
 ## Arquitetura
 
 ```
-CLAUDE.md (contexto, thresholds, templates)
+CLAUDE.md (contexto, thresholds, namespaces, templates)
+        │
+        ▼
+/startup (verifica e sobe port-forwards)
         │
         ▼
 /sentinel (orquestrador)
@@ -33,11 +36,12 @@ CLAUDE.md (contexto, thresholds, templates)
    ▼         ▼
 /collect-  /analyze-       ← paralelo
  metrics    pods
+            (default | monitoring | kube-system)
    │         │
    └────┬────┘
         ▼
    /correlate
-   (classifica severidade)
+   (classifica severidade por namespace)
         │
    ┌────┴──────────┐
    ▼               ▼
@@ -49,11 +53,12 @@ gera runbook     gera relatório
 
 | Componente | Função |
 |---|---|
-| `CLAUDE.md` | Memória do agente: endpoints, thresholds, templates de runbook |
-| `/sentinel` | Orquestrador — ponto de entrada, verifica pré-requisitos e consolida |
+| `CLAUDE.md` | Memória do agente: endpoints, thresholds, namespaces, templates de runbook |
+| `/startup` | Pré-requisito — verifica e sobe port-forwards automaticamente |
+| `/sentinel` | Orquestrador — ponto de entrada, consolida e decide a ação |
 | `/collect-metrics` | Sub-agent A — consulta Prometheus via PromQL |
-| `/analyze-pods` | Sub-agent B — verifica status de pods e deployments via kubectl |
-| `/correlate` | Sub-agent C — correlaciona dados e classifica severidade |
+| `/analyze-pods` | Sub-agent B — verifica pods e deployments em todos os namespaces monitorados |
+| `/correlate` | Sub-agent C — correlaciona dados e classifica severidade por namespace |
 
 ---
 
@@ -121,11 +126,16 @@ claude mcp list
 
 Ambos devem aparecer como `Connected`.
 
-### 4. Ativa os port-forwards
+### 4. Port-forwards
+
+Não é necessário ativar os port-forwards manualmente. O comando `/startup` — chamado automaticamente pelo `/sentinel` — verifica se Prometheus, Grafana e AlertManager estão acessíveis e sobe apenas os que estiverem down, em background.
+
+Se preferir subir manualmente antes de rodar o agente:
 
 ```bash
 kubectl port-forward svc/prometheus-stack-kube-prom-prometheus -n monitoring 9090:9090 &
 kubectl port-forward svc/prometheus-stack-grafana -n monitoring 3000:80 &
+kubectl port-forward svc/prometheus-stack-kube-prom-alertmanager -n monitoring 9093:9093 &
 ```
 
 ---
@@ -144,7 +154,7 @@ Executa o agente:
 /sentinel
 ```
 
-O orquestrador verifica os pré-requisitos, dispara os sub-agents em paralelo, correlaciona os resultados e gera automaticamente o output em `./runbooks/` ou `./reports/`.
+O `/sentinel` chama `/startup` automaticamente, que verifica e sobe os port-forwards necessários sem intervenção manual. Em seguida dispara os sub-agents em paralelo, correlaciona os resultados por namespace e gera automaticamente o output em `./runbooks/` ou `./reports/`.
 
 ---
 
@@ -188,6 +198,7 @@ cloudwatch-sentinel/
 ├── README.md
 ├── .claude/
 │   └── commands/
+│       ├── startup.md               # Pré-requisito: port-forwards automáticos
 │       ├── sentinel.md              # Orquestrador
 │       ├── collect-metrics.md       # Sub-agent A
 │       ├── analyze-pods.md          # Sub-agent B
@@ -209,6 +220,19 @@ Pods Running: 16/16 | Deployments saudáveis: 7/7
 64 Warning events identificados como residuais de restart anterior do nó
 2 pontos de atenção: storage-provisioner BackOff + readiness probes CoreDNS/Grafana
 ```
+
+---
+
+## Changelog
+
+### v1.1
+- `/startup`: verifica e sobe port-forwards automaticamente antes de qualquer operação
+- Suporte a múltiplos namespaces (`default`, `monitoring`, `kube-system`) — resultados agrupados por namespace em todos os sub-agents
+- `/sentinel` chama `/startup` como primeiro passo obrigatório
+
+### v1.0
+- Release inicial: orquestrador + sub-agents paralelos (`/collect-metrics`, `/analyze-pods`, `/correlate`)
+- Geração automática de runbooks CRITICAL e relatórios WARNING/OK
 
 ---
 
