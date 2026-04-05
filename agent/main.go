@@ -2,16 +2,20 @@ package main
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
 	_ "embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"sync"
+	"syscall"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -81,46 +85,73 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func requireEnv(key string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok || value == "" {
+		slog.Error("required environment variable not set", "var", key)
+		os.Exit(1)
+	}
+	return value
+}
+
+var iconETag string
+
+func init() {
+	h := md5.Sum(iconPNG)
+	iconETag = `"` + hex.EncodeToString(h[:]) + `"`
+}
+
 func main() {
-	dbUser := getEnv("DB_USER", "boccatosantos")
-	dbPass := getEnv("DB_PASSWORD", "sentinel")
+	dbUser := requireEnv("DB_USER")
+	dbPass := requireEnv("DB_PASSWORD")
 	dbName := getEnv("DB_NAME", "sentinel_db")
 	dbHost := getEnv("DB_HOST", "localhost")
 	sslMode := getEnv("DB_SSLMODE", "disable")
+	if sslMode == "disable" {
+		slog.Warn("PostgreSQL SSL is disabled — set DB_SSLMODE=require for production")
+	}
 
-	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s", 
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s",
 		dbHost, dbUser, dbPass, dbName, sslMode)
-	
+
 	var err error
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatalf("❌ CRITICAL: Database connection failed: %v", err)
+		slog.Error("database connection failed", "err", err)
+		os.Exit(1)
 	}
 	if err = db.Ping(); err != nil {
-		log.Fatalf("❌ CRITICAL: Database ping failed: %v", err)
+		slog.Error("database ping failed", "err", err)
+		os.Exit(1)
 	}
-	
-	fmt.Println("✅ Sentinel Intelligence Engine: Active.")
+
+	slog.Info("Sentinel Intelligence Engine: Active")
 
 	home := homedir.HomeDir()
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+	k8sCfg, err := clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
 	if err != nil {
-		log.Fatalf("❌ CRITICAL: Failed to load kubeconfig: %v", err)
+		slog.Error("failed to load kubeconfig", "err", err)
+		os.Exit(1)
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(k8sCfg)
 	if err != nil {
-		log.Fatalf("❌ CRITICAL: Failed to create k8s client: %v", err)
+		slog.Error("failed to create k8s client", "err", err)
+		os.Exit(1)
 	}
-	metricsClient, err := metricsv.NewForConfig(config)
+	metricsClient, err := metricsv.NewForConfig(k8sCfg)
 	if err != nil {
-		log.Fatalf("❌ CRITICAL: Failed to create metrics client: %v", err)
+		slog.Error("failed to create metrics client", "err", err)
+		os.Exit(1)
 	}
+
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
 
 	go func() {
 		for {
 			summary := ClusterSummary{PodsByPhase: make(map[string]int)}
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			ctx, cancel := context.WithTimeout(appCtx, 15*time.Second)
 			
 			nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 			if err == nil {
@@ -159,7 +190,7 @@ func main() {
 				// OPT-01: Iniciar Transação para Batch Insert
 				tx, err := db.Begin()
 				if err != nil {
-					log.Printf("⚠️ WARN: Transaction failed: %v", err)
+					slog.Warn("transaction begin failed", "err", err)
 				} else {
 					for _, m := range mList.Items {
 						var podCPU, podMem int64
@@ -173,11 +204,16 @@ func main() {
 							pStat.Opportunity = fmt.Sprintf("-%dm", req-podCPU)
 						}
 						
-						_, _ = tx.Exec(`INSERT INTO metrics (pod_name, namespace, container_name, cpu_usage, cpu_request, mem_usage, mem_request, opportunity) 
-							VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, m.Name, m.Namespace, "all", podCPU, req, podMem, 0, pStat.Opportunity)
-						newStats = append(newStats, pStat)
+						if _, err := tx.Exec(`INSERT INTO metrics (pod_name, namespace, container_name, cpu_usage, cpu_request, mem_usage, mem_request, opportunity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+						m.Name, m.Namespace, "all", podCPU, req, podMem, 0, pStat.Opportunity); err != nil {
+						slog.Warn("insert metric failed", "pod", m.Name, "err", err)
 					}
-					tx.Commit()
+					newStats = append(newStats, pStat)
+				}
+				if err := tx.Commit(); err != nil {
+					slog.Warn("transaction commit failed", "err", err)
+					_ = tx.Rollback()
+				}
 				}
 			}
 			sort.Slice(newStats, func(i, j int) bool { return newStats[i].CPUUsage > newStats[j].CPUUsage })
@@ -191,22 +227,40 @@ func main() {
 			latestSummary = summary
 			statsMutex.Unlock()
 			cancel()
-			time.Sleep(10 * time.Second)
+			select {
+			case <-appCtx.Done():
+				return
+			case <-time.After(10 * time.Second):
+			}
 		}
 	}()
 
 	setSecureHeaders := func(w http.ResponseWriter) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8080")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
 	}
 
 	http.HandleFunc("/static/icon.png", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.Header.Get("If-None-Match") == iconETag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
 		w.Header().Set("Content-Type", "image/png")
-		w.Header().Set("Cache-Control", "max-age=86400")
+		w.Header().Set("Cache-Control", "public, max-age=3600, must-revalidate")
+		w.Header().Set("ETag", iconETag)
 		w.Write(iconPNG)
 	})
 
 	http.HandleFunc("/api/summary", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		setSecureHeaders(w)
 		statsMutex.Lock()
 		defer statsMutex.Unlock()
@@ -214,6 +268,10 @@ func main() {
 	})
 
 	http.HandleFunc("/api/metrics", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		setSecureHeaders(w)
 		statsMutex.Lock()
 		defer statsMutex.Unlock()
@@ -221,6 +279,10 @@ func main() {
 	})
 
 	http.HandleFunc("/api/history", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		setSecureHeaders(w)
 		rows, err := db.Query(`
 			SELECT t, SUM(req) as req, SUM(use) as use FROM (
@@ -230,7 +292,7 @@ func main() {
 				FROM metrics WHERE timestamp > NOW() - INTERVAL '30 minutes'
 			) sub GROUP BY t ORDER BY t ASC LIMIT 100`, USD_PER_VCPU_HOUR/1000.0)
 		if err != nil {
-			log.Printf("⚠️ SQL Error: %v", err)
+			slog.Error("sql query error", "err", err)
 			return
 		}
 		defer rows.Close()
@@ -247,6 +309,9 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:")
 		fmt.Fprint(w, `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -739,6 +804,25 @@ update();
 		IdleTimeout:  60 * time.Second,
 	}
 
-	fmt.Println("🌐 Sentinel Cluster Overview: http://localhost:8080")
-	log.Fatal(srv.ListenAndServe())
+	slog.Info("Sentinel Cluster Overview", "url", "http://localhost:8080")
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("server error", "err", err)
+			os.Exit(1)
+		}
+	}()
+
+	<-sigChan
+	slog.Info("shutting down gracefully...")
+	appCancel()
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("shutdown error", "err", err)
+	}
 }

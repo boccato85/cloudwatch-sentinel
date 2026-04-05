@@ -25,12 +25,18 @@ RUNBOOK_DIR = os.path.join(os.path.dirname(__file__), "..", "runbooks")
 
 def validate_and_write(content: str, filepath: str) -> dict:
     """Passa o conteúdo pelo validador antes de gravar."""
-    result = subprocess.run(
-        [sys.executable, HARNESS],
-        input=content,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            [sys.executable, HARNESS],
+            input=content,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except FileNotFoundError:
+        return {"status": "error", "message": f"Harness não encontrado: {HARNESS}", "file": None}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "message": "Timeout na validação do harness (>10s)", "file": None}
 
     if result.returncode != 0:
         return {
@@ -39,13 +45,14 @@ def validate_and_write(content: str, filepath: str) -> dict:
             "file": None,
         }
 
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(filepath), exist_ok=True, mode=0o700)
+    fd = os.open(filepath, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(result.stdout)
 
     return {
         "status": "success",
-        "message": f"Relatório gravado com sucesso via harness.",
+        "message": "Relatório gravado com sucesso via harness.",
         "file": filepath,
     }
 
@@ -70,7 +77,7 @@ def main():
     )
     args = parser.parse_args()
 
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M")
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
 
     if args.severity == "CRITICAL":
         filepath = os.path.join(RUNBOOK_DIR, f"{ts}_CRITICAL_{args.component}.md")

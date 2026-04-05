@@ -43,7 +43,7 @@ def get_prometheus_metric(query: str, name: str) -> dict:
         result = resp.json().get("data", {}).get("result", [])
         value = round(float(result[0]["value"][1]), 2) if result else None
         return {"name": name, "value": value, "error": None}
-    except Exception as exc:
+    except (requests.RequestException, ValueError, KeyError, IndexError) as exc:
         return {"name": name, "value": None, "error": str(exc)}
 
 
@@ -112,7 +112,7 @@ def get_pod_status() -> list:
                 })
         return pods
     except Exception as exc:
-        return [{"error": str(exc)}]
+        return [{"error": f"Kubernetes connection failed: {exc}"}]
 
 
 def main():
