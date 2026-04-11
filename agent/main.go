@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -76,6 +78,7 @@ var (
 	latestSummary ClusterSummary
 	statsMutex    sync.Mutex
 	db            *sql.DB
+	dbTimeout     = 5 * time.Second
 )
 
 func getEnv(key, fallback string) string {
@@ -94,6 +97,37 @@ func requireEnv(key string) string {
 	return value
 }
 
+func getEnvInt(key string, fallback int) int {
+	value, ok := os.LookupEnv(key)
+	if !ok || value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		slog.Warn("invalid integer environment variable, using fallback", "var", key, "value", value, "fallback", fallback)
+		return fallback
+	}
+	return parsed
+}
+
+func withDBTimeout(parent context.Context) (context.Context, context.CancelFunc) {
+	if parent == nil {
+		parent = context.Background()
+	}
+	return context.WithTimeout(parent, dbTimeout)
+}
+
+func logSQLError(operation string, err error) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		slog.Warn("sql context error", "operation", operation, "timeout", dbTimeout.String(), "err", err)
+		return
+	}
+	slog.Warn("sql operation failed", "operation", operation, "err", err)
+}
+
 var iconETag string
 
 func init() {
@@ -107,6 +141,7 @@ func main() {
 	dbName := getEnv("DB_NAME", "sentinel_db")
 	dbHost := getEnv("DB_HOST", "localhost")
 	sslMode := getEnv("DB_SSLMODE", "disable")
+	dbTimeout = time.Duration(getEnvInt("DB_TIMEOUT_SEC", 5)) * time.Second
 	if sslMode == "disable" {
 		slog.Warn("PostgreSQL SSL is disabled — set DB_SSLMODE=require for production")
 	}
@@ -120,7 +155,9 @@ func main() {
 		slog.Error("database connection failed", "err", err)
 		os.Exit(1)
 	}
-	if err = db.Ping(); err != nil {
+	pingCtx, pingCancel := withDBTimeout(context.Background())
+	defer pingCancel()
+	if err = db.PingContext(pingCtx); err != nil {
 		slog.Error("database ping failed", "err", err)
 		os.Exit(1)
 	}
@@ -187,11 +224,16 @@ func main() {
 			var newStats []PodStats
 			mList, err := metricsClient.MetricsV1beta1().PodMetricses("").List(ctx, metav1.ListOptions{})
 			if err == nil {
-				// OPT-01: Iniciar Transação para Batch Insert
-				tx, err := db.Begin()
-				if err != nil {
-					slog.Warn("transaction begin failed", "err", err)
-				} else {
+				func() {
+					dbCtx, dbCancel := withDBTimeout(appCtx)
+					defer dbCancel()
+					tx, err := db.BeginTx(dbCtx, nil)
+					if err != nil {
+						logSQLError("begin_tx_metrics_insert", err)
+						return
+					}
+					defer tx.Rollback()
+
 					for _, m := range mList.Items {
 						var podCPU, podMem int64
 						for _, c := range m.Containers {
@@ -203,18 +245,21 @@ func main() {
 						if req > 5 && podCPU < req/2 {
 							pStat.Opportunity = fmt.Sprintf("-%dm", req-podCPU)
 						}
-						
-						if _, err := tx.Exec(`INSERT INTO metrics (pod_name, namespace, container_name, cpu_usage, cpu_request, mem_usage, mem_request, opportunity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-						m.Name, m.Namespace, "all", podCPU, req, podMem, 0, pStat.Opportunity); err != nil {
-						slog.Warn("insert metric failed", "pod", m.Name, "err", err)
+
+						if _, err := tx.ExecContext(dbCtx, `INSERT INTO metrics (pod_name, namespace, container_name, cpu_usage, cpu_request, mem_usage, mem_request, opportunity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+							m.Name, m.Namespace, "all", podCPU, req, podMem, 0, pStat.Opportunity); err != nil {
+							logSQLError("insert_metric", err)
+							slog.Warn("insert metric failed", "pod", m.Name, "namespace", m.Namespace, "err", err)
+							continue
+						}
+						newStats = append(newStats, pStat)
 					}
-					newStats = append(newStats, pStat)
-				}
-				if err := tx.Commit(); err != nil {
-					slog.Warn("transaction commit failed", "err", err)
-					_ = tx.Rollback()
-				}
-				}
+
+					if err := tx.Commit(); err != nil {
+						logSQLError("commit_metrics_insert", err)
+						return
+					}
+				}()
 			}
 			sort.Slice(newStats, func(i, j int) bool { return newStats[i].CPUUsage > newStats[j].CPUUsage })
 
@@ -284,7 +329,9 @@ func main() {
 			return
 		}
 		setSecureHeaders(w)
-		rows, err := db.Query(`
+		queryCtx, queryCancel := withDBTimeout(r.Context())
+		defer queryCancel()
+		rows, err := db.QueryContext(queryCtx, `
 			SELECT t, SUM(req) as req, SUM(use) as use FROM (
 				SELECT TO_CHAR(timestamp, 'HH24:MI:SS') as t, 
 				       (CAST(cpu_request AS FLOAT) * $1) / 360.0 as req,
@@ -292,6 +339,7 @@ func main() {
 				FROM metrics WHERE timestamp > NOW() - INTERVAL '30 minutes'
 			) sub GROUP BY t ORDER BY t ASC LIMIT 100`, USD_PER_VCPU_HOUR/1000.0)
 		if err != nil {
+			logSQLError("query_history", err)
 			slog.Error("sql query error", "err", err)
 			return
 		}
@@ -824,5 +872,8 @@ update();
 	defer shutdownCancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		slog.Error("shutdown error", "err", err)
+	}
+	if err := db.Close(); err != nil {
+		slog.Warn("database close failed", "err", err)
 	}
 }
