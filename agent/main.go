@@ -362,12 +362,15 @@ func main() {
 		queryCtx, queryCancel := withDBTimeout(r.Context())
 		defer queryCancel()
 		rows, err := db.QueryContext(queryCtx, `
-			SELECT t, SUM(req) as req, SUM(use) as use FROM (
-				SELECT TO_CHAR(timestamp, 'HH24:MI:SS') as t, 
-				       (CAST(cpu_request AS FLOAT) * $1) / 360.0 as req,
-				       (CAST(cpu_usage AS FLOAT) * $1) / 360.0 as use
-				FROM metrics WHERE timestamp > NOW() - INTERVAL '30 minutes'
-			) sub GROUP BY t ORDER BY t ASC LIMIT 100`, USD_PER_VCPU_HOUR/1000.0)
+			SELECT
+				date_trunc('minute', timestamp) AS bucket,
+				SUM((CAST(cpu_request AS FLOAT) * $1) / 360.0) AS req,
+				SUM((CAST(cpu_usage AS FLOAT) * $1) / 360.0) AS use
+			FROM metrics
+			WHERE timestamp > NOW() - INTERVAL '30 minutes'
+			GROUP BY bucket
+			ORDER BY bucket ASC
+			LIMIT 100`, USD_PER_VCPU_HOUR/1000.0)
 		if err != nil {
 			logSQLError("query_history", err)
 			slog.Error("sql query error", "err", err)
@@ -377,13 +380,21 @@ func main() {
 		defer rows.Close()
 		var points []HistoryPoint
 		for rows.Next() {
-			var p HistoryPoint
-			if err := rows.Scan(&p.Time, &p.ReqCost, &p.UseCost); err != nil {
+			var (
+				bucket  time.Time
+				reqCost float64
+				useCost float64
+			)
+			if err := rows.Scan(&bucket, &reqCost, &useCost); err != nil {
 				slog.Error("failed to scan history row", "err", err)
 				writeJSONError(w, http.StatusInternalServerError, "internal server error")
 				return
 			}
-			points = append(points, p)
+			points = append(points, HistoryPoint{
+				Time:    bucket.Format("15:04:05"),
+				ReqCost: reqCost,
+				UseCost: useCost,
+			})
 		}
 		if err := rows.Err(); err != nil {
 			logSQLError("history_rows_iteration", err)
