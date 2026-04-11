@@ -166,7 +166,7 @@ async function update() {
     m.slice(0, 10).forEach(function(p, i) {
       var pct = maxCpu > 0 ? (p.cpuUsage / maxCpu * 100) : 0;
       var fc = pct > 80 ? 'var(--red)' : pct > 55 ? 'var(--orange)' : 'var(--cyan)';
-      var reqText = p.cpuRequestPresent ? (p.cpuRequest + 'm') : 'N/A';
+      var cpuRequestText = p.cpuRequestPresent ? (p.cpuRequest + 'm') : 'N/A';
       var hasSaving = Number(p.potentialSavingMCpu || 0) > 0;
       var oppLabel = hasSaving ? ('-' + Number(p.potentialSavingMCpu) + 'm') : '';
       var opp = hasSaving
@@ -177,7 +177,7 @@ async function update() {
         '<td class="mono" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.name||'--') + '</td>' +
         '<td><span class="ns-tag">' + esc(p.namespace||'--') + '</span></td>' +
         '<td class="mono" style="color:var(--cyan)">' + p.cpuUsage + 'm</td>' +
-        '<td class="mono" style="color:var(--text-dim)">' + esc(reqText) + '</td>' +
+        '<td class="mono" style="color:var(--text-dim)">' + esc(cpuRequestText) + '</td>' +
         '<td><div class="util-wrap"><div class="util-bg"><div class="util-fill" style="width:' + pct.toFixed(0) + '%;background:' + fc + '"></div></div>' +
             '<span class="util-pct">' + pct.toFixed(0) + '%</span></div></td>' +
         '<td>' + opp + '</td>' +

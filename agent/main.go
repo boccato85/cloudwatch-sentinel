@@ -41,8 +41,9 @@ var dashboardCSS []byte
 var dashboardJS []byte
 
 const (
-	USD_PER_VCPU_HOUR = 0.04
-	USD_PER_GB_HOUR   = 0.005
+	USD_PER_VCPU_HOUR      = 0.04
+	USD_PER_GB_HOUR        = 0.005
+	MinWasteCPURequestMCpu = 5
 )
 
 type NodeInfo struct {
@@ -137,6 +138,15 @@ func logSQLError(operation string, err error) {
 		return
 	}
 	slog.Warn("sql operation failed", "operation", operation, "err", err)
+}
+
+func getPodRequest(podRequestMap map[string]map[string]int64, namespace, name string) (int64, bool) {
+	nsReqs, nsFound := podRequestMap[namespace]
+	if !nsFound {
+		return 0, false
+	}
+	req, reqFound := nsReqs[name]
+	return req, reqFound
 }
 
 type statusRecorder struct {
@@ -295,11 +305,7 @@ func main() {
 							podCPU += c.Usage.Cpu().MilliValue()
 							podMem += c.Usage.Memory().Value() / 1024 / 1024
 						}
-						nsReqs, nsFound := podRequestMap[m.Namespace]
-						req, reqFound := int64(0), false
-						if nsFound {
-							req, reqFound = nsReqs[m.Name]
-						}
+						req, reqFound := getPodRequest(podRequestMap, m.Namespace, m.Name)
 						pStat := PodStats{
 							Name:              m.Name,
 							Namespace:         m.Namespace,
@@ -308,7 +314,7 @@ func main() {
 							CPURequestPresent: reqFound,
 							MemUsage:          podMem,
 						}
-						if reqFound && req > 5 && podCPU < req/2 {
+						if reqFound && req > MinWasteCPURequestMCpu && podCPU < req/2 {
 							saving := req - podCPU
 							pStat.PotentialSavingMCpu = &saving
 							pStat.Opportunity = fmt.Sprintf("-%dm", saving)
@@ -472,7 +478,7 @@ func main() {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:")
 		_, _ = w.Write(dashboardHTML)
 	})
 
