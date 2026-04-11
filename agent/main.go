@@ -65,12 +65,14 @@ type HistoryPoint struct {
 }
 
 type PodStats struct {
-	Name        string `json:"name"`
-	Namespace   string `json:"namespace"`
-	CPUUsage    int64  `json:"cpuUsage"`
-	CPURequest  int64  `json:"cpuRequest"`
-	MemUsage    int64  `json:"memUsage"`
-	Opportunity string `json:"opportunity"`
+	Name                string `json:"name"`
+	Namespace           string `json:"namespace"`
+	CPUUsage            int64  `json:"cpuUsage"`
+	CPURequest          int64  `json:"cpuRequest"`
+	CPURequestPresent   bool   `json:"cpuRequestPresent"`
+	MemUsage            int64  `json:"memUsage"`
+	PotentialSavingMCpu *int64 `json:"potentialSavingMCpu,omitempty"`
+	Opportunity         string `json:"opportunity,omitempty"`
 }
 
 var (
@@ -240,10 +242,23 @@ func main() {
 							podCPU += c.Usage.Cpu().MilliValue()
 							podMem += c.Usage.Memory().Value() / 1024 / 1024
 						}
-						req := podRequestMap[m.Namespace][m.Name]
-						pStat := PodStats{Name: m.Name, Namespace: m.Namespace, CPUUsage: podCPU, CPURequest: req, MemUsage: podMem}
-						if req > 5 && podCPU < req/2 {
-							pStat.Opportunity = fmt.Sprintf("-%dm", req-podCPU)
+						nsReqs, nsFound := podRequestMap[m.Namespace]
+						req, reqFound := int64(0), false
+						if nsFound {
+							req, reqFound = nsReqs[m.Name]
+						}
+						pStat := PodStats{
+							Name:              m.Name,
+							Namespace:         m.Namespace,
+							CPUUsage:          podCPU,
+							CPURequest:        req,
+							CPURequestPresent: reqFound,
+							MemUsage:          podMem,
+						}
+						if reqFound && req > 5 && podCPU < req/2 {
+							saving := req - podCPU
+							pStat.PotentialSavingMCpu = &saving
+							pStat.Opportunity = fmt.Sprintf("-%dm", saving)
 						}
 
 						if _, err := tx.ExecContext(dbCtx, `INSERT INTO metrics (pod_name, namespace, container_name, cpu_usage, cpu_request, mem_usage, mem_request, opportunity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -826,15 +841,18 @@ async function update() {
     m.slice(0, 10).forEach(function(p, i) {
       var pct = maxCpu > 0 ? (p.cpuUsage / maxCpu * 100) : 0;
       var fc = pct > 80 ? 'var(--red)' : pct > 55 ? 'var(--orange)' : 'var(--cyan)';
-      var opp = p.opportunity
-        ? '<span style="color:var(--orange);font-family:monospace">' + esc(p.opportunity) + ' CPU</span>'
+      var reqText = p.cpuRequestPresent ? (p.cpuRequest + 'm') : 'N/A';
+      var hasSaving = Number(p.potentialSavingMCpu || 0) > 0;
+      var oppLabel = hasSaving ? ('-' + Number(p.potentialSavingMCpu) + 'm') : '';
+      var opp = hasSaving
+        ? '<span style="color:var(--orange);font-family:monospace">' + esc(oppLabel) + ' CPU</span>'
         : '<span style="color:var(--green)">&#10003;</span>';
       rows += '<tr>' +
         '<td style="color:var(--text-dim)">' + (i+1) + '</td>' +
         '<td class="mono" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.name||'--') + '</td>' +
         '<td><span class="ns-tag">' + esc(p.namespace||'--') + '</span></td>' +
         '<td class="mono" style="color:var(--cyan)">' + p.cpuUsage + 'm</td>' +
-        '<td class="mono" style="color:var(--text-dim)">' + p.cpuRequest + 'm</td>' +
+        '<td class="mono" style="color:var(--text-dim)">' + esc(reqText) + '</td>' +
         '<td><div class="util-wrap"><div class="util-bg"><div class="util-fill" style="width:' + pct.toFixed(0) + '%;background:' + fc + '"></div></div>' +
             '<span class="util-pct">' + pct.toFixed(0) + '%</span></div></td>' +
         '<td>' + opp + '</td>' +
@@ -843,7 +861,7 @@ async function update() {
     document.getElementById('wbody').innerHTML = rows ||
       '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:16px">No workload data</td></tr>';
 
-    var waste = m.filter(function(p){ return p.opportunity; });
+    var waste = m.filter(function(p){ return Number(p.potentialSavingMCpu || 0) > 0; });
     document.getElementById('kW').textContent = waste.length;
     var wc = document.getElementById('wcnt');
     wc.textContent = waste.length + ' item' + (waste.length !== 1 ? 's' : '');
@@ -852,7 +870,7 @@ async function update() {
       document.getElementById('wasteList').innerHTML = waste.slice(0, 5).map(function(p) {
         return '<div class="waste-item"><div class="waste-name">' + esc(p.name) + '</div>' +
                '<div class="waste-row"><span style="color:var(--text-dim)">Savings opportunity</span>' +
-               '<span class="waste-save">' + esc(p.opportunity) + ' CPU</span></div>' +
+               '<span class="waste-save">-' + esc(Number(p.potentialSavingMCpu)) + 'm CPU</span></div>' +
                '<div class="waste-bar"><div class="waste-fill" style="width:65%"></div></div></div>';
       }).join('');
     } else {
