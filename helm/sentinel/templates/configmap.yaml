@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sentinel.fullname" . }}-config
+  labels:
+    {{- include "sentinel.labels" . | nindent 4 }}
+data:
+  LISTEN_ADDR: {{ .Values.agent.listenAddr | quote }}
+  RATE_LIMIT_RPS: {{ .Values.agent.rateLimitRps | quote }}
+  DB_TIMEOUT_SEC: {{ .Values.agent.dbTimeoutSec | quote }}
+  # Retention settings
+  RETENTION_RAW_HOURS: {{ .Values.retention.rawHours | quote }}
+  RETENTION_HOURLY_DAYS: {{ .Values.retention.hourlyDays | quote }}
+  RETENTION_DAILY_DAYS: {{ .Values.retention.dailyDays | quote }}
+  # Thresholds file path inside the container
+  THRESHOLDS_PATH: "/etc/sentinel/thresholds.yaml"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sentinel.fullname" . }}-thresholds
+  labels:
+    {{- include "sentinel.labels" . | nindent 4 }}
+data:
+  thresholds.yaml: |
+    cpu:
+      warning: {{ .Values.thresholds.cpu.warning }}
+      critical: {{ .Values.thresholds.cpu.critical }}
+    memory:
+      warning: {{ .Values.thresholds.memory.warning }}
+      critical: {{ .Values.thresholds.memory.critical }}
+    disk:
+      warning: {{ .Values.thresholds.disk.warning }}
+      critical: {{ .Values.thresholds.disk.critical }}
+    pods:
+      pending_warning_minutes: {{ .Values.thresholds.pods.pendingWarningMinutes }}
+      crash_loop_critical: {{ .Values.thresholds.pods.crashLoopCritical }}
+    waste:
+      overprovisioned_warning: {{ .Values.thresholds.waste.overprovisionedWarning }}
+      min_request_mcpu: {{ .Values.thresholds.waste.minRequestMCpu }}

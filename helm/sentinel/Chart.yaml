@@ -1,0 +1,18 @@
+apiVersion: v2
+name: sentinel
+description: Standalone Kubernetes observability and FinOps platform with real-time dashboard
+type: application
+version: 0.10.15
+appVersion: "0.10.15"
+keywords:
+  - kubernetes
+  - observability
+  - finops
+  - standalone
+  - cost-optimization
+home: https://github.com/boccato85/Sentinel
+sources:
+  - https://github.com/boccato85/Sentinel
+maintainers:
+  - name: boccato85
+    url: https://github.com/boccato85

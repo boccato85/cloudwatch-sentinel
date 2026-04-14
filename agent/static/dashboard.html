@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sentinel | Cluster Observatory</title>
+<link rel="icon" type="image/png" href="/static/icon.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/dashboard.css?v=0.10.12">
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="logo"><img src="/static/icon.png" alt="Sentinel" style="width:30px;height:30px;object-fit:contain;margin-right:6px"/>SENTINEL</div>
+    <div class="ctag">minikube / local</div>
+    <!-- NAMESPACE FILTER -->
+    <div class="ns-filter-wrap">
+      <select id="nsFilter" class="ns-select">
+        <option value="">All Namespaces</option>
+      </select>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="spill" id="spillBadge">
+      <div class="sdot"></div>Connected
+      <div class="spill-tip" id="spillTip">
+        <div class="stt-row"><span class="stt-lbl">Cluster</span><span class="stt-val" id="sttCluster">--</span></div>
+        <div class="stt-row"><span class="stt-lbl">Endpoint</span><span class="stt-val" id="sttEndpoint">--</span></div>
+        <div class="stt-row"><span class="stt-lbl">Version</span><span class="stt-val" id="sttVer">--</span></div>
+        <div class="stt-row stt-sep"><span class="stt-lbl">Session up</span><span class="stt-val" id="sttSession">--</span></div>
+        <div class="stt-row"><span class="stt-lbl">Last sync</span><span class="stt-val" id="sttSync">--</span></div>
+        <div class="stt-row"><span class="stt-lbl">Database</span><span class="stt-val" id="sttDb">--</span></div>
+        <div class="stt-row stt-sep" style="justify-content:flex-end">
+          <a href="/status" target="_blank" style="color:var(--cyan);font-size:.85em;text-decoration:none;font-weight:500">View full status →</a>
+        </div>
+      </div>
+    </div>
+    <div class="hdr-alert" id="hdrAlertBadge" title="Active Alerts — click to view">
+      <span class="hdr-alert-dot"></span>
+      <span id="hdrAlertTxt">All OK</span>
+    </div>
+    <span id="lastUp">Updating...</span>
+    <div class="ver-badge" id="verBadge" title="Sentinel&#10;Kubernetes Observability&#10;© 2026 Sentinel Project">v--</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="workloads">Workloads</button>
+  <button class="tab-btn" data-tab="pods">Pods</button>
+</div>
+
+<!-- ===== TAB: OVERVIEW ===== -->
+<div id="tab-overview" class="tab-content active">
+<div class="main">
+
+  <!-- KPI STRIP -->
+  <div class="kpi-row">
+    <div class="kpi c-cyan kpi-clickable" id="kNodesCard">
+      <div class="kpi-lbl">Total Nodes</div>
+      <div class="kpi-val" id="kN">--</div>
+      <div class="kpi-sub" id="kNs">Checking...</div>
+      <span class="kpi-expand">&#8599; expand</span>
+    </div>
+    <div class="kpi c-green kpi-clickable" id="kPodsCard">
+      <div class="kpi-lbl">Running Pods</div>
+      <div class="kpi-val" id="kR">--</div>
+      <div class="kpi-sub" id="kRs">of -- total</div>
+      <span class="kpi-expand">&#8599; expand</span>
+    </div>
+    <div class="kpi c-red kpi-clickable" id="kFailCard">
+      <div class="kpi-lbl">Failed / Pending</div>
+      <div class="kpi-val" id="kF">--</div>
+      <div class="kpi-sub" id="kFs">-- pending</div>
+      <span class="kpi-expand">&#8599; expand</span>
+    </div>
+    <div class="kpi c-cyan kpi-clickable" id="kCpuCard">
+      <div class="kpi-lbl">Top CPU Consumer</div>
+      <div class="kpi-val mono" id="kT">--m</div>
+      <div class="kpi-sub" id="kTs" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">--</div>
+      <span class="kpi-expand">&#8599; expand</span>
+    </div>
+    <div class="kpi c-purple kpi-clickable" id="kMemCard">
+      <div class="kpi-lbl">Top Memory Consumer</div>
+      <div class="kpi-val mono" id="kMem">--Mi</div>
+      <div class="kpi-sub" id="kMems" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">--</div>
+      <span class="kpi-expand">&#8599; expand</span>
+    </div>
+    <div class="kpi c-yellow kpi-clickable" id="kWasteCard">
+      <div class="kpi-lbl">Waste Opportunities</div>
+      <div class="kpi-val" id="kW">--</div>
+      <div class="kpi-sub" id="kWmem" style="margin-bottom:2px">--</div>
+      <div class="kpi-sub" id="kWpareto">--</div>
+      <span class="kpi-expand">&#8599; expand</span>
+    </div>
+  </div>
+
+  <!-- ROW 1: NODE MAP | POD PHASES | CPU (compact) | MEMORY (compact) -->
+  <div class="row-4">
+
+    <div class="panel">
+      <div class="ph ph-clickable" id="ph-nodes"><span class="ph-title">Node Health Map</span><div style="display:flex;align-items:center;gap:8px"><span class="badge b-ok" id="nbadge">OK</span><span class="ph-expand">&#8599; expand</span></div></div>
+      <div class="pb">
+        <div class="hcomb chart-clickable" id="honeycomb" title="Click to expand"></div>
+        <div class="hleg">
+          <span><b style="background:var(--green)"></b>Healthy</span>
+          <span><b style="background:var(--red)"></b>Issue</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph ph-clickable" id="ph-pods"><span class="ph-title">Pod Distribution</span><div style="display:flex;align-items:center;gap:8px"><select id="tile-ns-pods" class="tile-ns-select" title="Filter by namespace"><option value="">All NS</option></select><span class="ph-expand">&#8599; expand</span></div></div>
+      <div class="pb">
+        <div class="dnut-wrap">
+          <div class="dnut-canvas chart-clickable" id="phaseDonutWrap" title="Click to expand"><canvas id="phaseDonut"></canvas></div>
+          <div class="legend" id="phaseLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-compact">
+      <div class="ph ph-clickable" id="ph-cpu"><span class="ph-title">CPU Resources</span><div style="display:flex;align-items:center;gap:6px"><select id="tile-ns-cpu" class="tile-ns-select" title="Filter by namespace"><option value="">All NS</option></select><span class="badge b-ok" id="cpubadge">Optimal</span><span class="ph-expand">&#8599;</span></div></div>
+      <div class="pb">
+        <div class="dnut-wrap dnut-compact">
+          <div class="dnut-canvas chart-clickable" id="cpuDonutWrap" title="Click to expand"><canvas id="cpuDonut"></canvas></div>
+          <div class="cpu-side">
+            <div class="eff-big" id="effBig">--%</div>
+            <div class="eff-lbl">efficiency ratio</div>
+            <div class="bar-row">
+              <div class="bar-head"><span>Requested</span><em id="cpuReqV">--m</em></div>
+              <div class="bar-bg"><div class="bar-fill" id="cpuReqB" style="width:0%;background:var(--cyan)"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-head"><span>Allocatable <span style="font-size:.85em;opacity:.6">(total capacity)</span></span><em id="cpuAlcV">--m</em></div>
+              <div class="bar-bg"><div class="bar-fill" style="width:100%;background:rgba(255,255,255,.2)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-compact">
+      <div class="ph ph-clickable" id="ph-mem"><span class="ph-title">Memory Resources</span><div style="display:flex;align-items:center;gap:6px"><select id="tile-ns-mem" class="tile-ns-select" title="Filter by namespace"><option value="">All NS</option></select><span class="badge b-ok" id="membadge">Optimal</span><span class="ph-expand">&#8599;</span></div></div>
+      <div class="pb">
+        <div class="dnut-wrap dnut-compact">
+          <div class="dnut-canvas chart-clickable" id="memDonutWrap" title="Click to expand"><canvas id="memDonut"></canvas></div>
+          <div class="cpu-side">
+            <div class="eff-big" id="memEffBig" style="color:var(--purple)">--%</div>
+            <div class="eff-lbl">pressure ratio</div>
+            <div class="bar-row">
+              <div class="bar-head"><span>Requested</span><em id="memReqV">--Mi</em></div>
+              <div class="bar-bg"><div class="bar-fill" id="memReqB" style="width:0%;background:var(--purple)"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-head"><span>Allocatable <span style="font-size:.85em;opacity:.6">(total capacity)</span></span><em id="memAlcV">--Mi</em></div>
+              <div class="bar-bg"><div class="bar-fill" style="width:100%;background:rgba(255,255,255,.2)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 2: ACTIVE ALERTS | WASTE INTELLIGENCE -->
+  <div class="row-2">
+
+  </div>
+
+  <!-- hidden compat elements so JS still finds alertsBox / abadge -->
+  <span id="abadge" style="display:none"></span>
+  <div id="alertsBox" style="display:none"></div>
+
+  <!-- FINANCIAL CORRELATION — Hero FinOps Panel (full-width, promoted) -->
+  <div class="panel finops-panel">
+    <div class="ph ph-clickable" id="ph-finops">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="ph-title" id="finops-chart-title">Financial Correlation &#8212; ROI Timeline</span>
+        <span class="badge b-finops">FinOps</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="line-legend">
+          <span><i style="background:var(--red)"></i>Budget</span>
+          <span><i style="background:var(--green)"></i>Actual</span>
+          <span><i class="legend-dash" style="background:var(--purple)"></i>Forecast Budget</span>
+          <span><i class="legend-dash" style="background:var(--cyan)"></i>Forecast Usage</span>
+        </div>
+        <span class="ph-expand">&#8599; expand</span>
+      </div>
+    </div>
+    <div class="range-bar">
+      <button class="range-btn active" data-range="30m">30m</button>
+      <button class="range-btn" data-range="1h">1h</button>
+      <button class="range-btn" data-range="6h">6h</button>
+      <button class="range-btn" data-range="24h">24h</button>
+      <button class="range-btn" data-range="7d">7d</button>
+      <button class="range-btn" data-range="30d">30d</button>
+      <button class="range-btn" data-range="90d">90d</button>
+      <button class="range-btn" data-range="365d">1y</button>
+      <button class="range-btn" data-range="custom">Custom</button>
+      <div id="custom-range-wrap" class="custom-range-wrap" style="display:none">
+        <input type="datetime-local" id="customFrom" />
+        <span style="color:var(--text-dim);font-size:.75em">→</span>
+        <input type="datetime-local" id="customTo" />
+        <button class="range-apply-btn" id="customApply">Apply</button>
+      </div>
+    </div>
+    <div class="pb">
+      <div id="finopsSummary" style="font-size:0.75em;color:var(--text-dim);padding:0 0 8px;font-family:'JetBrains Mono',monospace"></div>
+      <div id="chartDataNote" style="display:none;font-size:0.72em;color:var(--orange);padding:0 0 6px;font-family:'JetBrains Mono',monospace">&#9432; Insufficient daily aggregates &#8212; showing available hourly data</div>
+      <div class="line-area" id="finops-chart-area"><canvas id="mainLineChart"></canvas></div>
+    </div>
+    <!-- Forecast summary card (Azure-style) -->
+    <div id="forecastCard" class="forecast-card" style="display:none">
+      <div class="fc-header">
+        <span class="fc-title">&#9201; Cost Forecast</span>
+        <span class="fc-period" id="fcPeriod">--</span>
+      </div>
+      <div class="fc-metrics">
+        <div class="fc-metric">
+          <div class="fc-metric-lbl">Projected Budget</div>
+          <div class="fc-metric-val" id="fcProjBudget" style="color:var(--purple)">$--</div>
+        </div>
+        <div class="fc-metric">
+          <div class="fc-metric-lbl">Projected Usage</div>
+          <div class="fc-metric-val" id="fcProjUsage" style="color:var(--cyan)">$--</div>
+        </div>
+        <div class="fc-metric">
+          <div class="fc-metric-lbl">Projected Waste</div>
+          <div class="fc-metric-val" id="fcProjWaste" style="color:var(--orange)">$--</div>
+        </div>
+      </div>
+      <div class="fc-note">Linear regression forecast &bull; &#177;1.5&#963; confidence band</div>
+    </div>
+  </div>
+
+  <!-- NAMESPACE EFFICIENCY SCORE -->
+  <div class="panel eff-panel" style="position:relative">
+    <div class="ph" id="ph-efficiency">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="ph-title">Namespace Efficiency Score</span>
+        <span class="badge b-ok" id="eff-badge">Loading...</span>
+        <span class="badge b-warn" id="eff-unmanaged-badge" style="display:none"></span>
+        <!-- ⓘ lives in the header so it has room to breathe -->
+        <div class="grade-legend-wrap">
+          <button class="grade-info-btn" id="grade-info-btn" title="How grades work">ⓘ How grades work</button>
+          <div class="grade-legend-tip" id="grade-legend-tip">
+            <div class="gl-title">How efficiency grades work</div>
+            <div class="gl-formula">Score = actual usage ÷ requested &times; 100</div>
+            <div class="gl-row"><span class="eff-grade A">A</span><span class="gl-desc">≥75% — well-tuned, using what was requested</span></div>
+            <div class="gl-row"><span class="eff-grade B">B</span><span class="gl-desc">≥50% — good, some slack is acceptable</span></div>
+            <div class="gl-row"><span class="eff-grade C">C</span><span class="gl-desc">≥30% — review, significantly over-provisioned</span></div>
+            <div class="gl-row"><span class="eff-grade D">D</span><span class="gl-desc">≥15% — warning, severe over-provisioning</span></div>
+            <div class="gl-row"><span class="eff-grade F">F</span><span class="gl-desc">&lt;15% — critical waste, right-size urgently</span></div>
+            <div class="gl-row"><span class="eff-unmanaged">UNMANAGED</span><span class="gl-desc">no resource requests — scheduler blind spot &amp; FinOps risk</span></div>
+            <div class="gl-note">System namespaces excluded by default.</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label class="eff-sys-toggle" id="eff-sys-label">
+          <input type="checkbox" id="eff-show-system" style="accent-color:var(--cyan)"> Show system NS
+        </label>
+        <span class="ph-expand" id="eff-expand-btn">&#8599; expand</span>
+      </div>
+    </div>
+    <div class="pb" style="padding:0">
+      <table class="eff-table" id="eff-ns-list">
+        <thead><tr id="eff-thead">
+          <th class="th-sort" data-col="namespace">Namespace</th>
+          <th class="th-sort desc" data-col="score">Score <span class="th-sub">overall</span></th>
+          <th class="th-sort" data-col="cpuScore">CPU <span class="th-sub">used / requested</span></th>
+          <th class="th-sort" data-col="memScore">Mem <span class="th-sub">used / requested</span></th>
+          <th class="th-sort th-c" data-col="grade">Grade</th>
+        </tr></thead>
+        <tbody id="eff-ns-body"><tr><td colspan="5" style="color:var(--text-dim);padding:16px;font-size:.84em">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TOP WORKLOADS — CPU & WASTE ANALYSIS (unified full-width) -->
+  <div class="panel">
+    <div class="ph ph-clickable" id="ph-workloads">
+      <span class="ph-title">Top Workloads &mdash; CPU &amp; Waste Analysis</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge b-warn" id="wcnt">Scanning...</span>
+        <span class="ph-meta">Live &#183; 5s refresh</span>
+        <span class="ph-expand">&#8599; expand</span>
+      </div>
+    </div>
+    <div class="pb workloads-scroll-pb" style="padding:0 16px 10px">
+      <table class="wtable">
+        <thead><tr id="whead">
+          <th style="width:24px">#</th>
+          <th class="th-sort" data-col="name">Pod Name</th>
+          <th class="th-sort" data-col="namespace">NS</th>
+          <th class="th-sort desc" data-col="cpuUsage">CPU</th>
+          <th class="th-sort" data-col="wastePct">Util.</th>
+          <th class="th-sort" data-col="potentialSavingMCpu">Waste</th>
+          <th>Opportunity</th>
+        </tr></thead>
+        <tbody id="wbody"><tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Collecting data...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- hidden legacy element — keeps old event-listener refs alive -->
+  <div id="wasteList" style="display:none"></div>
+
+</div><!-- /main overview -->
+</div><!-- /tab-overview -->
+
+<!-- ===== TAB: WORKLOADS ===== -->
+<div id="tab-workloads" class="tab-content">
+<div class="main">
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-title">Deployments &amp; StatefulSets</span>
+      <span class="ph-meta" id="wl-count">Loading...</span>
+    </div>
+    <div class="pb" style="padding:0 16px 10px">
+      <table class="wtable">
+        <thead><tr>
+          <th>Name</th>
+          <th>Namespace</th>
+          <th>Kind</th>
+          <th>Replicas</th>
+          <th>Image</th>
+          <th>Age</th>
+          <th>Status</th>
+        </tr></thead>
+        <tbody id="wl-body"><tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Loading workloads...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div><!-- /tab-workloads -->
+
+<!-- ===== TAB: PODS ===== -->
+<div id="tab-pods" class="tab-content">
+<div class="main">
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-title">Pod List</span>
+      <span class="ph-meta" id="pod-count">Loading...</span>
+    </div>
+    <div class="pb" style="padding:0 16px 10px">
+      <table class="wtable">
+        <thead><tr>
+          <th>Name</th>
+          <th>Namespace</th>
+          <th>Phase</th>
+          <th>Ready</th>
+          <th>Restarts</th>
+          <th>Node</th>
+          <th>Age</th>
+          <th>Logs</th>
+        </tr></thead>
+        <tbody id="pod-body"><tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:20px">Loading pods...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div><!-- /tab-pods -->
+
+<!-- ===== DETAIL DRAWER ===== -->
+<div id="drawer-overlay" class="drawer-overlay"></div>
+<div id="detail-drawer" class="drawer">
+  <div class="drawer-hdr">
+    <span class="drawer-title" id="drawer-title">Detail</span>
+    <button class="drawer-close" id="drawer-close" title="Close">&times;</button>
+  </div>
+  <div class="drawer-body" id="drawer-body">
+    <!-- populated dynamically -->
+  </div>
+</div>
+
+<!-- ===== LOG MODAL ===== -->
+<div id="log-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="log-modal-title">Pod Logs</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-refresh" id="log-refresh-btn" title="Refresh logs">&#8635; Refresh</button>
+        <button class="modal-close" id="log-modal-close" title="Close">&times;</button>
+      </div>
+    </div>
+    <pre id="log-content" class="log-pre">Loading...</pre>
+  </div>
+</div>
+
+<script src="/static/dashboard.js?v=0.10.11"></script>
+</body>
+</html>

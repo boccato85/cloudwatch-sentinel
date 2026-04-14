@@ -1,0 +1,25 @@
+cpu:
+  warning: 70
+  critical: 85
+
+memory:
+  warning: 75
+  critical: 90
+
+disk:
+  warning: 70
+  critical: 85
+
+pods:
+  pending_warning_minutes: 5
+  crash_loop_critical: true
+  # restart_warning_threshold: não utilizado — ambiente dev/Minikube não-persistente.
+  # Restarts são cumulativos de múltiplos ciclos de boot e não indicam falha.
+  # Severidade é baseada exclusivamente no estado atual do pod.
+
+waste:
+  # Percentual de CPU request não utilizado que classifica o pod como "overprovisioned"
+  # Fórmula: (cpu_request - cpu_usage) / cpu_request * 100
+  overprovisioned_warning: 60  # > 60% do request desperdiçado → WARNING
+  # Threshold mínimo de request (mCPU) para avaliar waste — ignora pods com requests muito pequenos
+  min_request_mcpu: 5

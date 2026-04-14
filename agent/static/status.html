@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel | System Status</title>
+<link rel="icon" type="image/png" href="/static/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1e27;--surface2:#222735;--border:#2d3347;
+  --cyan:#00b4ff;--green:#00cc8f;--red:#e54949;--orange:#f5a623;
+  --purple:#a855f7;--text:#c8d0e0;--text-dim:#7a8499;--text-bright:#edf0f7;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{background:#090c12;border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1em;font-weight:700;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo img{width:28px;height:28px;object-fit:contain}
+.back-link{font-size:.8em;color:var(--text-dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .15s}
+.back-link:hover{color:var(--cyan)}
+.back-link::before{content:'←'}
+
+/* HERO */
+.hero{text-align:center;padding:56px 20px 40px}
+.hero-logo{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:20px}
+.hero-logo img{width:52px;height:52px;object-fit:contain}
+.hero-title{font-size:2em;font-weight:700;color:var(--text-bright);letter-spacing:3px;text-transform:uppercase}
+.hero-sub{font-size:.85em;color:var(--text-dim);margin-top:6px;letter-spacing:.5px}
+
+/* OVERALL BANNER */
+.banner{display:inline-flex;align-items:center;gap:10px;padding:10px 28px;border-radius:40px;font-size:.9em;font-weight:600;margin-top:20px;transition:background .3s,border-color .3s}
+.banner.ok{background:rgba(0,204,143,.12);border:1px solid rgba(0,204,143,.35);color:var(--green)}
+.banner.degraded{background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.35);color:var(--orange)}
+.banner.unhealthy{background:rgba(229,73,73,.12);border:1px solid rgba(229,73,73,.35);color:var(--red)}
+.banner-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.banner.ok .banner-dot{background:var(--green);animation:pulse 2s infinite}
+.banner.degraded .banner-dot{background:var(--orange);animation:pulse 1.2s infinite}
+.banner.unhealthy .banner-dot{background:var(--red);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+
+/* SERVICES GRID */
+.services{max-width:680px;margin:40px auto 0;padding:0 20px;width:100%}
+.section-label{font-size:.7em;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:14px}
+
+.service-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 22px;display:flex;align-items:center;gap:16px;margin-bottom:10px;transition:border-color .2s}
+.service-card:hover{border-color:#3d4560}
+.service-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0}
+.service-icon.cyan{background:rgba(0,180,255,.12)}
+.service-icon.green{background:rgba(0,204,143,.12)}
+.service-icon.purple{background:rgba(168,85,247,.12)}
+.service-icon.orange{background:rgba(245,166,35,.12)}
+.service-info{flex:1;min-width:0}
+.service-name{font-size:.9em;font-weight:600;color:var(--text-bright);margin-bottom:3px}
+.service-detail{font-size:.78em;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+.service-status{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-dot.ok{background:var(--green);animation:pulse 2.5s infinite}
+.status-dot.degraded{background:var(--orange);animation:pulse 1.5s infinite}
+.status-dot.unhealthy,.status-dot.error{background:var(--red);animation:pulse 1s infinite}
+.status-dot.loading{background:var(--text-dim)}
+.status-label{font-size:.78em;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.status-label.ok{color:var(--green)}
+.status-label.degraded{color:var(--orange)}
+.status-label.unhealthy,.status-label.error{color:var(--red)}
+.status-label.loading{color:var(--text-dim)}
+
+/* VERSION STRIP */
+.version-strip{max-width:680px;margin:10px auto 0;padding:0 20px;width:100%;display:flex;gap:10px}
+.vcard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;flex:1;text-align:center}
+.vcard-lbl{font-size:.68em;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px}
+.vcard-val{font-size:1em;font-weight:600;color:var(--text-bright);font-family:'JetBrains Mono',monospace}
+
+/* FOOTER */
+.footer{text-align:center;padding:40px 20px 28px;margin-top:auto}
+.footer-sync{font-size:.78em;color:var(--text-dim)}
+.footer-sync span{color:var(--text)}
+.footer-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite;vertical-align:middle}
+.footer-link{margin-top:10px;font-size:.78em}
+.footer-link a{color:var(--cyan);text-decoration:none}
+.footer-link a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <a class="logo" href="/">
+    <img src="/static/icon.png" alt="Sentinel">
+    SENTINEL
+  </a>
+  <a class="back-link" href="/">Dashboard</a>
+</div>
+
+<div class="hero">
+  <div class="hero-logo">
+    <img src="/static/icon.png" alt="Sentinel Logo">
+    <div>
+      <div class="hero-title">System Status</div>
+      <div class="hero-sub">sentinel · kubernetes observability</div>
+    </div>
+  </div>
+  <div id="bannerWrap">
+    <div class="banner ok" id="overallBanner">
+      <div class="banner-dot"></div>
+      <span id="overallText">Checking systems...</span>
+    </div>
+  </div>
+</div>
+
+<div class="services">
+  <div class="section-label">Services</div>
+
+  <div class="service-card">
+    <div class="service-icon cyan">🛰️</div>
+    <div class="service-info">
+      <div class="service-name">Sentinel Agent</div>
+      <div class="service-detail" id="agentDetail">loading...</div>
+    </div>
+    <div class="service-status">
+      <div class="status-dot" id="agentDot"></div>
+      <div class="status-label" id="agentLabel">—</div>
+    </div>
+  </div>
+
+  <div class="service-card">
+    <div class="service-icon green">🗄️</div>
+    <div class="service-info">
+      <div class="service-name">Database</div>
+      <div class="service-detail" id="dbDetail">loading...</div>
+    </div>
+    <div class="service-status">
+      <div class="status-dot" id="dbDot"></div>
+      <div class="status-label" id="dbLabel">—</div>
+    </div>
+  </div>
+
+  <div class="service-card">
+    <div class="service-icon purple">📡</div>
+    <div class="service-info">
+      <div class="service-name">Metrics Collector</div>
+      <div class="service-detail" id="collectorDetail">loading...</div>
+    </div>
+    <div class="service-status">
+      <div class="status-dot" id="collectorDot"></div>
+      <div class="status-label" id="collectorLabel">—</div>
+    </div>
+  </div>
+
+  <div class="service-card">
+    <div class="service-icon orange">☸️</div>
+    <div class="service-info">
+      <div class="service-name">Kubernetes API</div>
+      <div class="service-detail" id="k8sDetail">loading...</div>
+    </div>
+    <div class="service-status">
+      <div class="status-dot" id="k8sDot"></div>
+      <div class="status-label" id="k8sLabel">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="version-strip" id="versionStrip" style="margin-top:24px">
+  <div class="vcard">
+    <div class="vcard-lbl">Version</div>
+    <div class="vcard-val" id="vcVersion">—</div>
+  </div>
+  <div class="vcard">
+    <div class="vcard-lbl">DB Latency</div>
+    <div class="vcard-val" id="vcDbLatency">—</div>
+  </div>
+  <div class="vcard">
+    <div class="vcard-lbl">Last Collect</div>
+    <div class="vcard-val" id="vcLastCollect">—</div>
+  </div>
+  <div class="vcard">
+    <div class="vcard-lbl">Overall</div>
+    <div class="vcard-val" id="vcOverall">—</div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-sync">
+    <span class="footer-dot"></span>
+    Auto-refreshing every 10s · last update: <span id="lastCheck">—</span>
+  </div>
+  <div class="footer-link">
+    <a href="/">← Back to Dashboard</a>
+  </div>
+</div>
+
+<script>
+function applyStatus(dotId, labelId, status) {
+  const dot = document.getElementById(dotId);
+  const lbl = document.getElementById(labelId);
+  const s = status || 'error';
+  dot.className = 'status-dot ' + s;
+  lbl.className = 'status-label ' + s;
+  lbl.textContent = s === 'ok' ? 'Operational' : s === 'degraded' ? 'Degraded' : s === 'starting' ? 'Starting' : 'Down';
+}
+
+async function refresh() {
+  try {
+    const res = await fetch('/health');
+    const h = await res.json();
+
+    // Overall banner
+    const banner = document.getElementById('overallBanner');
+    const txt = document.getElementById('overallText');
+    banner.className = 'banner ' + h.status;
+    txt.textContent = h.status === 'ok'
+      ? 'All Systems Operational'
+      : h.status === 'degraded'
+      ? 'Partial Degradation'
+      : 'Service Disruption';
+
+    // Agent — always reachable if we got here
+    applyStatus('agentDot', 'agentLabel', 'ok');
+    document.getElementById('agentDetail').textContent = 'v' + h.version + ' · HTTP 200';
+
+    // Database
+    const db = h.checks && h.checks.database;
+    if (db) {
+      applyStatus('dbDot', 'dbLabel', db.status);
+      const dbMs = db.latency_ms;
+      document.getElementById('dbDetail').textContent =
+        db.status === 'ok' ? 'PostgreSQL · ' + (dbMs != null ? dbMs + 'ms' : 'connected') : db.message || 'unreachable';
+      document.getElementById('vcDbLatency').textContent =
+        db.status === 'ok' && dbMs != null ? dbMs + ' ms' : '—';
+    }
+
+    // Collector
+    const col = h.checks && h.checks.collector;
+    if (col) {
+      applyStatus('collectorDot', 'collectorLabel', col.status);
+      const colSec = col.latency_ms;
+      document.getElementById('collectorDetail').textContent =
+        col.status === 'ok'
+          ? 'Active · last sync ' + (colSec != null ? colSec + 's ago' : 'recent')
+          : col.message || 'stale';
+      document.getElementById('vcLastCollect').textContent =
+        col.status === 'ok' && colSec != null ? colSec + 's ago' : '—';
+    }
+
+    // Kubernetes API — inferred from collector
+    const k8sOk = col && (col.status === 'ok' || col.status === 'starting');
+    applyStatus('k8sDot', 'k8sLabel', k8sOk ? 'ok' : 'degraded');
+    document.getElementById('k8sDetail').textContent = k8sOk
+      ? 'Metrics API reachable · collector active'
+      : 'Metrics API unreachable or stale';
+
+    // Version strip
+    document.getElementById('vcVersion').textContent = 'v' + h.version;
+    document.getElementById('vcOverall').textContent =
+      h.status === 'ok' ? '✓ Healthy' : h.status === 'degraded' ? '⚠ Degraded' : '✕ Down';
+
+  } catch(e) {
+    const banner = document.getElementById('overallBanner');
+    banner.className = 'banner unhealthy';
+    document.getElementById('overallText').textContent = 'Agent Unreachable';
+    ['agent','db','collector','k8s'].forEach(s => applyStatus(s+'Dot', s+'Label', 'error'));
+  }
+
+  document.getElementById('lastCheck').textContent = new Date().toLocaleTimeString();
+}
+
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>
