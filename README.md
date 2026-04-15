@@ -319,15 +319,8 @@ sentinel/
 ├── harness/
 │   ├── validador_saida.py           # Gatekeeper: blocks destructive commands
 │   └── test_validador_saida.py      # Unit tests (16 tests)
-├── docs/
-│   └── screenshots/                 # Dashboard screenshots
-├── .minimax/                        # LLM agent commands and memory
-│   └── commands/
-│       ├── startup.md
-│       ├── incident.md
-│       └── checkpoint.md
-├── runbooks/                        # Generated CRITICAL runbooks
-└── reports/                         # Generated WARNING/OK reports
+└── docs/
+    └── screenshots/                 # Dashboard screenshots
 ```
 
 ---
