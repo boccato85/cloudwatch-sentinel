@@ -8,6 +8,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var SystemNamespaces = map[string]bool{
+	"kube-system":          true,
+	"kube-public":          true,
+	"kube-node-lease":      true,
+	"kubernetes-dashboard": true,
+	"cert-manager":         true,
+	"monitoring":           true,
+	"logging":              true,
+	"ingress-nginx":        true,
+	"istio-system":         true,
+}
+
 type Thresholds struct {
 	CPU struct {
 		Warning  float64 `yaml:"warning"`

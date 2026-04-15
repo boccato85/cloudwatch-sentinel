@@ -12,9 +12,10 @@ import (
 	"sort"
 	"time"
 
+	"database/sql"
+	"sentinel-agent/pkg/incidents"
 	"sentinel-agent/pkg/k8s"
 	"sentinel-agent/pkg/store"
-	"database/sql"
 )
 
 func (a *API) RegisterHandlers(mux *http.ServeMux) {
@@ -378,12 +379,14 @@ func (a *API) handleHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(points) == 0 && (rangeParam == "30d" || rangeParam == "90d" || rangeParam == "365d") {
-		fallbackQuery := `SELECT hour_bucket AS bucket, SUM((CAST(avg_cpu_request AS FLOAT) * $1) / 360.0) AS req, SUM((CAST(avg_cpu_usage AS FLOAT) * $1) / 360.0) AS use FROM metrics_hourly` + nsClauseAgg + ` GROUP BY bucket ORDER BY bucket ASC`
-		if nsClauseAgg != "" && nsFilter == "" {
-			// If we are using nsClauseAgg for exclusion (NOT IN), we need to replace " AND " with " WHERE "
-			fallbackQuery = `SELECT hour_bucket AS bucket, SUM((CAST(avg_cpu_request AS FLOAT) * $1) / 360.0) AS req, SUM((CAST(avg_cpu_usage AS FLOAT) * $1) / 360.0) AS use FROM metrics_hourly WHERE namespace NOT IN ('kube-system', 'kube-public', 'kube-node-lease', 'kubernetes-dashboard', 'cert-manager', 'monitoring', 'logging', 'ingress-nginx', 'istio-system') GROUP BY bucket ORDER BY bucket ASC`
-		} else if nsFilter != "" {
+		var fallbackQuery string
+		switch {
+		case nsFilter != "":
 			fallbackQuery = `SELECT hour_bucket AS bucket, SUM((CAST(avg_cpu_request AS FLOAT) * $1) / 360.0) AS req, SUM((CAST(avg_cpu_usage AS FLOAT) * $1) / 360.0) AS use FROM metrics_hourly WHERE namespace = $2 GROUP BY bucket ORDER BY bucket ASC`
+		case !includeSystem:
+			fallbackQuery = `SELECT hour_bucket AS bucket, SUM((CAST(avg_cpu_request AS FLOAT) * $1) / 360.0) AS req, SUM((CAST(avg_cpu_usage AS FLOAT) * $1) / 360.0) AS use FROM metrics_hourly WHERE namespace NOT IN ('kube-system', 'kube-public', 'kube-node-lease', 'kubernetes-dashboard', 'cert-manager', 'monitoring', 'logging', 'ingress-nginx', 'istio-system') GROUP BY bucket ORDER BY bucket ASC`
+		default:
+			fallbackQuery = `SELECT hour_bucket AS bucket, SUM((CAST(avg_cpu_request AS FLOAT) * $1) / 360.0) AS req, SUM((CAST(avg_cpu_usage AS FLOAT) * $1) / 360.0) AS use FROM metrics_hourly GROUP BY bucket ORDER BY bucket ASC`
 		}
 		fbCtx, fbCancel := context.WithTimeout(r.Context(), timeout)
 		defer fbCancel()
@@ -431,7 +434,7 @@ func (a *API) handleWaste(w http.ResponseWriter, r *http.Request) {
 			WastePct:            s.WastePct,
 			Severity:            s.Severity,
 			Opportunity:         s.Opportunity,
-			IsSystem:            SystemNamespaces[s.Namespace],
+			IsSystem:            incidents.SystemNamespaces[s.Namespace],
 		}
 		resp.Entries = append(resp.Entries, entry)
 		resp.TotalSavingMCpu += saving
@@ -505,7 +508,7 @@ func (a *API) handleEfficiency(w http.ResponseWriter, r *http.Request) {
 			CPURequest: acc.cpuRequest,
 			MemUsage:   acc.memUsage,
 			MemRequest: acc.memRequest,
-			IsSystem:   SystemNamespaces[ns],
+			IsSystem:   incidents.SystemNamespaces[ns],
 			Unmanaged:  acc.cpuRequest == 0 && acc.memRequest == 0,
 		}
 		if acc.cpuRequest > 0 {
@@ -686,7 +689,8 @@ func (a *API) handlePodLogs(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	stream, err := req.Stream(ctx)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		slog.Error("failed to stream pod logs", "component", "http", "namespace", ns, "pod", podName, "err", err)
+		writeJSONError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	defer stream.Close()
@@ -712,7 +716,7 @@ func (a *API) handleForecast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	setSecureHeaders(w)
-	
+
 	rangeParam := r.URL.Query().Get("range")
 	if rangeParam == "" {
 		rangeParam = "30m"
@@ -836,16 +840,20 @@ func (a *API) handleForecast(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < n; i++ {
 		futureT := lastBucket.Add(stepDur * time.Duration(i+1))
 		rV := reqProj[i]
-		if rV < 0 { rV = 0 }
+		if rV < 0 {
+			rV = 0
+		}
 		uV := useProj[i]
-		if uV < 0 { uV = 0 }
+		if uV < 0 {
+			uV = 0
+		}
 		points[i] = ForecastPoint{
 			Time:    futureT.Format(timeFormat),
 			ReqCost: rV,
 			UseCost: uV,
 			ReqLow:  max(0, rV-reqBand),
 			ReqHigh: rV + reqBand,
-			UseHow:  max(0, uV-useBand),
+			UseLow:  max(0, uV-useBand),
 			UseHigh: uV + useBand,
 		}
 	}
@@ -1023,14 +1031,14 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 			} else if memPct >= a.Thresholds.Memory.Warning {
 				sev := "WARNING"
 				msg := fmt.Sprintf("Memory usage at %.1f%% of request", memPct)
-				// If usage > 100% of request, it's a warning. 
-				// It only becomes CRITICAL if it's near limit (handled above) 
+				// If usage > 100% of request, it's a warning.
+				// It only becomes CRITICAL if it's near limit (handled above)
 				// or if it's ridiculously high relative to request and no limit is set.
 				if st.MemLimit == 0 && memPct > 250 {
 					sev = "CRITICAL"
 					msg = fmt.Sprintf("Memory usage at %.1f%% of request (No limit set, risk of eviction)", memPct)
 				}
-				
+
 				incs = append(incs, Incident{
 					PodName:   p.Name,
 					Namespace: p.Namespace,
@@ -1066,7 +1074,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		incs = []Incident{}
 	}
 
-fmt.Printf("DEBUG: Incidents count: %d, first inc: %+v\n", len(incs), incs[0])
+	fmt.Printf("DEBUG: Incidents count: %d, first inc: %+v\n", len(incs), incs[0])
 	json.NewEncoder(w).Encode(incs)
 }
 

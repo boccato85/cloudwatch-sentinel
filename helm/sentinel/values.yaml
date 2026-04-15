@@ -5,8 +5,8 @@ replicaCount: 1
 timezone: "America/Sao_Paulo"
 
 image:
-  repository: sentinel
-  tag: "0.10.17-gemini"
+  repository: localhost/sentinel-gemini
+  tag: "0.10.18"
   pullPolicy: Never
 
 service:

@@ -43,7 +43,7 @@ var (
 	usdPerGbHour   float64
 )
 
-const agentVersion = "0.10.17"
+const agentVersion = "0.10.18"
 const collectorStaleThreshold = 30 * time.Second
 
 var (
@@ -100,6 +100,19 @@ func getEnvFloat(key string, fallback float64) float64 {
 
 func logCollectorError(op string, err error) {
 	slog.Error("collector error", "component", "collector", "op", op, "err", err)
+}
+
+// getPodRequest looks up the CPU request (mCPU) for a pod in the given namespace map.
+func getPodRequest(m map[string]map[string]int64, ns, pod string) (int64, bool) {
+	if m == nil {
+		return 0, false
+	}
+	if nsMap, ok := m[ns]; ok {
+		if req, ok := nsMap[pod]; ok {
+			return req, true
+		}
+	}
+	return 0, false
 }
 
 func main() {
@@ -198,6 +211,9 @@ func main() {
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
 
+	authEnabled := getEnv("AUTH_ENABLED", "false") == "true"
+	authToken := getEnv("AUTH_TOKEN", "")
+
 	go store.StartRetentionWorker(appCtx, retentionRawHours, retentionHourlyDays, retentionDailyDays)
 
 	go func() {
@@ -217,49 +233,20 @@ func main() {
 			}
 
 			pods, err := k8s.ListPods(ctx, "")
-			type podSpec struct {
-				cpuReq, cpuLim, memReq, memLim int64
-				appLabel                       string
-				reqFound                       bool
-			}
-			podSpecMap := make(map[string]map[string]podSpec)
+			podSpecMap := make(map[string]map[string]k8s.PodSpec)
 
 			if err != nil {
 				slog.Error("failed to list pods", "component", "collector", "err", err)
 			} else {
+				podSpecMap = k8s.BuildPodSpecMap(pods.Items)
 				for _, p := range pods.Items {
 					summary.PodsByPhase[string(p.Status.Phase)]++
 					if p.Status.Phase == "Failed" {
 						summary.FailedPods = append(summary.FailedPods, api.PodAlert{Name: p.Name, Namespace: p.Namespace})
 					}
-					var totalCPUReq, totalCPULim, totalMemReq, totalMemLim int64
-					cpuReqPresent := false
 					for _, c := range p.Spec.Containers {
-						cpuR := c.Resources.Requests.Cpu().MilliValue()
-						cpuL := c.Resources.Limits.Cpu().MilliValue()
-						memR := c.Resources.Requests.Memory().Value() / 1024 / 1024
-						memL := c.Resources.Limits.Memory().Value() / 1024 / 1024
-						
-						summary.CpuRequested += cpuR
-						summary.MemRequested += memR
-						totalCPUReq += cpuR
-						totalCPULim += cpuL
-						totalMemReq += memR
-						totalMemLim += memL
-						if cpuR > 0 {
-							cpuReqPresent = true
-						}
-					}
-					if podSpecMap[p.Namespace] == nil {
-						podSpecMap[p.Namespace] = make(map[string]podSpec)
-					}
-					podSpecMap[p.Namespace][p.Name] = podSpec{
-						cpuReq:   totalCPUReq,
-						cpuLim:   totalCPULim,
-						memReq:   totalMemReq,
-						memLim:   totalMemLim,
-						appLabel: p.Labels["app"],
-						reqFound: cpuReqPresent,
+						summary.CpuRequested += c.Resources.Requests.Cpu().MilliValue()
+						summary.MemRequested += c.Resources.Requests.Memory().Value() / 1024 / 1024
 					}
 				}
 			}
@@ -289,8 +276,8 @@ func main() {
 							podCPU += c.Usage.Cpu().MilliValue()
 							podMem += c.Usage.Memory().Value() / 1024 / 1024
 						}
-						
-						spec := podSpec{}
+
+						spec := k8s.PodSpec{}
 						if nsMap, ok := podSpecMap[m.Namespace]; ok {
 							spec = nsMap[m.Name]
 						}
@@ -298,14 +285,14 @@ func main() {
 						pStat := api.PodStats{
 							Name:              m.Name,
 							Namespace:         m.Namespace,
-							AppLabel:          spec.appLabel,
+							AppLabel:          spec.AppLabel,
 							CPUUsage:          podCPU,
-							CPURequest:        spec.cpuReq,
-							CPULimit:          spec.cpuLim,
-							CPURequestPresent: spec.reqFound,
+							CPURequest:        spec.CPUReq,
+							CPULimit:          spec.CPULim,
+							CPURequestPresent: spec.ReqFound,
 							MemUsage:          podMem,
-							MemRequest:        spec.memReq,
-							MemLimit:          spec.memLim,
+							MemRequest:        spec.MemReq,
+							MemLimit:          spec.MemLim,
 						}
 						saving, opportunity, wastePct, severity := incidents.AnalyzeWaste(pStat.CPURequestPresent, pStat.CPURequest, pStat.CPUUsage, thresholds)
 						if saving != nil {
@@ -316,7 +303,7 @@ func main() {
 						}
 
 						if _, err := tx.ExecContext(dbCtx, `INSERT INTO metrics (pod_name, namespace, container_name, cpu_usage, cpu_request, mem_usage, mem_request, opportunity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-							m.Name, m.Namespace, "all", podCPU, spec.cpuReq, podMem, spec.memReq, pStat.Opportunity); err != nil {
+							m.Name, m.Namespace, "all", podCPU, spec.CPUReq, podMem, spec.MemReq, pStat.Opportunity); err != nil {
 							store.LogSQLError("insert_metric", err)
 							slog.Warn("insert metric failed", "component", "collector", "pod", m.Name, "namespace", m.Namespace, "err", err)
 							continue
@@ -361,6 +348,8 @@ func main() {
 		CollectorStaleThreshold: collectorStaleThreshold,
 		USDPerVcpuHour:          usdPerVcpuHour,
 		Thresholds:              thresholds,
+		AuthEnabled:             authEnabled,
+		AuthToken:               authToken,
 		GetLatestStats: func() ([]api.PodStats, api.ClusterSummary) {
 			statsMutex.Lock()
 			defer statsMutex.Unlock()
@@ -383,13 +372,9 @@ func main() {
 	listenAddr := getEnv("LISTEN_ADDR", "127.0.0.1:8080")
 	rateLimit := getEnvInt("RATE_LIMIT_RPS", 100)
 
-	// Since we moved middlewares to api, we use them here.
-	// But `withMiddleware`, `RecoverMiddleware`, `RequestLoggerMiddleware`, `RateLimitMiddleware` are in `api` package.
-	// We need to make sure they are accessible. They are capitalized in `api`.
-	
 	srv := &http.Server{
 		Addr:         listenAddr,
-		Handler:      api.WithMiddleware(mux, api.RecoverMiddleware, api.RequestLoggerMiddleware, api.RateLimitMiddleware(rateLimit)),
+		Handler:      api.WithMiddleware(mux, api.RecoverMiddleware, api.RequestLoggerMiddleware, api.RateLimitMiddleware(rateLimit), apiService.AuthMiddleware),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
