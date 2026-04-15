@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Sentinel Agent API
+  description: Sentinel is an SRE/FinOps intelligence agent for small teams running Kubernetes.
+  version: 0.10.17
+servers:
+  - url: http://localhost:30080
+    description: Minikube Local Development
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the agent, including database and collector states.
+      responses:
+        '200':
+          description: Agent is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Agent is unhealthy or degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/summary:
+    get:
+      summary: Cluster Summary
+      description: Returns aggregated metrics and stats about the Kubernetes cluster.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterSummary'
+  /api/incidents:
+    get:
+      summary: Active Incidents
+      description: Returns a list of active incidents based on pod states, correlated metrics (like CrashLoop + High CPU), and resource waste.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Incident'
+  /api/pods:
+    get:
+      summary: List Pods
+      description: Returns a list of pods, optionally filtered by namespace.
+      parameters:
+        - in: query
+          name: namespace
+          schema:
+            type: string
+          description: Optional namespace filter
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PodInfo'
+  /api/namespaces:
+    get:
+      summary: List Namespaces
+      description: Returns a list of all namespaces in the cluster.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/waste:
+    get:
+      summary: Resource Waste Analysis
+      description: Returns a detailed analysis of resource waste and potential FinOps savings.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WasteResponse'
+  /api/efficiency:
+    get:
+      summary: Namespace Efficiency
+      description: Returns efficiency scores and grades for namespaces based on resource utilization.
+      parameters:
+        - in: query
+          name: system
+          schema:
+            type: boolean
+          description: Include system namespaces (kube-system, etc.) in the results
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NamespaceEfficiency'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+        version:
+          type: string
+          example: "0.10.17"
+        checks:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HealthStatus'
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+        latency_ms:
+          type: integer
+          example: 12
+        message:
+          type: string
+    ClusterSummary:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeInfo'
+        podsByPhase:
+          type: object
+          additionalProperties:
+            type: integer
+        failedPods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PodAlert'
+        pendingPods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PodAlert'
+        cpuAllocatable:
+          type: integer
+        cpuRequested:
+          type: integer
+        memAllocatable:
+          type: integer
+        memRequested:
+          type: integer
+        efficiency:
+          type: number
+          format: float
+    NodeInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+    PodAlert:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+    Incident:
+      type: object
+      properties:
+        podName:
+          type: string
+        namespace:
+          type: string
+        type:
+          type: string
+          example: "CrashLoopCpuThrottling"
+        severity:
+          type: string
+          example: "CRITICAL"
+        message:
+          type: string
+        age:
+          type: string
+    PodInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        phase:
+          type: string
+        ready:
+          type: string
+        restarts:
+          type: integer
+        node:
+          type: string
+        age:
+          type: string
+    WasteResponse:
+      type: object
+      properties:
+        totalSavingMCpu:
+          type: integer
+        totalSavingUSD:
+          type: number
+          format: float
+        wastedPods:
+          type: integer
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/WasteEntry'
+        byNamespace:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/NamespaceWaste'
+    WasteEntry:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        appLabel:
+          type: string
+        cpuUsage:
+          type: integer
+        cpuRequest:
+          type: integer
+        memUsage:
+          type: integer
+        memRequest:
+          type: integer
+        potentialSavingMCpu:
+          type: integer
+        wastePct:
+          type: number
+          format: float
+        severity:
+          type: string
+        opportunity:
+          type: string
+        isSystem:
+          type: boolean
+    NamespaceWaste:
+      type: object
+      properties:
+        savingMCpu:
+          type: integer
+        wastedPods:
+          type: integer
+    NamespaceEfficiency:
+      type: object
+      properties:
+        namespace:
+          type: string
+        podCount:
+          type: integer
+        cpuUsage:
+          type: integer
+        cpuRequest:
+          type: integer
+        cpuScore:
+          type: number
+          format: float
+        memUsage:
+          type: integer
+        memRequest:
+          type: integer
+        memScore:
+          type: number
+          format: float
+        score:
+          type: number
+          format: float
+        grade:
+          type: string
+          example: "A"
+        unmanaged:
+          type: boolean
+        isSystem:
+          type: boolean

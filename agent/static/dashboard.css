@@ -319,3 +319,52 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .eff-sys-toggle{display:flex;align-items:center;gap:5px;font-size:.78em;color:var(--text-dim);cursor:pointer}
 /* th-sub — subtitle within column header */
 .th-sub{font-size:.88em;font-weight:400;color:rgba(122,132,153,.7);text-transform:none;letter-spacing:0;margin-left:3px}
+
+/* NATIVE CONTROLS OVERRIDE */
+select.ns-select, select.tile-ns-select, select.dtool-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 4px;
+  padding: 2px 24px 2px 8px;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23c8d0e0" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  cursor: pointer;
+}
+select.ns-select:focus, select.tile-ns-select:focus, select.dtool-select:focus {
+  border-color: var(--cyan);
+  outline: none;
+  color: var(--text-bright);
+}
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background-color: var(--surface2);
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s;
+}
+input[type="checkbox"]:checked {
+  background-color: var(--cyan);
+  border-color: var(--cyan);
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}

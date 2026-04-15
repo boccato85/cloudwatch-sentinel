@@ -1,0 +1,131 @@
+# Sentinel Helm Chart Values
+
+replicaCount: 1
+
+timezone: "America/Sao_Paulo"
+
+image:
+  repository: sentinel
+  tag: "0.10.17-gemini"
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30081
+
+# Resource limits
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+# PostgreSQL configuration
+postgresql:
+  # Use external PostgreSQL or deploy one via subchart
+  external: false
+  # External PostgreSQL settings (if external: true)
+  host: ""
+  port: 5432
+  # Internal PostgreSQL settings (if external: false)
+  image:
+    repository: postgres
+    tag: "15-alpine"
+  storage:
+    size: 1Gi
+    storageClass: ""
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Database credentials (will be stored in Secret)
+database:
+  name: sentinel_db
+  user: sentinel
+  password: sentinel123
+  sslmode: disable
+
+# Agent configuration
+agent:
+  listenAddr: "0.0.0.0:8080"
+  rateLimitRps: 100
+  dbTimeoutSec: 5
+
+# Operational thresholds (mirrors config/thresholds.yaml)
+thresholds:
+  cpu:
+    warning: 70
+    critical: 85
+  memory:
+    warning: 75
+    critical: 90
+  disk:
+    warning: 70
+    critical: 85
+  pods:
+    pendingWarningMinutes: 5
+    crashLoopCritical: true
+  waste:
+    overprovisionedWarning: 60
+    minRequestMCpu: 5
+
+# Data retention configuration
+# Sentinel uses a tiered retention strategy:
+# - Raw metrics: high resolution, short retention (default: 24 hours)
+# - Hourly aggregates: medium resolution, medium retention (default: 30 days)
+# - Daily aggregates: low resolution, long retention (default: 365 days)
+retention:
+  # Raw metrics retention in hours (minute-level granularity)
+  # Recommended: 24-72 hours for most use cases
+  rawHours: 24
+  
+  # Hourly aggregates retention in days
+  # These are auto-generated from raw metrics every hour
+  # Recommended: 30-90 days
+  hourlyDays: 30
+  
+  # Daily aggregates retention in days
+  # These are auto-generated from hourly data every day
+  # Recommended: 365-730 days (1-2 years)
+  dailyDays: 365
+
+# Ingress configuration (optional)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: sentinel.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# RBAC for reading cluster metrics
+rbac:
+  create: true
+
+# Pod annotations
+podAnnotations: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

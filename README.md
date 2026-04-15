@@ -11,7 +11,7 @@
   <img src="docs/screenshots/cw_sentinel_ss_0.10.15(2).png" alt="Sentinel Dashboard v0.10.15" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.10.15-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.10.17--gemini-brightgreen)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-native-orange)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-agent-00ADD8)
@@ -120,12 +120,12 @@ claude mcp add kubectl -- npx -y kubectl-mcp-server
 
 ```bash
 # Build the image
-podman build -t localhost/sentinel:0.10.15 agent/
-podman save localhost/sentinel:0.10.15 | minikube image load -
+podman build -t localhost/sentinel:0.10.17 agent/
+podman save localhost/sentinel:0.10.17 | minikube image load -
 
 # Deploy (PostgreSQL spins up automatically as a pod)
 helm install sentinel helm/sentinel -n sentinel --create-namespace \
-  --set image.tag=0.10.15 \
+  --set image.tag=0.10.17 \
   --set image.pullPolicy=Never
 
 # Check pods

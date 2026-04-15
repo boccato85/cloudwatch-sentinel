@@ -160,6 +160,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="status-label" id="k8sLabel">—</div>
     </div>
   </div>
+
+  <div class="service-card">
+    <div class="service-icon cyan">📊</div>
+    <div class="service-info">
+      <div class="service-name">Metrics API</div>
+      <div class="service-detail" id="metricsDetail">loading...</div>
+    </div>
+    <div class="service-status">
+      <div class="status-dot" id="metricsDot"></div>
+      <div class="status-label" id="metricsLabel">—</div>
+    </div>
+  </div>
 </div>
 
 <div class="version-strip" id="versionStrip" style="margin-top:24px">
@@ -244,12 +256,25 @@ async function refresh() {
         col.status === 'ok' && colSec != null ? colSec + 's ago' : '—';
     }
 
-    // Kubernetes API — inferred from collector
-    const k8sOk = col && (col.status === 'ok' || col.status === 'starting');
-    applyStatus('k8sDot', 'k8sLabel', k8sOk ? 'ok' : 'degraded');
-    document.getElementById('k8sDetail').textContent = k8sOk
-      ? 'Metrics API reachable · collector active'
-      : 'Metrics API unreachable or stale';
+    // Kubernetes API
+    const k8s = h.checks && h.checks.k8s_api;
+    if (k8s) {
+      applyStatus('k8sDot', 'k8sLabel', k8s.status);
+      const k8sMs = k8s.latency_ms;
+      document.getElementById('k8sDetail').textContent = k8s.status === 'ok' 
+        ? 'reachable · latency ' + (k8sMs != null ? k8sMs + 'ms' : 'connected')
+        : k8s.message || 'unreachable';
+    }
+
+    // Metrics API
+    const metrics = h.checks && h.checks.metrics_api;
+    if (metrics) {
+      applyStatus('metricsDot', 'metricsLabel', metrics.status);
+      const metricsMs = metrics.latency_ms;
+      document.getElementById('metricsDetail').textContent = metrics.status === 'ok'
+        ? 'reachable · latency ' + (metricsMs != null ? metricsMs + 'ms' : 'connected')
+        : metrics.message || 'unreachable';
+    }
 
     // Version strip
     document.getElementById('vcVersion').textContent = 'v' + h.version;

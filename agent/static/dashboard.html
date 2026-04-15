@@ -22,6 +22,9 @@
         <option value="">All Namespaces</option>
       </select>
     </div>
+    <label class="eff-sys-toggle" id="global-sys-label" style="border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; margin-left: 8px;">
+      <input type="checkbox" id="global-show-system" style="accent-color:var(--cyan)"> Show system NS
+    </label>
   </div>
   <div class="hdr-r">
     <div class="spill" id="spillBadge">
@@ -73,9 +76,9 @@
       <span class="kpi-expand">&#8599; expand</span>
     </div>
     <div class="kpi c-red kpi-clickable" id="kFailCard">
-      <div class="kpi-lbl">Failed / Pending</div>
+      <div class="kpi-lbl">Critical / Warnings</div>
       <div class="kpi-val" id="kF">--</div>
-      <div class="kpi-sub" id="kFs">-- pending</div>
+      <div class="kpi-sub" id="kFs">-- warnings</div>
       <span class="kpi-expand">&#8599; expand</span>
     </div>
     <div class="kpi c-cyan kpi-clickable" id="kCpuCard">
@@ -182,6 +185,9 @@
       <div style="display:flex;align-items:center;gap:10px">
         <span class="ph-title" id="finops-chart-title">Financial Correlation &#8212; ROI Timeline</span>
         <span class="badge b-finops">FinOps</span>
+        <select id="tile-ns-finops" class="tile-ns-select" title="Filter by namespace">
+          <option value="">All NS</option>
+        </select>
       </div>
       <div style="display:flex;align-items:center;gap:12px">
         <div class="line-legend">
@@ -190,6 +196,9 @@
           <span><i class="legend-dash" style="background:var(--purple)"></i>Forecast Budget</span>
           <span><i class="legend-dash" style="background:var(--cyan)"></i>Forecast Usage</span>
         </div>
+        <label class="eff-sys-toggle" id="finops-sys-label">
+          <input type="checkbox" id="finops-show-system" style="accent-color:var(--cyan)"> Show system NS
+        </label>
         <span class="ph-expand">&#8599; expand</span>
       </div>
     </div>
@@ -261,6 +270,9 @@
             <div class="gl-note">System namespaces excluded by default.</div>
           </div>
         </div>
+        <select id="tile-ns-eff" class="tile-ns-select" style="margin-left:8px;" title="Filter by namespace">
+          <option value="">All NS</option>
+        </select>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <label class="eff-sys-toggle" id="eff-sys-label">
@@ -286,7 +298,15 @@
   <!-- TOP WORKLOADS — CPU & WASTE ANALYSIS (unified full-width) -->
   <div class="panel">
     <div class="ph ph-clickable" id="ph-workloads">
-      <span class="ph-title">Top Workloads &mdash; CPU &amp; Waste Analysis</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="ph-title">Top Workloads &mdash; CPU &amp; Waste Analysis</span>
+        <select id="tile-ns-workloads" class="tile-ns-select" title="Filter by namespace">
+          <option value="">All NS</option>
+        </select>
+        <label class="eff-sys-toggle" id="wl-sys-label" style="border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px;">
+          <input type="checkbox" id="workloads-show-system" style="accent-color:var(--cyan)"> Show system NS
+        </label>
+      </div>
       <div style="display:flex;align-items:center;gap:10px">
         <span class="badge b-warn" id="wcnt">Scanning...</span>
         <span class="ph-meta">Live &#183; 5s refresh</span>

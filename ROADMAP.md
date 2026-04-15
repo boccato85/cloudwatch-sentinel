@@ -1,6 +1,6 @@
 # Sentinel Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-13 | Current version: `v0.10.15`
+> Last updated: 2026-04-14 | Current version: `v0.10.17`
 
 ## Product vision
 
@@ -28,7 +28,7 @@
 |---|---|---|
 | M1 — Stable core | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
-| M3 — Deterministic incident intelligence | In progress (~20%) | `v0.11` |
+| M3 — Deterministic incident intelligence | In progress (~95%) | `v0.10.17` |
 | M4 — Real lab with Online Boutique | Not started | `v0.11` |
 | M5 — Sentinel self-observability | ✅ Done (integrated into M1) | `v0.10.1` |
 | M6 — Optional intelligence | Partial (~20%) | `v0.12` |
@@ -88,7 +88,7 @@
 
 ---
 
-### M3 — Deterministic incident intelligence (`v0.11`)
+### M3 — Deterministic incident intelligence In Progress (~90%) (`v0.10.17`)
 
 **Goal:** Sentinel generates useful diagnosis even without AI, with APIs documented and individually monitored.
 
@@ -97,15 +97,16 @@
 | Item | Status |
 |---|---|
 | Thresholds read from `config/thresholds.yaml` in Go agent | ✅ Done |
-| Automatic violation detection (CPU, memory, pod health) | Pending |
-| `severity` field in API endpoints | Pending |
-| Simple correlation (pod in CrashLoop + high CPU usage) | Pending |
-| Deterministic operational summary at `/api/incidents` | Pending |
-| `/incident` integration with new endpoint (not LLM-only) | Pending |
-| Per-endpoint health check in `/health` (`checks.apis`) with individual latency | Pending |
-| `/status` page displays per-component status (APIM-style) | ✅ Done (v0.10.13 — 4 animated cards, auto-refresh 10s) |
-| `openapi.yaml` embedded in binary covering all endpoints | Pending |
-| Swagger UI at `/docs` (via CDN, no external build dependency) | Pending |
+| Automatic violation detection (CPU, memory, pod health) | ✅ Done |
+| `severity` field in API endpoints | ✅ Done |
+| Simple correlation (pod in CrashLoop + high CPU usage) | ✅ Done |
+| Deterministic operational summary at `/api/incidents` | ✅ Done |
+| Consumption of `/api/incidents` by the Dashboard UI | Pending |
+| `/incident` integration with new endpoint (not LLM-only) | Pending (M6) |
+| Per-endpoint health check in `/health` (`checks.apis`) with individual latency | ✅ Done |
+| `/status` page displays per-component status (APIM-style) | ✅ Done |
+| `openapi.yaml` embedded in binary covering all endpoints | ✅ Done |
+| Swagger UI at `/docs` (via CDN, no external build dependency) | ✅ Done |
 
 **Done criterion:** Sentinel detects and classifies incidents via thresholds without needing the LLM, each endpoint has individually monitorable status, and any dev can explore the API via `/docs`.
 
