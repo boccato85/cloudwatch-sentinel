@@ -12,7 +12,6 @@
 </p>
 
 ![Status](https://img.shields.io/badge/status-v0.10.18-brightgreen)
-![Minimax](https://img.shields.io/badge/Minimax-native-orange)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-agent-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
@@ -30,7 +29,7 @@ Sentinel is a standalone SRE and FinOps intelligence platform for Kubernetes. It
 **Two layers:**
 
 - **Go Agent** — standalone binary that collects, persists and exposes a web dashboard (port 8080)
-- **Minimax** — analysis layer: consumes the agent API, applies LLM reasoning and generates runbooks
+- **LLM Agent (optional)** — analysis layer that consumes the agent API, applies reasoning and generates runbooks
 
 ---
 
@@ -40,7 +39,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 - **Zero external monitoring stack** — no Prometheus, no Grafana, no AlertManager
 - **FinOps native** — waste per pod and deployment, linear forecast, namespace efficiency grades
-- **AI that explains, not replaces** — deterministic rules detect the problem; the LLM explains it in plain language
+- **Deterministic first** — rules detect problems without LLM; optional LLM explains in plain language
 - **Simple deploy** — Helm chart, single namespace, up in minutes
 
 ---
@@ -74,7 +73,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
                         │ REST API
                         ▼
 ┌─────────────────────────────────────────────────────┐
-│                    Minimax                           │
+│                  LLM Agent (optional)                 │
 │  /startup   → checks Minikube + Go agent            │
 │  /incident  → LLM analysis + runbook via harness    │
 └─────────────────────────────────────────────────────┘
@@ -90,14 +89,12 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 | Agent | Go 1.23 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
-| LLM Agent | Minimax |
-| Integrations | MCP Server kubectl |
+| LLM Agent | Optional — any LLM agent (Claude, Gemini, Minimax…) |
 
 ---
 
 ## Prerequisites
 
-- [Minimax](https://minimax.ai) installed and authenticated
 - Minikube running with Metrics Server enabled
 - Go 1.23+ (only for local development without Helm)
 
@@ -163,10 +160,6 @@ export RETENTION_DAILY_DAYS=365     # daily aggregates
 
 ## Usage
 
-```bash
-minimax
-```
-
 **Bootstrap:**
 ```
 /startup
@@ -177,7 +170,7 @@ Checks Minikube and starts the Go agent if needed.
 ```
 /incident
 ```
-Consumes the Go agent API, applies LLM reasoning and generates a runbook via harness.
+Consumes the Go agent API, applies LLM reasoning and generates a runbook via harness (requires LLM agent).
 
 ---
 
@@ -282,7 +275,6 @@ Aggregation and cleanup run automatically every hour.
 
 ```
 sentinel/
-├── CLAUDE.md                        # LLM agent operational context
 ├── ROADMAP.md                       # Milestones M1–M7 toward v1.0
 ├── README.md
 ├── agent/
@@ -329,7 +321,7 @@ sentinel/
 │   └── test_validador_saida.py      # Unit tests (16 tests)
 ├── docs/
 │   └── screenshots/                 # Dashboard screenshots
-├── .minimax/
+├── .minimax/                        # LLM agent commands and memory
 │   └── commands/
 │       ├── startup.md
 │       ├── incident.md
