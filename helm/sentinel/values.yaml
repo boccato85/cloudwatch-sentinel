@@ -6,13 +6,13 @@ timezone: "America/Sao_Paulo"
 
 image:
   repository: sentinel
-  tag: "0.10.15"
-  pullPolicy: IfNotPresent
+  tag: "0.10.17-gemini"
+  pullPolicy: Never
 
 service:
   type: NodePort
   port: 8080
-  nodePort: 30080
+  nodePort: 30081
 
 # Resource limits
 resources:

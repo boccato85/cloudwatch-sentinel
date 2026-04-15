@@ -2,8 +2,8 @@ apiVersion: v2
 name: sentinel
 description: Standalone Kubernetes observability and FinOps platform with real-time dashboard
 type: application
-version: 0.10.15
-appVersion: "0.10.15"
+version: 0.10.17
+appVersion: "0.10.17"
 keywords:
   - kubernetes
   - observability

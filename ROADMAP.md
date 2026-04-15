@@ -1,17 +1,17 @@
-# Sentinel Roadmap — 0.x → 1.0
+# Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-14 | Current version: `v0.10.17`
+> Last updated: 2026-04-15 | Current version: `v0.10.17`
 
 ## Product vision
 
-**Sentinel is an SRE/FinOps tool for small engineering teams** — teams that need cost management and reliability without a dedicated specialist. Startups, scale-ups and platform squads that don't have the budget for Datadog/New Relic but need fast answers about cluster health and cost.
+**Sentinel-Gemini is an SRE/FinOps tool for small engineering teams** — teams that need cost management and reliability without a dedicated specialist. Startups, scale-ups and platform squads that don't have the budget for Datadog/New Relic but need fast answers about cluster health and cost.
 
 > **Guiding principle:** Observability-first, intelligence-second. Didactic, lean, actionable.
 
 ## Product principles
 
 - **Standalone first** — no Prometheus, Grafana or AlertManager required
-- **LLM second** — if the LLM goes down, Sentinel keeps working through deterministic rules
+- **Intelligence second** — if the analysis layer goes down, Sentinel-Gemini keeps working through deterministic rules
 - **Collection doesn't decide** — collection, calculation and presentation are separate layers
 - **UI doesn't calculate** — business logic stays in the backend
 - **Deterministic rules before generative intelligence**
@@ -148,19 +148,19 @@
 
 ### M6 — Optional intelligence (`v0.12`)
 
-**Goal:** The LLM improves the experience but is not required for the core.
+**Goal:** The intelligence layer improves the experience but is not required for the core.
 
 **Deliverables:**
 
 | Item | Status |
 |---|---|
 | `/incident` consumes deterministic `/api/incidents` first | Pending |
-| LLM enriches with narrative context, doesn't replace diagnosis | Partial |
-| Degraded mode: if LLM unavailable, returns deterministic analysis | Pending |
+| Narrative enrichment for context, doesn't replace diagnosis | Partial |
+| Degraded mode: if intelligence layer unavailable, returns deterministic analysis | Pending |
 | Possible local model support (Ollama) | Future |
 | Automatic runbooks based on templates + variables | Pending |
 
-**Done criterion:** `/incident` works without Claude and produces usable diagnosis.
+**Done criterion:** `/incident` works without external models and produces usable diagnosis.
 
 **Dependencies:** M3
 

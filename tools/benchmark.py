@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 benchmark.py — Ciclo autônomo de benchmark com telemetria FDR
-Sentinel - Claude Code Edition
+Sentinel-Gemini Benchmark
 
 Executa o pipeline completo (coleta → correlação → relatório),
 mede o tempo de cada fase e grava um FDR em reports/.
@@ -109,7 +109,7 @@ def save_benchmark_report(stats: dict) -> str:
     info_md = "\n".join(f"- {i}" for i in stats["info"]) or "- N/A"
     namespaces_str = ", ".join(stats["namespaces"])
 
-    content = f"""# Benchmark — Sentinel - Claude Code Edition
+    content = f"""# Benchmark — Sentinel-Gemini Benchmark
 
 ## Resumo Executivo
 
@@ -256,7 +256,7 @@ def main():
     ds = int(stats["duration_total"] % 60)
     print(f"""
 ╔══════════════════════════════════════════════════════════╗
-║         Sentinel - Claude Code Edition — Benchmark       ║
+║         Sentinel-Gemini Benchmark — Benchmark              ║
 ╚══════════════════════════════════════════════════════════╝
   Tempo total:        {stats['duration_total']:.1f}s ({dm}min {ds}s)
   Fase sanitização:   {stats['duration_sanitize']:.2f}s
