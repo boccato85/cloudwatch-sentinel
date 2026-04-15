@@ -16,7 +16,7 @@
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-agent-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
-![Tests](https://img.shields.io/badge/tests-22%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-modular-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 ---
@@ -282,38 +282,33 @@ sentinel/
 ├── ROADMAP.md                       # Milestones M1–M7 toward v1.0
 ├── README.md
 ├── agent/
-│   ├── main.go                      # Go agent: collection + API + dashboard
-│   ├── main_test.go                 # 22 automated tests
+│   ├── main.go                      # Go agent: entry point + setup
+│   ├── pkg/                         # Core modules:
+│   │   ├── api/                     # API handlers, OpenAPI, Swagger
+│   │   ├── incidents/               # Incident detection & severity
+│   │   ├── k8s/                     # Metrics collection & K8s client
+│   │   └── store/                   # PostgreSQL persistence & queries
 │   ├── Dockerfile                   # Multi-stage Alpine build
 │   ├── go.mod / go.sum
 │   ├── Makefile
 │   └── static/
-│       ├── dashboard.html           # Dashboard (embedded in binary)
+│       ├── dashboard.html           # Dashboard (embedded)
 │       ├── dashboard.css
 │       ├── dashboard.js
 │       ├── status.html              # Status page (embedded)
 │       └── icon.png
 ├── helm/sentinel/                   # Kubernetes Helm chart
-│   ├── Chart.yaml
-│   ├── values.yaml
-│   └── templates/
 ├── config/
 │   └── thresholds.yaml              # Operational thresholds
 ├── tools/
 │   ├── monitor.py                   # Monitor via Go agent API
 │   └── report_tool.py               # Safe write via harness
 ├── harness/
-│   ├── validador_saida.py           # Gatekeeper: blocks destructive commands
-│   └── test_validador_saida.py      # Unit tests (16 tests)
+│   ├── validador_saida.py           # Gatekeeper
+│   └── test_validador_saida.py      # Unit tests
 ├── docs/
 │   └── screenshots/                 # Dashboard screenshots
-├── .claude/
-│   └── commands/
-│       ├── startup.md
-│       ├── incident.md
-│       └── checkpoint.md
-├── runbooks/                        # Generated CRITICAL runbooks
-└── reports/                         # Generated WARNING/OK reports
+└── .claude/
 ```
 
 ---
@@ -418,7 +413,7 @@ Every final report passes through `harness/validador_saida.py`:
 |---|---|---|
 | M1 — Stable core | ✅ Done | v0.10.1 |
 | M2 — Actionable FinOps | ✅ Done | v0.10.15 |
-| M3 — Deterministic incident intelligence | In progress | v0.11 |
+| M3 — Deterministic incident intelligence | 95% Done (UI integration pending) | v0.11 |
 | M4 — Real lab with Online Boutique | Not started | v0.11 |
 | M5 — Sentinel self-observability | ✅ Done | v0.10.1 |
 | M6 — Optional intelligence (LLM as a layer) | Partial | v0.12 |

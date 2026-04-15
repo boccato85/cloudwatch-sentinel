@@ -28,7 +28,7 @@
 |---|---|---|
 | M1 — Stable core | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
-| M3 — Deterministic incident intelligence | In progress (~95%) | `v0.10.17` |
+| M3 — Deterministic incident intelligence | 95% Done (UI integration pending) | `v0.10.17` |
 | M4 — Real lab with Online Boutique | Not started | `v0.11` |
 | M5 — Sentinel self-observability | ✅ Done (integrated into M1) | `v0.10.1` |
 | M6 — Optional intelligence | Partial (~20%) | `v0.12` |
