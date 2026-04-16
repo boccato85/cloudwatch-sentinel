@@ -102,7 +102,6 @@
 | Simple correlation (pod in CrashLoop + high CPU usage) | ✅ Done |
 | Deterministic operational summary at `/api/incidents` | ✅ Done |
 | Consumption of `/api/incidents` by the Dashboard UI | ✅ Done |
-| `/incident` integration with new endpoint (not LLM-only) | Pending (M6) |
 | Per-endpoint health check in `/health` (`checks.apis`) with individual latency | ✅ Done |
 | `/status` page displays per-component status (APIM-style) | ✅ Done |
 | `openapi.yaml` embedded in binary covering all endpoints | ✅ Done |
