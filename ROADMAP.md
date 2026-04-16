@@ -28,7 +28,7 @@
 |---|---|---|
 | M1 — Stable core | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
-| M3 — Deterministic incident intelligence | 95% Done (UI integration pending) | `v0.10.20` |
+| M3 — Deterministic incident intelligence | ✅ Done | `v0.10.20` |
 | M4 — Real lab with Online Boutique | Not started | `v0.11` |
 | M5 — Sentinel self-observability | ✅ Done (integrated into M1) | `v0.10.1` |
 | M6 — Optional intelligence | Partial (~20%) | `v0.12` |
@@ -88,7 +88,7 @@
 
 ---
 
-### M3 — Deterministic incident intelligence In Progress (~90%) (`v0.10.17`)
+### M3 — Deterministic incident intelligence ✅ Done (`v0.10.20`)
 
 **Goal:** Sentinel generates useful diagnosis even without AI, with APIs documented and individually monitored.
 
@@ -101,7 +101,7 @@
 | `severity` field in API endpoints | ✅ Done |
 | Simple correlation (pod in CrashLoop + high CPU usage) | ✅ Done |
 | Deterministic operational summary at `/api/incidents` | ✅ Done |
-| Consumption of `/api/incidents` by the Dashboard UI | Pending |
+| Consumption of `/api/incidents` by the Dashboard UI | ✅ Done |
 | `/incident` integration with new endpoint (not LLM-only) | Pending (M6) |
 | Per-endpoint health check in `/health` (`checks.apis`) with individual latency | ✅ Done |
 | `/status` page displays per-component status (APIM-style) | ✅ Done |
