@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-15 | Current version: `v0.10.17`
+> Last updated: 2026-04-15 | Current version: `v0.10.20`
 
 ## Product vision
 
@@ -28,7 +28,7 @@
 |---|---|---|
 | M1 — Stable core | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
-| M3 — Deterministic incident intelligence | 95% Done (UI integration pending) | `v0.10.17` |
+| M3 — Deterministic incident intelligence | 95% Done (UI integration pending) | `v0.10.20` |
 | M4 — Real lab with Online Boutique | Not started | `v0.11` |
 | M5 — Sentinel self-observability | ✅ Done (integrated into M1) | `v0.10.1` |
 | M6 — Optional intelligence | Partial (~20%) | `v0.12` |
@@ -196,6 +196,8 @@
 | `v0.10.13` | M3 partial | ✅ `/status` page with animated health cards per component |
 | `v0.10.14` | M2 partial | ✅ Namespace Efficiency Score (grades A→F), UX polish, inline glossaries |
 | `v0.10.15` | M2 | ✅ Waste by Deployment — M2 closed |
+| `v0.10.18` | M3 partial | ✅ `/api/incidents` consumed by dashboard, multi-instance sync |
+| `v0.10.20` | M3 + Dashboard UX | ✅ Dashboard v2: no-scroll layout, FinOps/Efficiency toggle, context bar, events drawer |
 | `v0.11` | M3 + M4 | Incident intelligence + Online Boutique lab |
 | `v0.12` | M6 | LLM as optional layer, degraded mode |
 | `v1.0` | M7 | Polish, docs, stable contracts, auth |

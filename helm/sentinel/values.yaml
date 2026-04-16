@@ -6,7 +6,7 @@ timezone: "America/Sao_Paulo"
 
 image:
   repository: localhost/sentinel-gemini
-  tag: "0.10.18"
+  tag: "0.10.20"
   pullPolicy: Never
 
 service:
