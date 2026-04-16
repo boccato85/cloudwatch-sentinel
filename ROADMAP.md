@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-15 | Current version: `v0.10.20`
+> Last updated: 2026-04-16 | Current version: `v0.10.20`
 
 ## Product vision
 
