@@ -87,6 +87,7 @@
 
 ---
 
+<<<<<<< HEAD
 ### M3 — Deterministic incident intelligence ✅ Done (`v0.10.20`)
 
 **Goal:** Sentinel generates useful diagnosis even without AI, with APIs documented and individually monitored.
@@ -101,6 +102,7 @@
 | Simple correlation (pod in CrashLoop + high CPU usage) | ✅ Done |
 | Deterministic operational summary at `/api/incidents` | ✅ Done |
 | Consumption of `/api/incidents` by the Dashboard UI | ✅ Done |
+| `/incident` integration with new endpoint (not LLM-only) | ✅ Done (moved to M6) |
 | Per-endpoint health check in `/health` (`checks.apis`) with individual latency | ✅ Done |
 | `/status` page displays per-component status (APIM-style) | ✅ Done |
 | `openapi.yaml` embedded in binary covering all endpoints | ✅ Done |
@@ -129,18 +131,6 @@
 **Done criterion:** Report comparing normal vs degraded state produced by Sentinel.
 
 **Dependencies:** M1 ✅, M2 partial, M3 recommended
-
----
-
-### M5 — Sentinel self-observability ✅
-
-> Integrated into **M1 (`v0.10.1`)**. Done.
-
-| Item | Status |
-|---|---|
-| `GET /health` — reports DB and collector state | ✅ Done |
-| Structured logs with fields: `component`, `level`, `msg`, `err` | ✅ Done |
-| Dynamic version badge in dashboard | ✅ Done |
 
 ---
 
@@ -179,6 +169,7 @@
 | README reflecting real project state | Pending |
 | Predictable failure behavior (graceful degradation) | Pending |
 | Minimal auth (at least BasicAuth or static token) | Pending |
+| AGENTS.md + MINIMAX.md agent instruction files | ✅ Done |
 
 **Done criterion:** Another developer can clone, configure and run Sentinel without help.
 
@@ -205,10 +196,6 @@
 ## Backlog by priority
 
 ### High priority (v0.11)
-- Automatic violation detection with thresholds → `/api/incidents`
-- `severity` field in API endpoints
-- Per-endpoint health check in `/health` (`checks.apis`) with individual latency
-- `openapi.yaml` + Swagger UI at `/docs`
 - Online Boutique lab: baseline + load + comparison
 - Diary #4 (after M3/M4)
 
