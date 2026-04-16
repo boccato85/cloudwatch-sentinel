@@ -1372,7 +1372,11 @@ function closeDrawer() {
 }
 
 function drawerHTML(html) {
-  document.getElementById('drawer-body').innerHTML = html;
+  if (typeof DOMPurify !== 'undefined') {
+    document.getElementById('drawer-body').innerHTML = DOMPurify.sanitize(html);
+  } else {
+    document.getElementById('drawer-body').innerHTML = html;
+  }
 }
 
 // sort state per drawer
