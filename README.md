@@ -8,7 +8,7 @@
 > Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/cw_sentinel_ss_0.10.15(2).png" alt="Sentinel Dashboard v0.10.20" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_0.10.20(1).png" alt="Sentinel Dashboard v0.10.20" width="900"/>
 </p>
 
 ![Status](https://img.shields.io/badge/status-v0.10.20-brightgreen)
@@ -46,13 +46,13 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 ## Screenshots
 
-| Dashboard Overview | Waste Intelligence — By Deployment |
+| Dashboard Overview (v0.10.20) | Recent Events Drawer |
 |---|---|
-| ![Overview](docs/screenshots/cw_sentinel_ss_0.10.15(2).png) | ![By Deployment](docs/screenshots/cw_sentinel_ss_0.10.15(3).png) |
+| ![Overview](docs/screenshots/sentinel_ss_0.10.20(1).png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
 
-| Status | Efficiency |
+| Efficiency Tab | Waste Intelligence |
 |---|---|
-| ![Status](docs/screenshots/cw_sentinel_ss_0.10.15(1).png) | ![Efficiency](docs/screenshots/cw_sentinel_ss_0.10.12_3.png) |
+| ![Efficiency](docs/screenshots/sentinel_ss_0.10.20(3).png) | ![Waste](docs/screenshots/sentinel_ss_0.10.20(4).png) |
 
 ---
 
@@ -340,20 +340,20 @@ Every final report passes through `harness/validador_saida.py`:
 ## Changelog
 
 ### v0.10.20 — Dashboard v2: no-scroll layout + FinOps/Efficiency toggle
-- **Dashboard v2 layout** — overview completo sem scroll, otimizado para monitoramento em tela única
-- **Tab bar removida** — substituída por context bar fina (Overview | NS | pods | warnings | status dot)
-- **Workloads/Pods tabs eliminados** — dados acessíveis via KPI expand + drawers
-- **Layout compacto** — main gap 14→10px, panel padding 14→10px, KPI padding 14→10px, donuts 88→72px
-- **Recent Events tile** — drawer full com search debounce, NS selector, sort por colunas, 220px altura
-- **FinOps/Efficiency toggle** — CSP-safe (addEventListener), altura fixa 270px, line chart 140px
-- **Efficiency tab** — donut 130px sem texto abaixo, "How grades work" tooltip (A→F/UNMANAGED), NS breakdown table com sortable columns
+- **Dashboard v2 layout** — scroll-free overview optimized for single-screen monitoring
+- **Tab bar removed** — replaced by thin context bar (Overview | NS | pods | warnings | status dot)
+- **Workloads/Pods tabs eliminated** — data accessible via KPI expand + drawers
+- **Compact layout** — main gap 14→10px, panel padding 14→10px, KPI padding 14→10px, donuts 88→72px
+- **Recent Events tile** — full drawer with search debounce, NS selector, sortable columns, 220px height
+- **FinOps/Efficiency toggle** — CSP-safe (addEventListener), fixed height 270px, line chart 140px
+- **Efficiency tab** — donut 130px no text below, "How grades work" tooltip (A→F/UNMANAGED), NS breakdown table with sortable columns
 - **FinOps drawer** — "What these metrics mean" glossary tooltip (Budget, Actual, Waste, Waste%, Proj., ±1.5σ)
-- **Node Health legend removida** — badge OK/Issue já explica
-- **Footer com créditos** — "Built with OpenCode + Go + JS • Kubernetes Dashboard"
+- **Node Health legend removed** — badge OK/Issue already explains
+- **Footer credits** — "Built with OpenCode + Go + JS • Kubernetes Dashboard"
 
 ### v0.10.18 — Multi-instance sync + UI parity + `/api/incidents` in dashboard
 - **Sync from gemini instance** — `AuthMiddleware` + `AuthEnabled`/`AuthToken`, types extracted to `types.go`, `BuildPodSpecMap()` in `pkg/k8s`, `SystemNamespaces` exported
-- **Dashboard parity with gemini** — all new UI elements added to opencode: global "Show system NS" toggle in header, "Critical / Warnings" KPI (was "Failed / Pending"), per-tile namespace filters + system toggles in FinOps, Efficiency and Top Workloads panels
+- **Dashboard parity with gemini** — all new UI elements added to opencode: global "Show system NS" toggle in header, "Critical / Warnings" KPI, per-tile namespace filters + system toggles in FinOps, Efficiency and Top Workloads panels
 - **Metrics API card in `/status`** — 5th service card (Sentinel Agent, Database, Metrics Collector, Kubernetes API, Metrics API)
 - **Native select/checkbox CSS** — `appearance: none`, custom dropdown arrows for `ns-select` and `tile-ns-select`
 - **`/api/incidents` consumed by dashboard** — `updateOverview()` now fetches `/api/incidents`, distinguishes CRITICAL from WARNING, renders health incidents instead of failed/pending pod list
