@@ -26,11 +26,10 @@
 
 | Milestone | Status | Target version |
 |---|---|---|
-| M1 — Stable core | ✅ Done | `v0.10.1` |
+| M1 — Stable core (+ M5 self-observability) | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
 | M3 — Deterministic incident intelligence | ✅ Done | `v0.10.20` |
 | M4 — Real lab with Online Boutique | Not started | `v0.11` |
-| M5 — Sentinel self-observability | ✅ Done (integrated into M1) | `v0.10.1` |
 | M6 — Optional intelligence | Partial (~20%) | `v0.12` |
 | M7 — v1.0 preparation | Not started | `v1.0` |
 
