@@ -53,6 +53,15 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone | default "UTC" | quote }}
+            - name: AUTH_ENABLED
+              value: {{ .Values.agent.auth.enabled | quote }}
+            {{- if .Values.agent.auth.enabled }}
+            - name: AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "sentinel.fullname" . }}-db
+                  key: AUTH_TOKEN
+            {{- end }}
           volumeMounts:
             - name: thresholds
               mountPath: /etc/sentinel
