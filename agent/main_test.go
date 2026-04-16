@@ -45,3 +45,8 @@ func TestGetPodRequest_EmptyMap(t *testing.T) {
 		t.Error("expected found=false for nil map")
 	}
 }
+
+func TestFailingCI(t *testing.T) {
+	t.Errorf("CI pipeline failure test")
+}
+
