@@ -316,6 +316,7 @@ func main() {
 						pStat := api.PodStats{
 							Name:              m.Name,
 							Namespace:         m.Namespace,
+							NodeName:          spec.NodeName,
 							AppLabel:          spec.AppLabel,
 							CPUUsage:          podCPU,
 							CPURequest:        spec.CPUReq,

@@ -42,6 +42,7 @@ type HistoryPoint struct {
 type PodStats struct {
 	Name                string  `json:"name"`
 	Namespace           string  `json:"namespace"`
+	NodeName            string  `json:"nodeName,omitempty"`
 	AppLabel            string  `json:"appLabel"`
 	CPUUsage            int64   `json:"cpuUsage"`
 	CPURequest          int64   `json:"cpuRequest"`

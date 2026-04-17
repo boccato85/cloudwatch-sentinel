@@ -1793,22 +1793,25 @@ async function renderNodeDrawer() {
       '</div>';
     }
 
-    var nodeCards = nodes.map(function(n) {
-      var isOk = n.status === 'Running';
-      var color = isOk ? 'var(--green)' : 'var(--red)';
-      return '<div class="pod-detail-card">' +
-        '<div class="pod-detail-row"><span class="pod-detail-label">Node</span><span class="pod-detail-val" style="color:var(--cyan)">' + esc(n.name) + '</span></div>' +
-        '<div class="pod-detail-row"><span class="pod-detail-label">Status</span><span class="pod-detail-val" style="color:' + color + '">' + esc(n.status) + '</span></div>' +
-        '<div class="pod-detail-row"><span class="pod-detail-label">CPU Requested</span>' +
-          '<span class="pod-detail-val">' + s.cpuRequested + 'm / ' + s.cpuAllocatable + 'm</span>' +
-          '<div class="pod-detail-bar" style="max-width:200px"><div class="pod-detail-fill" style="width:' + Math.min(reqPct,100).toFixed(1) + '%;background:var(--cyan)"></div></div>' +
-        '</div>' +
-        '<div class="pod-detail-row"><span class="pod-detail-label">Memory Requested</span>' +
-          '<span class="pod-detail-val">' + s.memRequested + 'Mi / ' + s.memAllocatable + 'Mi</span>' +
-          '<div class="pod-detail-bar" style="max-width:200px"><div class="pod-detail-fill" style="width:' + Math.min(s.memAllocatable>0?s.memRequested/s.memAllocatable*100:0,100).toFixed(1) + '%;background:var(--purple)"></div></div>' +
-        '</div>' +
-      '</div>';
-    }).join('');
+    var nodeCards = '';
+    if (!targetNode) {
+      nodeCards = nodes.map(function(n) {
+        var isOk = n.status === 'Running';
+        var color = isOk ? 'var(--green)' : 'var(--red)';
+        return '<div class="pod-detail-card">' +
+          '<div class="pod-detail-row"><span class="pod-detail-label">Node</span><span class="pod-detail-val" style="color:var(--cyan)">' + esc(n.name) + '</span></div>' +
+          '<div class="pod-detail-row"><span class="pod-detail-label">Status</span><span class="pod-detail-val" style="color:' + color + '">' + esc(n.status) + '</span></div>' +
+          '<div class="pod-detail-row"><span class="pod-detail-label">CPU Requested</span>' +
+            '<span class="pod-detail-val">' + s.cpuRequested + 'm / ' + s.cpuAllocatable + 'm</span>' +
+            '<div class="pod-detail-bar" style="max-width:200px"><div class="pod-detail-fill" style="width:' + Math.min(reqPct,100).toFixed(1) + '%;background:var(--cyan)"></div></div>' +
+          '</div>' +
+          '<div class="pod-detail-row"><span class="pod-detail-label">Memory Requested</span>' +
+            '<span class="pod-detail-val">' + s.memRequested + 'Mi / ' + s.memAllocatable + 'Mi</span>' +
+            '<div class="pod-detail-bar" style="max-width:200px"><div class="pod-detail-fill" style="width:' + Math.min(s.memAllocatable>0?s.memRequested/s.memAllocatable*100:0,100).toFixed(1) + '%;background:var(--purple)"></div></div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
 
     // Top pods on this node
     var topPods = (m || []).slice(0,8);

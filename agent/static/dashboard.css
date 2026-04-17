@@ -58,9 +58,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .b-warn{background:rgba(240,112,0,.14);color:var(--orange);border:1px solid rgba(240,112,0,.28)}
 .b-crit{background:rgba(229,73,73,.14);color:var(--red);border:1px solid rgba(229,73,73,.28)}
 /* HONEYCOMB */
-.hcomb{display:flex;gap:1px;flex-wrap:wrap;align-content:flex-start;padding:4px}
-.hex{width:28px;height:28px;clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#000;cursor:default;transition:transform .15s;margin-right:-6px;margin-bottom:-4px}
-.hex:nth-child(even){margin-top:14px}
+.hcomb{display:flex;gap:3px;flex-wrap:wrap;align-content:flex-start;padding:4px}
+.hex{width:28px;height:28px;clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#000;cursor:default;transition:transform .15s}
 .hex:hover{transform:scale(1.2);z-index:2}
 .hex.ok{background:var(--green)}
 .hex.issue{background:var(--red)}

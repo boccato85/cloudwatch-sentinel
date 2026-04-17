@@ -7,6 +7,7 @@ import (
 type PodSpec struct {
 	CPUReq, CPULim, MemReq, MemLim int64
 	AppLabel                       string
+	NodeName                       string
 	ReqFound                       bool
 }
 
@@ -33,13 +34,13 @@ func BuildPodSpecMap(pods []corev1.Pod) map[string]map[string]PodSpec {
 			result[p.Namespace] = make(map[string]PodSpec)
 		}
 		result[p.Namespace][p.Name] = PodSpec{
-			CPUReq:   totalCPUReq,
-			CPULim:   totalCPULim,
-			MemReq:   totalMemReq,
-			MemLim:   totalMemLim,
-			AppLabel: p.Labels["app"],
-			ReqFound: cpuReqPresent,
-		}
-	}
+		        CPUReq:   totalCPUReq,
+		        CPULim:   totalCPULim,
+		        MemReq:   totalMemReq,
+		        MemLim:   totalMemLim,
+		        AppLabel: p.Labels["app"],
+		        NodeName: p.Spec.NodeName,
+		        ReqFound: cpuReqPresent,
+		}	}
 	return result
 }
