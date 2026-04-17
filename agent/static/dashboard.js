@@ -481,11 +481,19 @@ async function updateOverview() {
       document.getElementById('kT').textContent  = topCpuPod.cpuUsage + 'm';
       document.getElementById('kTs').textContent = topCpuPod.name || '--';
       
-      var reqCpu = topCpuPod.cpuRequest > 0 ? topCpuPod.cpuRequest : topCpuPod.cpuUsage;
-      var fillPct = Math.min(100, (topCpuPod.cpuUsage / reqCpu) * 100);
+      var fillPct = 0;
+      if (topCpuPod.cpuRequest > 0) {
+        fillPct = Math.min(100, (topCpuPod.cpuUsage / topCpuPod.cpuRequest) * 100);
+      }
       if(fillPct === Infinity || isNaN(fillPct)) fillPct = 0;
       var cCard = document.getElementById('kCpuCard');
-      if (cCard) cCard.style.backgroundImage = 'linear-gradient(to right, rgba(0, 180, 255, 0.12) ' + fillPct.toFixed(0) + '%, transparent ' + fillPct.toFixed(0) + '%)';
+      if (cCard) {
+        if (topCpuPod.cpuRequest > 0) {
+           cCard.style.backgroundImage = 'linear-gradient(to right, rgba(0, 180, 255, 0.12) ' + fillPct.toFixed(0) + '%, transparent ' + fillPct.toFixed(0) + '%)';
+        } else {
+           cCard.style.backgroundImage = 'linear-gradient(to right, rgba(255, 255, 255, 0.03) 100%, transparent 100%)';
+        }
+      }
     }
     // top memory consumer KPI
     var topByMem = m.slice().sort(function(a,b){ return (b.memUsage||0) - (a.memUsage||0); });
@@ -494,11 +502,19 @@ async function updateOverview() {
       document.getElementById('kMem').textContent  = (topMemPod.memUsage || 0) + 'Mi';
       document.getElementById('kMems').textContent = topMemPod.name || '--';
       
-      var reqMem = topMemPod.memRequest > 0 ? topMemPod.memRequest : topMemPod.memUsage;
-      var fillPctM = Math.min(100, (topMemPod.memUsage / reqMem) * 100);
+      var fillPctM = 0;
+      if (topMemPod.memRequest > 0) {
+         fillPctM = Math.min(100, (topMemPod.memUsage / topMemPod.memRequest) * 100);
+      }
       if(fillPctM === Infinity || isNaN(fillPctM)) fillPctM = 0;
       var mCard = document.getElementById('kMemCard');
-      if (mCard) mCard.style.backgroundImage = 'linear-gradient(to right, rgba(168, 85, 247, 0.12) ' + fillPctM.toFixed(0) + '%, transparent ' + fillPctM.toFixed(0) + '%)';
+      if (mCard) {
+         if (topMemPod.memRequest > 0) {
+            mCard.style.backgroundImage = 'linear-gradient(to right, rgba(168, 85, 247, 0.12) ' + fillPctM.toFixed(0) + '%, transparent ' + fillPctM.toFixed(0) + '%)';
+         } else {
+            mCard.style.backgroundImage = 'linear-gradient(to right, rgba(255, 255, 255, 0.03) 100%, transparent 100%)';
+         }
+      }
     }
     renderOverviewEvents();
 
