@@ -156,9 +156,9 @@ func (a *API) AuthMiddleware(next http.Handler) http.Handler {
 		isPublic := !a.AuthEnabled ||
 			r.URL.Path == "/health" ||
 			r.URL.Path == "/" ||
-			r.URL.Path == "/dashboard.css" ||
-			r.URL.Path == "/dashboard.js" ||
-			r.URL.Path == "/icon.png" ||
+			r.URL.Path == "/static/dashboard.css" ||
+			r.URL.Path == "/static/dashboard.js" ||
+			r.URL.Path == "/static/icon.png" ||
 			r.URL.Path == "/status" ||
 			r.URL.Path == "/docs" ||
 			r.URL.Path == "/openapi.yaml" ||
