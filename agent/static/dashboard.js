@@ -380,21 +380,26 @@ async function updateOverview() {
     // --- MOCK MODE FOR SINGLE NODE ---
     if (nodes.length === 1) {
       isMock = true;
-      drawNodes = [];
-      for (var i=1; i<=24; i++) {
-         var cpuPct = Math.random() * 100;
-         var memPct = Math.random() * 100;
-         var cpuCap = 4000;
-         var memCap = 16000;
-         drawNodes.push({
-           name: 'mock-node-' + i,
-           status: Math.random() > 0.95 ? 'NotReady' : 'Running',
-           cpuAllocatable: cpuCap,
-           cpuRequested: (cpuPct / 100) * cpuCap,
-           memAllocatable: memCap,
-           memRequested: (memPct / 100) * memCap,
-           podCount: Math.floor(Math.random() * 50) + 1
-         });
+      if (window._mockNodes) {
+        drawNodes = window._mockNodes;
+      } else {
+        drawNodes = [];
+        for (var i=1; i<=24; i++) {
+           var cpuPct = Math.random() * 100;
+           var memPct = Math.random() * 100;
+           var cpuCap = 4000;
+           var memCap = 16000;
+           drawNodes.push({
+             name: 'mock-node-' + i,
+             status: Math.random() > 0.95 ? 'NotReady' : 'Running',
+             cpuAllocatable: cpuCap,
+             cpuRequested: (cpuPct / 100) * cpuCap,
+             memAllocatable: memCap,
+             memRequested: (memPct / 100) * memCap,
+             podCount: Math.floor(Math.random() * 50) + 1
+           });
+        }
+        window._mockNodes = drawNodes;
       }
     }
 
@@ -407,10 +412,9 @@ async function updateOverview() {
       
       var hexClass = 'hex';
       if (n.status !== 'Running') {
-         hexClass += ' issue'; // fallback to dark with red border
-         d.style.background = '#1a1e27';
-         d.style.border = '1px solid var(--red)';
-         d.style.color = 'var(--red)';
+         hexClass += ' issue';
+         d.style.background = '#4b5563'; // distinct dark slate
+         d.style.color = '#ff4d4d'; // red text to indicate error
       } else if (maxSat > 85) {
          d.style.background = 'var(--red)';
          d.style.color = '#fff';
