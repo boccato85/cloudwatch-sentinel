@@ -152,23 +152,23 @@ function uLine(id, hData, fData) {
 
   var datasets = [
     // 0 — Historical Budget
-    { label: 'Budget (Requested)', borderColor: '#e54949', borderWidth: 2,
+    { label: 'Budget (Requested)', borderColor: '#ff4d4d', borderWidth: 3,
       data: histReq, pointRadius: 0, tension: 0.3, fill: false, spanGaps: false },
     // 1 — Historical Actual
-    { label: 'Actual (Usage)', borderColor: '#00cc8f', borderWidth: 2,
-      data: histUse, fill: true, backgroundColor: 'rgba(0,204,143,.15)',
+    { label: 'Actual (Usage)', borderColor: '#00ffb3', borderWidth: 3,
+      data: histUse, fill: true, backgroundColor: 'rgba(0,255,179,.10)',
       pointRadius: 0, tension: 0.3, spanGaps: false }
   ];
 
   if (fData && fData.length > 0) {
     datasets = datasets.concat([
       // 2 — Forecast Budget line (dashed)
-      { label: 'Forecast Budget', borderColor: '#a855f7', borderWidth: 2,
-        borderDash: [5, 4], data: fReqLine,
+      { label: 'Forecast Budget', borderColor: '#c084fc', borderWidth: 3,
+        borderDash: [6, 4], data: fReqLine,
         pointRadius: 0, tension: 0.3, fill: false, spanGaps: false },
       // 3 — Forecast Usage line (dashed)
-      { label: 'Forecast Usage', borderColor: '#00b4ff', borderWidth: 2,
-        borderDash: [5, 4], data: fUseLine,
+      { label: 'Forecast Usage', borderColor: '#38bdf8', borderWidth: 3,
+        borderDash: [6, 4], data: fUseLine,
         pointRadius: 0, tension: 0.3, fill: false, spanGaps: false },
       // 4 — Forecast Budget upper bound (invisible line, for fill target)
       { label: '_fReqHigh', borderColor: 'transparent', borderWidth: 0,
@@ -373,12 +373,20 @@ async function updateOverview() {
 
     var hc = document.getElementById('honeycomb');
     hc.innerHTML = '';
-    nodes.forEach(function(n) {
-      var d = document.createElement('div');
-      d.className = 'hex ' + (n.status === 'Running' ? 'ok' : 'issue');
-      d.title = n.name; d.textContent = 'N';
-      hc.appendChild(d);
-    });
+    if (nodes.length === 1) {
+      var n = nodes[0];
+      hc.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:8px 6px;width:100%">' +
+        '<div class="hex ' + (n.status === 'Running' ? 'ok' : 'issue') + '" style="flex-shrink:0" title="' + esc(n.name) + '">N</div>' +
+        '<div style="font-size:0.8em;font-weight:500;color:var(--text-bright);word-break:break-all;line-height:1.2">' + esc(n.name) + '</div>' +
+      '</div>';
+    } else {
+      nodes.forEach(function(n) {
+        var d = document.createElement('div');
+        d.className = 'hex ' + (n.status === 'Running' ? 'ok' : 'issue');
+        d.title = n.name; d.textContent = 'N';
+        hc.appendChild(d);
+      });
+    }
     var nb = document.getElementById('nbadge');
     nb.textContent = issues > 0 ? issues + ' Issues' : 'All OK';
     nb.className = 'badge ' + (issues > 0 ? 'b-crit' : 'b-ok');
