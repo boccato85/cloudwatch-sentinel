@@ -1819,6 +1819,15 @@ async function renderAlertsDrawer() {
     var critIncs = healthIncidents.filter(function(i) { return i.severity === 'CRITICAL' || i.severity === 'critical'; });
     var warnIncs = healthIncidents.filter(function(i) { return i.severity === 'WARNING' || i.severity === 'warning'; });
 
+    var alertInfoCard =
+      '<button class="grade-info-btn" id="alert-info-btn" style="margin-bottom:8px">ⓘ What these metrics mean</button>' +
+      '<div id="alert-info-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-size:.82em;line-height:1.6">' +
+        '<div class="gl-title" style="margin-bottom:8px">Active Alerts — metric glossary</div>' +
+        '<div class="gl-row"><span style="color:var(--red);font-weight:600;min-width:160px">Critical</span><span class="gl-desc">Severe issues requiring immediate attention (e.g., CrashLoopBackOff, high CPU).</span></div>' +
+        '<div class="gl-row"><span style="color:var(--orange);font-weight:600;min-width:160px">Warnings</span><span class="gl-desc">Potential problems that could degrade performance if ignored.</span></div>' +
+        '<div class="gl-row" style="border-bottom:none"><span style="color:var(--green);font-weight:600;min-width:160px">Total Issues</span><span class="gl-desc">The total count of all active alerts in the cluster.</span></div>' +
+      '</div>';
+
     var statsHtml = '<div class="drawer-stats">' +
       dstat('Critical', critIncs.length, critIncs.length > 0 ? 'var(--red)' : 'var(--green)') +
       dstat('Warnings', warnIncs.length, warnIncs.length > 0 ? 'var(--orange)' : 'var(--green)') +
@@ -1834,7 +1843,7 @@ async function renderAlertsDrawer() {
       var typeStr = esc(inc.type || 'ALERT').toUpperCase();
       var msg = esc(inc.message || '');
       if (inc.age) msg += ' <span style="opacity:0.7">(' + esc(inc.age) + ')</span>';
-      
+
       alertItems += alertCard(inc.podName || inc.name || '--', inc.namespace, typeStr, cls, color, icon, msg);
     });
 
@@ -1842,10 +1851,14 @@ async function renderAlertsDrawer() {
       alertItems = '<div class="alert ok"><span class="alert-ico" style="color:var(--green)">&#10003;</span><div><b>No active alerts</b><div class="alert-ns" style="margin-top:4px">All pods are healthy. Cluster is operating normally.</div></div></div>';
     }
 
-    drawerHTML(statsHtml + '<div style="display:flex;flex-direction:column;gap:8px">' + alertItems + '</div>');
-  } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
-}
+    drawerHTML(alertInfoCard + statsHtml + '<div style="display:flex;flex-direction:column;gap:8px">' + alertItems + '</div>');
 
+    document.getElementById('alert-info-btn').addEventListener('click', function() {
+      var c = document.getElementById('alert-info-card');
+      if (c) c.style.display = c.style.display === 'none' ? '' : 'none';
+    });
+    } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
+    }
 function alertCard(name, ns, label, cls, color, icon, hint) {
   return '<div class="alert ' + cls + '" style="padding:12px 14px">' +
     '<span class="alert-ico" style="color:' + color + ';font-size:1.1em">' + icon + '</span>' +
@@ -2287,7 +2300,16 @@ async function renderWorkloadsDrawer() {
         '<td>'+sevBadge+'</td></tr>';
     }).join('');
 
-    drawerHTML(statsHtml + toolbar +
+    var workloadsInfoCard =
+      '<button class="grade-info-btn" id="workloads-info-btn" style="margin-bottom:8px">ⓘ What these metrics mean</button>' +
+      '<div id="workloads-info-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-size:.82em;line-height:1.6">' +
+        '<div class="gl-title" style="margin-bottom:8px">Top Workloads — metric glossary</div>' +
+        '<div class="gl-row"><span style="color:var(--text-bright);font-weight:600;min-width:160px">Pods Shown</span><span class="gl-desc">Number of pods matching the current filters.</span></div>' +
+        '<div class="gl-row"><span style="color:var(--cyan);font-weight:600;min-width:160px">Total CPU Usage</span><span class="gl-desc">The aggregated CPU currently consumed by the displayed pods.</span></div>' +
+        '<div class="gl-row" style="border-bottom:none"><span style="color:var(--orange);font-weight:600;min-width:160px">Waste Ops</span><span class="gl-desc">Opportunities to reduce requested resources without impacting performance.</span></div>' +
+      '</div>';
+
+    drawerHTML(workloadsInfoCard + statsHtml + toolbar +
       '<div class="drawer-table-wrap"><table class="wtable"><thead><tr>' +
       '<th>#</th>' +
       makeSortHeader('Pod','name',drawerSort) +
@@ -2305,6 +2327,11 @@ async function renderWorkloadsDrawer() {
     document.getElementById('dfilter-wl-sev').addEventListener('change', renderWorkloadsDrawer);
     document.getElementById('dfilter-wl-search').addEventListener('input', renderWorkloadsDrawer);
     attachSortHandlers('', renderWorkloadsDrawer);
+
+    document.getElementById('workloads-info-btn').addEventListener('click', function() {
+      var c = document.getElementById('workloads-info-card');
+      if (c) c.style.display = c.style.display === 'none' ? '' : 'none';
+    });
   } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
 }
 
@@ -2540,6 +2567,20 @@ async function loadVersion() {
     if (badge) {
       badge.textContent = 'v' + v;
       badge.title = 'Sentinel v' + v + '\nKubernetes Observability\n\u00a9 2026 Sentinel Project';
+    }
+    // populate Connected tooltip with DB status from /health
+    var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
+    updateSpillTip(dbSt);
+  } catch(e) { updateSpillTip('unknown'); }
+}
+
+loadNamespaces();
+loadVersion();
+setInterval(update, 5000);
+update();
+fetchChart();
+updateEfficiency();
+oject';
     }
     // populate Connected tooltip with DB status from /health
     var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
