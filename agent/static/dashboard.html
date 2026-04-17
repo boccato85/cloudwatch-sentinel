@@ -5,7 +5,6 @@
 <title>Sentinel | Cluster Observatory</title>
 <link rel="icon" type="image/png" href="/static/icon.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/dashboard.css?v=0.10.12">
@@ -51,14 +50,22 @@
   </div>
 </div>
 
-<!-- TABS -->
-<div class="tab-bar">
-  <button class="tab-btn active" data-tab="overview">Overview</button>
-  <button class="tab-btn" data-tab="workloads">Workloads</button>
-  <button class="tab-btn" data-tab="pods">Pods</button>
+<!-- CONTEXT BAR -->
+<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:5px 20px;display:flex;align-items:center;gap:12px;font-size:.72em;color:var(--text-dim)">
+  <span style="color:var(--text-bright);font-weight:600">Overview</span>
+  <span style="color:var(--border)">|</span>
+  <span id="ctx-ns">All Namespaces</span>
+  <span style="color:var(--border)">|</span>
+  <span id="ctx-pods">-- pods</span>
+  <span style="color:var(--border)">|</span>
+  <span id="ctx-warnings" style="color:var(--orange)">-- warnings</span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+    <span style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></span>
+    <span id="ctx-updated">updating...</span>
+  </span>
 </div>
 
-<!-- ===== TAB: OVERVIEW ===== -->
+<!-- ===== OVERVIEW ===== -->
 <div id="tab-overview" class="tab-content active">
 <div class="main">
 
@@ -76,10 +83,10 @@
       <div class="kpi-sub" id="kRs">of -- total</div>
       <span class="kpi-expand">&#8599; expand</span>
     </div>
-    <div class="kpi c-red kpi-clickable" id="kFailCard">
+    <div class="kpi kpi-clickable" id="kFailCard">
       <div class="kpi-lbl">Critical / Warnings</div>
       <div class="kpi-val" id="kF">--</div>
-      <div class="kpi-sub" id="kFs">-- warnings</div>
+      <div class="kpi-sub" id="kFs">--</div>
       <span class="kpi-expand">&#8599; expand</span>
     </div>
     <div class="kpi c-cyan kpi-clickable" id="kCpuCard">
@@ -106,18 +113,14 @@
   <!-- ROW 1: NODE MAP | POD PHASES | CPU (compact) | MEMORY (compact) -->
   <div class="row-4">
 
-    <div class="panel">
+    <div class="panel node-panel">
       <div class="ph ph-clickable" id="ph-nodes"><span class="ph-title">Node Health Map</span><div style="display:flex;align-items:center;gap:8px"><span class="badge b-ok" id="nbadge">OK</span><span class="ph-expand">&#8599; expand</span></div></div>
-      <div class="pb">
+      <div class="pb" style="padding-bottom:8px">
         <div class="hcomb chart-clickable" id="honeycomb" title="Click to expand"></div>
-        <div class="hleg">
-          <span><b style="background:var(--green)"></b>Healthy</span>
-          <span><b style="background:var(--red)"></b>Issue</span>
-        </div>
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel pods-panel">
       <div class="ph ph-clickable" id="ph-pods"><span class="ph-title">Pod Distribution</span><div style="display:flex;align-items:center;gap:8px"><select id="tile-ns-pods" class="tile-ns-select" title="Filter by namespace"><option value="">All NS</option></select><span class="ph-expand">&#8599; expand</span></div></div>
       <div class="pb">
         <div class="dnut-wrap">
@@ -127,7 +130,7 @@
       </div>
     </div>
 
-    <div class="panel panel-compact">
+    <div class="panel panel-compact cpu-panel">
       <div class="ph ph-clickable" id="ph-cpu"><span class="ph-title">CPU Resources</span><div style="display:flex;align-items:center;gap:6px"><select id="tile-ns-cpu" class="tile-ns-select" title="Filter by namespace"><option value="">All NS</option></select><span class="badge b-ok" id="cpubadge">Optimal</span><span class="ph-expand">&#8599;</span></div></div>
       <div class="pb">
         <div class="dnut-wrap dnut-compact">
@@ -148,7 +151,7 @@
       </div>
     </div>
 
-    <div class="panel panel-compact">
+    <div class="panel panel-compact mem-panel">
       <div class="ph ph-clickable" id="ph-mem"><span class="ph-title">Memory Resources</span><div style="display:flex;align-items:center;gap:6px"><select id="tile-ns-mem" class="tile-ns-select" title="Filter by namespace"><option value="">All NS</option></select><span class="badge b-ok" id="membadge">Optimal</span><span class="ph-expand">&#8599;</span></div></div>
       <div class="pb">
         <div class="dnut-wrap dnut-compact">
@@ -171,165 +174,126 @@
 
   </div>
 
-  <!-- ROW 2: ACTIVE ALERTS | WASTE INTELLIGENCE -->
-  <div class="row-2">
-
-  </div>
-
   <!-- hidden compat elements so JS still finds alertsBox / abadge -->
   <span id="abadge" style="display:none"></span>
   <div id="alertsBox" style="display:none"></div>
 
-  <!-- FINANCIAL CORRELATION — Hero FinOps Panel (full-width, promoted) -->
-  <div class="panel finops-panel">
-    <div class="ph ph-clickable" id="ph-finops">
+  <!-- RECENT EVENTS — Latest cluster events (compact full-width) -->
+  <div class="panel events-panel">
+    <div class="ph ph-clickable" id="ph-events">
       <div style="display:flex;align-items:center;gap:10px">
-        <span class="ph-title" id="finops-chart-title">Financial Correlation &#8212; ROI Timeline</span>
-        <span class="badge b-finops">FinOps</span>
-        <select id="tile-ns-finops" class="tile-ns-select" title="Filter by namespace">
+        <span class="ph-title">Recent Events</span>
+        <select id="tile-ns-events" class="tile-ns-select" title="Filter by namespace">
           <option value="">All NS</option>
         </select>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div class="line-legend">
-          <span><i style="background:var(--red)"></i>Budget</span>
-          <span><i style="background:var(--green)"></i>Actual</span>
-          <span><i class="legend-dash" style="background:var(--purple)"></i>Forecast Budget</span>
-          <span><i class="legend-dash" style="background:var(--cyan)"></i>Forecast Usage</span>
-        </div>
-        <label class="eff-sys-toggle" id="finops-sys-label">
-          <input type="checkbox" id="finops-show-system" style="accent-color:var(--cyan)"> Show system NS
+        <label class="eff-sys-toggle" id="events-sys-label" style="border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px;">
+          <input type="checkbox" id="events-show-system" style="accent-color:var(--cyan)"> Show system NS
         </label>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge b-warn" id="evtcnt">Loading...</span>
+        <span class="ph-meta">Live &#183; 10s refresh</span>
         <span class="ph-expand">&#8599; expand</span>
       </div>
     </div>
-    <div class="range-bar">
-      <button class="range-btn active" data-range="30m">30m</button>
-      <button class="range-btn" data-range="1h">1h</button>
-      <button class="range-btn" data-range="6h">6h</button>
-      <button class="range-btn" data-range="24h">24h</button>
-      <button class="range-btn" data-range="7d">7d</button>
-      <button class="range-btn" data-range="30d">30d</button>
-      <button class="range-btn" data-range="90d">90d</button>
-      <button class="range-btn" data-range="365d">1y</button>
-      <button class="range-btn" data-range="custom">Custom</button>
-      <div id="custom-range-wrap" class="custom-range-wrap" style="display:none">
-        <input type="datetime-local" id="customFrom" />
-        <span style="color:var(--text-dim);font-size:.75em">→</span>
-        <input type="datetime-local" id="customTo" />
-        <button class="range-apply-btn" id="customApply">Apply</button>
-      </div>
-    </div>
-    <div class="pb">
-      <div id="finopsSummary" style="font-size:0.75em;color:var(--text-dim);padding:0 0 8px;font-family:'JetBrains Mono',monospace"></div>
-      <div id="chartDataNote" style="display:none;font-size:0.72em;color:var(--orange);padding:0 0 6px;font-family:'JetBrains Mono',monospace">&#9432; Insufficient daily aggregates &#8212; showing available hourly data</div>
-      <div class="line-area" id="finops-chart-area"><canvas id="mainLineChart"></canvas></div>
-    </div>
-    <!-- Forecast summary card (Azure-style) -->
-    <div id="forecastCard" class="forecast-card" style="display:none">
-      <div class="fc-header">
-        <span class="fc-title">&#9201; Cost Forecast</span>
-        <span class="fc-period" id="fcPeriod">--</span>
-      </div>
-      <div class="fc-metrics">
-        <div class="fc-metric">
-          <div class="fc-metric-lbl">Projected Budget</div>
-          <div class="fc-metric-val" id="fcProjBudget" style="color:var(--purple)">$--</div>
-        </div>
-        <div class="fc-metric">
-          <div class="fc-metric-lbl">Projected Usage</div>
-          <div class="fc-metric-val" id="fcProjUsage" style="color:var(--cyan)">$--</div>
-        </div>
-        <div class="fc-metric">
-          <div class="fc-metric-lbl">Projected Waste</div>
-          <div class="fc-metric-val" id="fcProjWaste" style="color:var(--orange)">$--</div>
-        </div>
-      </div>
-      <div class="fc-note">Linear regression forecast &bull; &#177;1.5&#963; confidence band</div>
+    <div class="pb workloads-scroll-pb" style="padding:0 14px">
+      <table class="wtable">
+        <thead><tr id="evthead">
+          <th class="th-sort" data-col="type">Type</th>
+          <th class="th-sort" data-col="reason">Reason</th>
+          <th class="th-sort" data-col="name">Object</th>
+          <th class="th-sort" data-col="namespace">NS</th>
+          <th class="th-sort" data-col="age">Age</th>
+          <th>Message</th>
+        </tr></thead>
+        <tbody id="evtbody"><tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:8px">Loading events...</td></tr></tbody>
+      </table>
     </div>
   </div>
 
-  <!-- NAMESPACE EFFICIENCY SCORE -->
-  <div class="panel eff-panel" style="position:relative">
-    <div class="ph" id="ph-efficiency">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="ph-title">Namespace Efficiency Score</span>
-        <span class="badge b-ok" id="eff-badge">Loading...</span>
-        <span class="badge b-warn" id="eff-unmanaged-badge" style="display:none"></span>
-        <!-- ⓘ lives in the header so it has room to breathe -->
-        <div class="grade-legend-wrap">
-          <button class="grade-info-btn" id="grade-info-btn" title="How grades work">ⓘ How grades work</button>
-          <div class="grade-legend-tip" id="grade-legend-tip">
-            <div class="gl-title">How efficiency grades work</div>
-            <div class="gl-formula">Score = actual usage ÷ requested &times; 100</div>
-            <div class="gl-row"><span class="eff-grade A">A</span><span class="gl-desc">≥75% — well-tuned, using what was requested</span></div>
-            <div class="gl-row"><span class="eff-grade B">B</span><span class="gl-desc">≥50% — good, some slack is acceptable</span></div>
-            <div class="gl-row"><span class="eff-grade C">C</span><span class="gl-desc">≥30% — review, significantly over-provisioned</span></div>
-            <div class="gl-row"><span class="eff-grade D">D</span><span class="gl-desc">≥15% — warning, severe over-provisioning</span></div>
-            <div class="gl-row"><span class="eff-grade F">F</span><span class="gl-desc">&lt;15% — critical waste, right-size urgently</span></div>
-            <div class="gl-row"><span class="eff-unmanaged">UNMANAGED</span><span class="gl-desc">no resource requests — scheduler blind spot &amp; FinOps risk</span></div>
-            <div class="gl-note">System namespaces excluded by default.</div>
+  <!-- ROW: EFFICIENCY (compact) + FINOPS (expanded) -->
+  <div class="row-eff-fino">
+
+    <!-- FINANCIAL CORRELATION — FinOps Panel with Efficiency toggle -->
+    <div class="panel finops-panel">
+      <div class="ph ph-clickable" id="ph-finops">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="ph-title" id="finops-chart-title">Financial Correlation</span>
+          <span class="badge b-finops">FinOps</span>
+          <select id="tile-ns-finops" class="tile-ns-select" title="Filter by namespace">
+            <option value="">All NS</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="fino-eff-tabs">
+            <button class="fino-eff-tab active" id="fino-tab-btn">FinOps</button>
+            <button class="fino-eff-tab" id="eff-tab-btn">Efficiency</button>
+          </div>
+          <span class="ph-expand">&#8599; expand</span>
+        </div>
+      </div>
+
+      <!-- FINOPS CONTENT -->
+      <div id="fino-content" style="display:flex;flex-direction:column">
+        <div class="range-bar">
+          <button class="range-btn active" data-range="30m">30m</button>
+          <button class="range-btn" data-range="1h">1h</button>
+          <button class="range-btn" data-range="6h">6h</button>
+          <button class="range-btn" data-range="24h">24h</button>
+          <button class="range-btn" data-range="7d">7d</button>
+          <button class="range-btn" data-range="30d">30d</button>
+          <button class="range-btn" data-range="90d">90d</button>
+          <button class="range-btn" data-range="365d">1y</button>
+          <button class="range-btn" data-range="custom">Custom</button>
+          <div id="custom-range-wrap" class="custom-range-wrap" style="display:none">
+            <input type="datetime-local" id="customFrom" />
+            <span style="color:var(--text-dim);font-size:.75em">→</span>
+            <input type="datetime-local" id="customTo" />
+            <button class="range-apply-btn" id="customApply">Apply</button>
           </div>
         </div>
-        <select id="tile-ns-eff" class="tile-ns-select" style="margin-left:8px;" title="Filter by namespace">
-          <option value="">All NS</option>
-        </select>
+        <div class="pb">
+          <div id="finopsSummary" style="font-size:0.75em;color:var(--text-dim);padding:0 0 8px;font-family:'JetBrains Mono',monospace"></div>
+          <div id="chartDataNote" style="display:none;font-size:0.72em;color:var(--orange);padding:0 0 6px;font-family:'JetBrains Mono',monospace">&#9432; Insufficient daily aggregates &#8212; showing available hourly data</div>
+          <div class="line-area" id="finops-chart-area"><canvas id="mainLineChart"></canvas></div>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <label class="eff-sys-toggle" id="eff-sys-label">
-          <input type="checkbox" id="eff-show-system" style="accent-color:var(--cyan)"> Show system NS
-        </label>
-        <span class="ph-expand" id="eff-expand-btn">&#8599; expand</span>
-      </div>
-    </div>
-    <div class="pb" style="padding:0">
-      <table class="eff-table" id="eff-ns-list">
-        <thead><tr id="eff-thead">
-          <th class="th-sort" data-col="namespace">Namespace</th>
-          <th class="th-sort desc" data-col="score">Score <span class="th-sub">overall</span></th>
-          <th class="th-sort" data-col="cpuScore">CPU <span class="th-sub">used / requested</span></th>
-          <th class="th-sort" data-col="memScore">Mem <span class="th-sub">used / requested</span></th>
-          <th class="th-sort th-c" data-col="grade">Grade</th>
-        </tr></thead>
-        <tbody id="eff-ns-body"><tr><td colspan="5" style="color:var(--text-dim);padding:16px;font-size:.84em">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- TOP WORKLOADS — CPU & WASTE ANALYSIS (unified full-width) -->
-  <div class="panel">
-    <div class="ph ph-clickable" id="ph-workloads">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="ph-title">Top Workloads &mdash; CPU &amp; Waste Analysis</span>
-        <select id="tile-ns-workloads" class="tile-ns-select" title="Filter by namespace">
-          <option value="">All NS</option>
-        </select>
-        <label class="eff-sys-toggle" id="wl-sys-label" style="border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px;">
-          <input type="checkbox" id="workloads-show-system" style="accent-color:var(--cyan)"> Show system NS
-        </label>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="badge b-warn" id="wcnt">Scanning...</span>
-        <span class="ph-meta">Live &#183; 5s refresh</span>
-        <span class="ph-expand">&#8599; expand</span>
+      <!-- EFFICIENCY CONTENT (inside FinOps panel) -->
+      <div id="eff-content" style="display:none;flex:1;overflow-y:auto">
+        <div class="pb" style="display:flex;gap:20px;align-items:flex-start;flex:1">
+          <!-- donut summary left -->
+          <div style="width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:10px">
+            <button class="grade-info-btn" id="grade-info-btn" title="What these grades mean">ⓘ How grades work</button>
+            <div style="position:relative;width:130px;height:130px">
+              <canvas id="effDonut2" width="130" height="130" style="width:130px;height:130px"></canvas>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.1">
+                <div id="eff-avg-score2" style="font-size:1.4em;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace">--%</div>
+                <div style="font-size:.62em;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">avg</div>
+              </div>
+            </div>
+          </div>
+          <!-- full NS breakdown right -->
+          <div style="flex:1;overflow-y:auto;max-height:280px;scrollbar-width:thin;scrollbar-color:var(--border) transparent">
+            <table class="wtable" style="font-size:.82em">
+              <thead id="eff-thead"><tr>
+                <th class="th-sort" data-col="namespace">Namespace</th>
+                <th class="th-sort" data-col="score">Score</th>
+                <th class="th-sort" data-col="cpuScore">CPU</th>
+                <th class="th-sort" data-col="memScore">Mem</th>
+                <th class="th-sort th-c">Grade</th>
+              </tr></thead>
+              <tbody id="eff-ns-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="eff-worst2" style="padding:0 16px 10px;font-size:.72em;color:var(--text-dim)"></div>
       </div>
     </div>
-    <div class="pb workloads-scroll-pb" style="padding:0 16px 10px">
-      <table class="wtable">
-        <thead><tr id="whead">
-          <th style="width:24px">#</th>
-          <th class="th-sort" data-col="name">Pod Name</th>
-          <th class="th-sort" data-col="namespace">NS</th>
-          <th class="th-sort desc" data-col="cpuUsage">CPU</th>
-          <th class="th-sort" data-col="wastePct">Util.</th>
-          <th class="th-sort" data-col="potentialSavingMCpu">Waste</th>
-          <th>Opportunity</th>
-        </tr></thead>
-        <tbody id="wbody"><tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px">Collecting data...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-  <!-- hidden legacy element — keeps old event-listener refs alive -->
+
+  </div><!-- /row-eff-fino -->
+
+  <!-- hidden legacy element -->
   <div id="wasteList" style="display:none"></div>
 
 </div><!-- /main overview -->
@@ -414,6 +378,34 @@
   </div>
 </div>
 
-<script src="/static/dashboard.js?v=0.10.11"></script>
+<div id="grade-legend-tip" class="grade-legend-tip">
+  <div class="gl-title">Efficiency Grades</div>
+  <div class="gl-formula">Score = actual usage &divide; requested resources &times; 100</div>
+  <div class="gl-row"><span style="color:var(--green);font-weight:700;min-width:40px">A</span><span class="gl-desc">85–100% &mdash; perfectly provisioned. Actual usage close to requests.</span></div>
+  <div class="gl-row"><span style="color:var(--cyan);font-weight:700;min-width:40px">B</span><span class="gl-desc">70–84% &mdash; well provisioned. Minor headroom but acceptable.</span></div>
+  <div class="gl-row"><span style="color:#fbbf24;font-weight:700;min-width:40px">C</span><span class="gl-desc">50–69% &mdash; moderate waste. Consider right-sizing requests.</span></div>
+  <div class="gl-row"><span style="color:#f97316;font-weight:700;min-width:40px">D</span><span class="gl-desc">30–49% &mdash; significant waste. Priority for optimization.</span></div>
+  <div class="gl-row"><span style="color:var(--red);font-weight:700;min-width:40px">F</span><span class="gl-desc">&lt;30% &mdash; critical waste. Immediate action recommended.</span></div>
+  <div class="gl-row" style="border-bottom:none"><span style="color:#a855f7;font-weight:700;min-width:40px">—</span><span class="gl-desc">UNMANAGED &mdash; no CPU/memory requests set. No basis for score.</span></div>
+</div>
+
+<div id="finops-legend-tip" class="grade-legend-tip" style="z-index:601">
+  <div class="gl-title">FinOps — metric glossary</div>
+  <div class="gl-formula">Reference price: ~$0.048 / core-hour &bull; ~$12.50 / month per 1m CPU</div>
+  <div class="gl-row"><span style="color:var(--red);font-weight:600;min-width:80px">Budget ($)</span><span class="gl-desc">Cost of <em>requested</em> (reserved) resources &mdash; what you committed to pay regardless of actual use. Lower is better.</span></div>
+  <div class="gl-row"><span style="color:var(--green);font-weight:600;min-width:80px">Actual ($)</span><span class="gl-desc">Real cost of <em>actual</em> CPU/memory consumption &mdash; what you actually used. This is the baseline.</span></div>
+  <div class="gl-row"><span style="color:var(--orange);font-weight:600;min-width:80px">Waste ($)</span><span class="gl-desc">Budget &minus; Actual &mdash; resources reserved but not consumed. <strong>This is your optimization opportunity.</strong></span></div>
+  <div class="gl-row"><span style="color:var(--yellow);font-weight:600;min-width:80px">Waste %</span><span class="gl-desc">Waste &divide; Budget &times; 100 &mdash; efficiency ratio. &lt;20% is lean; &gt;40% is critical.</span></div>
+  <div class="gl-row"><span style="color:var(--purple);font-weight:600;min-width:80px">Proj. Budget</span><span class="gl-desc">Forecast of committed spend for the next time window, based on current request patterns.</span></div>
+  <div class="gl-row"><span style="color:var(--cyan);font-weight:600;min-width:80px">Proj. Usage</span><span class="gl-desc">Forecast of actual consumption &mdash; expected real cost based on usage trends.</span></div>
+  <div class="gl-row"><span style="color:var(--orange);font-weight:600;min-width:80px">Proj. Waste</span><span class="gl-desc">Forecast of waste for the next period &mdash; use this to plan right-sizing actions.</span></div>
+  <div class="gl-row" style="border-bottom:none"><span style="color:var(--text-dim);font-weight:600;min-width:80px">±1.5σ</span><span class="gl-desc">95% confidence band &mdash; statistical margin. Real value likely falls within this range.</span></div>
+</div>
+
+<script src="/static/dashboard.js?v=0.10.16"></script>
+<!-- FOOTER -->
+<div style="background:#090c12;border-top:1px solid var(--border);padding:5px 20px;display:flex;align-items:center;justify-content:space-between;font-size:.68em;color:var(--text-dim)">
+  <span>Built with <span style="color:#fff">OpenCode</span> + <span style="color:#00ADD8">Go</span> + <span style="color:#F7DF1E">JS</span> &bull; Kubernetes Dashboard</span>
+</div>
 </body>
 </html>

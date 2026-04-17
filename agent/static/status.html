@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0f1117;--surface:#1a1e27;--surface2:#222735;--border:#2d3347;
-  --cyan:#00b4ff;--green:#00cc8f;--red:#e54949;--orange:#f5a623;
+  --cyan:#00b4ff;--green:#00cc8f;--red:#e54949;--orange:#f07000;
   --purple:#a855f7;--text:#c8d0e0;--text-dim:#7a8499;--text-bright:#edf0f7;
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
@@ -34,7 +34,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 /* OVERALL BANNER */
 .banner{display:inline-flex;align-items:center;gap:10px;padding:10px 28px;border-radius:40px;font-size:.9em;font-weight:600;margin-top:20px;transition:background .3s,border-color .3s}
 .banner.ok{background:rgba(0,204,143,.12);border:1px solid rgba(0,204,143,.35);color:var(--green)}
-.banner.degraded{background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.35);color:var(--orange)}
+.banner.degraded{background:rgba(240,112,0,.12);border:1px solid rgba(240,112,0,.35);color:var(--orange)}
 .banner.unhealthy{background:rgba(229,73,73,.12);border:1px solid rgba(229,73,73,.35);color:var(--red)}
 .banner-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .banner.ok .banner-dot{background:var(--green);animation:pulse 2s infinite}
@@ -52,7 +52,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .service-icon.cyan{background:rgba(0,180,255,.12)}
 .service-icon.green{background:rgba(0,204,143,.12)}
 .service-icon.purple{background:rgba(168,85,247,.12)}
-.service-icon.orange{background:rgba(245,166,35,.12)}
+.service-icon.orange{background:rgba(240,112,0,.12)}
 .service-info{flex:1;min-width:0}
 .service-name{font-size:.9em;font-weight:600;color:var(--text-bright);margin-bottom:3px}
 .service-detail{font-size:.78em;color:var(--text-dim);font-family:'JetBrains Mono',monospace}

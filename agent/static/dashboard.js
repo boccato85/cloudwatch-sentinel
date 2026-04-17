@@ -248,12 +248,12 @@ async function loadNamespaces() {
 }
 
 function renderDropdowns() {
-  var selIds = ['nsFilter', 'tile-ns-pods', 'tile-ns-cpu', 'tile-ns-mem', 'tile-ns-finops', 'tile-ns-eff', 'tile-ns-workloads'];
+  var selIds = ['nsFilter', 'tile-ns-pods', 'tile-ns-cpu', 'tile-ns-mem', 'tile-ns-finops', 'tile-ns-eff', 'tile-ns-workloads', 'tile-ns-events'];
   
-  var showSysFinops = typeof _finopsSysToggle !== 'undefined' && _finopsSysToggle ? _finopsSysToggle.checked : false;
   var showSysGlobal = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
   var showSysEff = typeof _effSysToggle !== 'undefined' && _effSysToggle ? _effSysToggle.checked : false;
   var showSysWl = document.getElementById('workloads-show-system') ? document.getElementById('workloads-show-system').checked : false;
+  var showSysEvt = document.getElementById('events-show-system') ? document.getElementById('events-show-system').checked : false;
   
   selIds.forEach(function(id) {
     var sel = document.getElementById(id);
@@ -262,10 +262,10 @@ function renderDropdowns() {
     sel.innerHTML = '<option value="">All NS</option>';
     allNamespaces.forEach(function(n) {
       if (sysNsList.indexOf(n) !== -1) {
-        if (id === 'tile-ns-finops' && !showSysFinops) return;
         if (id === 'nsFilter' && !showSysGlobal) return;
         if (id === 'tile-ns-eff' && !showSysEff) return;
         if (id === 'tile-ns-workloads' && !showSysWl) return;
+        if (id === 'tile-ns-events' && !showSysEvt) return;
       }
       var opt = document.createElement('option');
       opt.value = n;
@@ -299,28 +299,38 @@ function switchTab(tab) {
 // ─── Overview update ──────────────────────────────────────────────────────────
 async function updateOverview() {
   try {
-    var [s, incidents] = await Promise.all([
+    var showSysGlobal = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
+    var [s, incidents, allPods] = await Promise.all([
       fetchAuth('/api/summary').then(function(r){ return r.json(); }),
-      fetchAuth('/api/incidents').then(function(r){ return r.json(); }).catch(function(){ return []; })
+      fetchAuth('/api/incidents').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+      fetchAuth('/api/pods').then(function(r){ return r.json(); }).catch(function(){ return []; })
     ]);
-    incidents = incidents || [];
-    var healthIncidents = incidents.filter(function(i) { return !i.isWaste; });
-    var critIncs = healthIncidents.filter(function(i) { return i.severity === 'CRITICAL' || i.severity === 'critical'; });
-    var warnIncs = healthIncidents.filter(function(i) { return i.severity === 'WARNING' || i.severity === 'warning'; });
-
+    allPods = allPods || [];
+    var nsPods = activeNs ? allPods.filter(function(p){ return p.namespace === activeNs; }) : allPods;
+    var filteredPods = showSysGlobal ? nsPods : nsPods.filter(function(p){ return !_SYSTEM_NS[p.namespace]; });
+    var byPhase = {};
+    filteredPods.forEach(function(p){ byPhase[p.phase] = (byPhase[p.phase]||0)+1; });
     var nodes   = s.nodes || [];
-    var byPhase = s.podsByPhase || {};
     var eff     = s.efficiency || 0;
     var running = byPhase['Running'] || 0;
     var total   = Object.values(byPhase).reduce(function(a,b){ return a+b; }, 0);
     var issues  = nodes.filter(function(n){ return n.status !== 'Running'; }).length;
 
+    incidents = incidents || [];
+    var nsIncidents = activeNs ? incidents.filter(function(i){ return i.namespace === activeNs; }) : incidents;
+    var healthIncidents = nsIncidents.filter(function(i) { return !i.isWaste && (showSysGlobal || !_SYSTEM_NS[i.namespace]); });
+    var critIncs = healthIncidents.filter(function(i) { return i.severity === 'CRITICAL' || i.severity === 'critical'; });
+    var warnIncs = healthIncidents.filter(function(i) { return i.severity === 'WARNING' || i.severity === 'warning'; });
+
     document.getElementById('kN').textContent  = nodes.length;
     document.getElementById('kNs').textContent = issues > 0 ? issues + ' with issues' : 'All healthy';
     document.getElementById('kR').textContent  = running;
     document.getElementById('kRs').textContent = 'of ' + total + ' total';
+    var kFailCard = document.getElementById('kFailCard');
     document.getElementById('kF').textContent  = critIncs.length;
-    document.getElementById('kFs').textContent = warnIncs.length + ' warnings';
+    var w = warnIncs.length;
+    document.getElementById('kFs').textContent = critIncs.length + ' crítico' + (critIncs.length !== 1 ? 's' : '') + ' • ' + w + ' warning' + (w !== 1 ? 's' : '');
+    kFailCard.className = 'kpi' + (critIncs.length > 0 ? ' c-red' : w > 0 ? ' c-orange' : ' c-green') + ' kpi-clickable';
     // kE/kEs kept for compat (element may be absent after layout v0.10.7+)
     var _kE = document.getElementById('kE'); if (_kE) { _kE.textContent = eff.toFixed(1) + '%'; }
     var _kEs = document.getElementById('kEs'); if (_kEs) { _kEs.textContent = s.cpuRequested + 'm / ' + s.cpuAllocatable + 'm'; }
@@ -421,7 +431,7 @@ async function updateOverview() {
       document.getElementById('kMem').textContent  = (topByMem[0].memUsage || 0) + 'Mi';
       document.getElementById('kMems').textContent = topByMem[0].name || '--';
     }
-    renderOverviewWorkloads(m);
+    renderOverviewEvents();
 
     var waste = m.filter(function(p){ return Number(p.potentialSavingMCpu || 0) > 0; });
     // ── Waste KPI card ────────────────────────────────────────────────────────
@@ -465,110 +475,208 @@ async function updateOverview() {
     }
 
     document.getElementById('lastUp').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+    var ctxNs = document.getElementById('ctx-ns');
+    if (ctxNs) ctxNs.textContent = (activeNs || 'All Namespaces');
+
+    var ctxPods = document.getElementById('ctx-pods');
+    if (ctxPods) ctxPods.textContent = (allPods.length) + ' pods';
+
+    var ctxWarn = document.getElementById('ctx-warnings');
+    if (ctxWarn) {
+      var warnCount = incidents && incidents.length ? incidents.length : (s.failedPods || 0);
+      ctxWarn.textContent = warnCount + ' warning' + (warnCount !== 1 ? 's' : '');
+      ctxWarn.style.color = warnCount > 0 ? 'var(--orange)' : 'var(--green)';
+    }
+
+    var ctxUpdated = document.getElementById('ctx-updated');
+    if (ctxUpdated) ctxUpdated.textContent = new Date().toLocaleTimeString();
   } catch(e) { console.error('Sentinel overview error:', e); }
 }
 
-// ─── Overview Top Workloads — sortable table ──────────────────────────────────
-function renderOverviewWorkloads(data) {
-  var m = data || lastMetrics;
-  
-  var viewNs = tileNs.workloads || activeNs;
-  var showSys = document.getElementById('workloads-show-system') ? document.getElementById('workloads-show-system').checked : false;
-  
-  m = m.filter(function(p) {
-    return (!viewNs || p.namespace === viewNs) && (showSys || !_SYSTEM_NS[p.namespace]);
-  });
+// ─── Overview Recent Events ─────────────────────────────────────────────────────
+var lastEvents = [];
+var eventsSort = { col: 'age', dir: 'desc' };
 
-  // add computed wastePct field for sort (may be missing from API)
-  m = m.map(function(p) {
-    var pct = (p.cpuRequestPresent && p.cpuRequest > 0) ? (p.cpuUsage / p.cpuRequest * 100) : 0;
-    return Object.assign({}, p, { _utilPct: pct });
-  });
+async function renderOverviewEvents() {
+  try {
+    var showSysEvt = document.getElementById('events-show-system') ? document.getElementById('events-show-system').checked : false;
+    var ns = document.getElementById('tile-ns-events') ? document.getElementById('tile-ns-events').value : '';
+    var url = '/api/events';
+    if (ns) url += '?namespace=' + encodeURIComponent(ns);
+    var events = await (await fetchAuth(url)).json();
+    events = events || [];
+    lastEvents = showSysEvt ? events : events.filter(function(e){ return !_SYSTEM_NS[e.namespace]; });
 
-  // determine sort col — map UI col to data field
-  var col = overviewSort.col;
-  var sorted = m.slice().sort(function(a, b) {
-    var av = col === 'wastePct' ? (a.potentialSavingMCpu||0) : (a[col] !== undefined ? a[col] : (a._utilPct||0));
-    var bv = col === 'wastePct' ? (b.potentialSavingMCpu||0) : (b[col] !== undefined ? b[col] : (b._utilPct||0));
-    if (typeof av === 'string') av = av.toLowerCase();
-    if (typeof bv === 'string') bv = bv.toLowerCase();
-    if (av < bv) return overviewSort.dir === 'asc' ? -1 : 1;
-    if (av > bv) return overviewSort.dir === 'asc' ? 1 : -1;
-    return 0;
-  });
+    document.getElementById('evtcnt').textContent = lastEvents.length + ' events';
 
-  // update th classes
-  document.querySelectorAll('#whead .th-sort').forEach(function(th) {
-    th.classList.remove('asc', 'desc');
-    if (th.dataset.col === overviewSort.col) th.classList.add(overviewSort.dir);
-  });
-
-  var rows = '';
-  sorted.slice(0, 15).forEach(function(p, i) {
-    var pct = p._utilPct;
-    var fc  = pct > 70 ? 'var(--green)' : pct > 40 ? 'var(--orange)' : 'var(--red)';
-    var hasSaving = Number(p.potentialSavingMCpu || 0) > 0;
-    var wasteBadge = hasSaving
-      ? '<span style="color:var(--orange);font-size:.78em;font-family:monospace">-' + Number(p.potentialSavingMCpu) + 'm</span>'
-      : '<span style="color:var(--green)">&#10003;</span>';
-    var oppText = hasSaving
-      ? '<span style="color:var(--orange);font-size:.76em">Overprovisioned &mdash; reduce request</span>'
-      : '<span style="color:var(--green);font-size:.76em">Rightsized</span>';
-    var rowClass = hasSaving ? ' class="waste-row-hl"' : '';
-    rows += '<tr' + rowClass + '>' +
-      '<td style="color:var(--text-dim);font-size:.78em">' + (i+1) + '</td>' +
-      '<td class="mono" title="' + esc(p.name||'--') + '" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78em">' +
-        '<span class="pod-name-link" data-idx="' + i + '" style="cursor:pointer;color:var(--cyan);text-decoration:underline dotted">' + esc(p.name||'--') + '</span>' +
-      '</td>' +
-      '<td><span class="ns-tag" style="font-size:.72em">' + esc(p.namespace||'--') + '</span></td>' +
-      '<td class="mono" style="color:var(--cyan);font-size:.78em">' + p.cpuUsage + 'm</td>' +
-      '<td><div class="util-wrap"><div class="util-bg"><div class="util-fill" style="width:' + Math.min(pct,100).toFixed(0) + '%;background:' + fc + '"></div></div>' +
-          '<span class="util-pct" style="font-size:.72em">' + pct.toFixed(0) + '%</span></div></td>' +
-      '<td>' + wasteBadge + '</td>' +
-      '<td>' + oppText + '</td>' +
-      '</tr>';
-  });
-  document.getElementById('wbody').innerHTML = rows ||
-    '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:16px">No workload data</td></tr>';
+    var rows = '';
+    lastEvents.slice(0, 10).forEach(function(e, i) {
+      var typeClass = e.type === 'Warning' ? 'b-warn' : e.type === 'Normal' ? 'b-ok' : 'b-warn';
+      var msg = esc(e.message || '--');
+      if (msg.length > 80) msg = msg.substring(0, 77) + '...';
+      rows += '<tr>' +
+        '<td><span class="badge ' + typeClass + '" style="font-size:.7em">' + esc(e.type||'--') + '</span></td>' +
+        '<td style="font-size:.78em;color:var(--text-dim)">' + esc(e.reason||'--') + '</td>' +
+        '<td style="font-size:.78em;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
+        '<td style="font-size:.72em"><span class="ns-tag">' + esc(e.namespace||'--') + '</span></td>' +
+        '<td style="font-size:.72em;color:var(--text-dim)">' + esc(e.age||'--') + '</td>' +
+        '<td style="font-size:.72em;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'') + '">' + msg + '</td>' +
+        '</tr>';
+    });
+    document.getElementById('evtbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No events</td></tr>';
+  } catch(e) { console.error('events error:', e); }
 }
 
-// attach sort handlers to overview workloads header (runs once after DOM ready)
-document.querySelectorAll('#whead .th-sort').forEach(function(th) {
-  th.addEventListener('click', function() {
-    var col = th.dataset.col;
-    if (overviewSort.col === col) {
-      overviewSort.dir = overviewSort.dir === 'desc' ? 'asc' : 'desc';
-    } else {
-      overviewSort.col = col;
-      overviewSort.dir = 'desc';
-    }
-    renderOverviewWorkloads();
-  });
-});
+// ─── Drawer: Events ─────────────────────────────────────────────────────────────
+var _evtDrawerState = { ns: '', showSys: false, search: '' };
+var _evtDrawerAbortable = null;
+var _evtDrawerSearchTimer = null;
+var _evtDrawerReqId = 0;
 
-// delegate pod-name clicks in workloads table → detail drawer
-document.getElementById('wbody').addEventListener('click', function(e) {
-  var link = e.target.closest('.pod-name-link');
-  if (!link) return;
-  var idx = parseInt(link.dataset.idx, 10);
-  // rebuild sorted list the same way renderOverviewWorkloads does
-  var m = lastMetrics.map(function(p) {
-    var pct = (p.cpuRequestPresent && p.cpuRequest > 0) ? (p.cpuUsage / p.cpuRequest * 100) : 0;
-    return Object.assign({}, p, { _utilPct: pct });
-  });
-  var col = overviewSort.col;
-  var sorted = m.slice().sort(function(a, b) {
-    var av = col === 'wastePct' ? (a.potentialSavingMCpu||0) : (a[col] !== undefined ? a[col] : (a._utilPct||0));
-    var bv = col === 'wastePct' ? (b.potentialSavingMCpu||0) : (b[col] !== undefined ? b[col] : (b._utilPct||0));
-    if (typeof av === 'string') av = av.toLowerCase();
-    if (typeof bv === 'string') bv = bv.toLowerCase();
-    if (av < bv) return overviewSort.dir === 'asc' ? -1 : 1;
-    if (av > bv) return overviewSort.dir === 'asc' ? 1 : -1;
-    return 0;
-  });
-  var pod = sorted[idx];
-  if (pod) openPodDetailDrawer(pod);
-});
+function openEventsDrawer() {
+  var curNs = document.getElementById('tile-ns-events') ? document.getElementById('tile-ns-events').value : '';
+  var curShowSys = document.getElementById('events-show-system') ? document.getElementById('events-show-system').checked : false;
+  _evtDrawerState = { ns: curNs, showSys: curShowSys, search: '' };
+  openDrawer('Recent Events — Full Log', renderEventsDrawer);
+}
+
+async function renderEventsDrawer() {
+  try {
+    var nsFilter = _evtDrawerState.ns;
+    var showSysEvt = _evtDrawerState.showSys;
+    var searchVal = _evtDrawerState.search;
+
+    var myReqId = ++_evtDrawerReqId;
+
+    if (_evtDrawerAbortable) _evtDrawerAbortable.abort();
+    var ctrl = new AbortController();
+    _evtDrawerAbortable = ctrl;
+
+    var url = '/api/events';
+    var events = await (await fetchAuth(url, { signal: ctrl.signal })).json();
+    if (myReqId !== _evtDrawerReqId) return;
+    events = events || [];
+
+    var filtered = events.filter(function(e) {
+      if (!showSysEvt && _SYSTEM_NS[e.namespace]) return false;
+      if (searchVal && !(e.name||'').toLowerCase().includes(searchVal) && !(e.message||'').toLowerCase().includes(searchVal) && !(e.reason||'').toLowerCase().includes(searchVal)) return false;
+      return true;
+    });
+
+    if (nsFilter) {
+      filtered = filtered.filter(function(e){ return e.namespace === nsFilter; });
+    }
+
+    filtered = filtered.slice().sort(function(a, b) {
+      var av, bv;
+      if (eventsSort.col === 'age') {
+        av = a._ts || 0; bv = b._ts || 0;
+      } else {
+        av = a[eventsSort.col] || ''; bv = b[eventsSort.col] || '';
+        if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      }
+      if (av < bv) return eventsSort.dir === 'asc' ? -1 : 1;
+      if (av > bv) return eventsSort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    var nsSet = {};
+    events.forEach(function(e){ if (showSysEvt || !_SYSTEM_NS[e.namespace]) nsSet[e.namespace] = 1; });
+
+    var allNs = await (await fetchAuth('/api/namespaces')).json();
+    allNs = allNs || [];
+    var nsForSelect = {};
+    allNs.forEach(function(n) {
+      if (showSysEvt || !_SYSTEM_NS[n]) nsForSelect[n] = 1;
+    });
+    var nsOpts = '<option value="">All Namespaces</option>' + Object.keys(nsForSelect).sort().map(function(n){ return '<option value="'+esc(n)+'"'+(nsFilter===n?' selected':'')+'>' + esc(n) + '</option>'; }).join('');
+
+    var tableHTML = '';
+    if (!filtered.length) {
+      tableHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px">No events matching filters</div>';
+    } else {
+      tableHTML = '<table class="wtable"><thead><tr id="devthead">' +
+        makeSortHeader('Type', 'type', eventsSort) +
+        makeSortHeader('Reason', 'reason', eventsSort) +
+        makeSortHeader('Object', 'name', eventsSort) +
+        makeSortHeader('NS', 'namespace', eventsSort) +
+        makeSortHeader('Age', 'age', eventsSort) +
+        '<th>Message</th>' +
+        '</tr></thead><tbody>';
+
+      filtered.forEach(function(e) {
+        var typeClass = e.type === 'Warning' ? 'b-warn' : e.type === 'Normal' ? 'b-ok' : 'b-warn';
+        tableHTML += '<tr>' +
+          '<td><span class="badge ' + typeClass + '" style="font-size:.7em">' + esc(e.type||'--') + '</span></td>' +
+          '<td style="font-size:.78em;color:var(--text-dim)">' + esc(e.reason||'--') + '</td>' +
+          '<td style="font-size:.78em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
+          '<td style="font-size:.72em"><span class="ns-tag">' + esc(e.namespace||'--') + '</span></td>' +
+          '<td style="font-size:.72em;color:var(--text-dim)">' + esc(e.age||'--') + '</td>' +
+          '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'') + '">' + esc(e.message||'--') + '</td>' +
+          '</tr>';
+      });
+      tableHTML += '</tbody></table>';
+    }
+
+    var existingTable = document.getElementById('devt-table');
+    if (!existingTable) {
+      var controlsHTML = '<div style="padding:0 0 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
+        '<input class="dtool-input" id="devt-search" placeholder="search reason, object, message..." value="' + esc(searchVal) + '" style="flex:1;min-width:200px">' +
+        '<select id="devt-ns" class="dtool-select">' + nsOpts + '</select>' +
+        '</div>';
+      drawerHTML(controlsHTML + '<div id="devt-table">' + tableHTML + '</div>');
+
+      var searchInput = document.getElementById('devt-search');
+      var nsSelect = document.getElementById('devt-ns');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          clearTimeout(_evtDrawerSearchTimer);
+          _evtDrawerSearchTimer = setTimeout(function() {
+            _evtDrawerState.search = searchInput.value.toLowerCase();
+            renderEventsDrawer();
+          }, 300);
+        });
+      }
+      if (nsSelect) {
+        nsSelect.addEventListener('change', function() {
+          _evtDrawerState.ns = nsSelect.value;
+          renderEventsDrawer();
+        });
+      }
+      document.querySelectorAll('#devthead .th-sort').forEach(function(th) {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', function() {
+          var col = th.dataset.col;
+          if (eventsSort.col === col) {
+            eventsSort.dir = eventsSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            eventsSort.col = col; eventsSort.dir = 'asc';
+          }
+          renderEventsDrawer();
+        });
+      });
+    } else {
+      existingTable.innerHTML = tableHTML;
+      var searchInput = document.getElementById('devt-search');
+      var nsSelect = document.getElementById('devt-ns');
+      if (searchInput) searchInput.focus();
+      if (nsSelect) nsSelect.value = nsFilter;
+      document.querySelectorAll('#devthead .th-sort').forEach(function(th) {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', function() {
+          var col = th.dataset.col;
+          if (eventsSort.col === col) {
+            eventsSort.dir = eventsSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            eventsSort.col = col; eventsSort.dir = 'asc';
+          }
+          renderEventsDrawer();
+        });
+      });
+    }
+  } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
+}
 
 // ─── Pod Detail Drawer ────────────────────────────────────────────────────────
 function openPodDetailDrawer(p) {
@@ -629,21 +737,13 @@ function openPodDetailDrawer(p) {
   openDrawer('Pod Detail — Waste Analysis', function(el) { drawerHTML(html); });
 }
 
-var _finopsSysLabel = document.getElementById('finops-sys-label');
-if (_finopsSysLabel) _finopsSysLabel.addEventListener('click', function(e) { e.stopPropagation(); });
-
-var _finopsSysToggle = document.getElementById('finops-show-system');
-if (_finopsSysToggle) _finopsSysToggle.addEventListener('change', function() {
-  renderDropdowns();
-  fetchChart();
-});
 
 // ─── Financial Correlation chart (independent of 5s loop) ────────────────────
 async function fetchChart() {
   try {
     var url, forecastUrl;
     var chartNs = tileNs.finops || activeNs;
-    var showSys = _finopsSysToggle ? _finopsSysToggle.checked : false;
+    var showSys = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
     if (activeRange === 'custom' && customFrom && customTo) {
       url = '/api/history?range=custom&from=' + encodeURIComponent(customFrom) + '&to=' + encodeURIComponent(customTo) + '&system=' + showSys;
       if (chartNs) url += '&namespace=' + encodeURIComponent(chartNs);
@@ -699,7 +799,7 @@ function updateForecastCard(fData) {
     card.style.display = 'none';
     return;
   }
-  card.style.display = '';
+  card.style.display = _fcVisible ? '' : 'none';
   var projBudget = fData.reduce(function(s, p) { return s + p.reqCost; }, 0);
   var projUsage  = fData.reduce(function(s, p) { return s + p.useCost; }, 0);
   var projWaste  = projBudget - projUsage;
@@ -834,7 +934,7 @@ async function renderFinOpsDrawer() {
   try {
     var range = finopsDrawerRange || activeRange;
     var chartNs = tileNs.finops || activeNs;
-    var showSys = _finopsSysToggle ? _finopsSysToggle.checked : false;
+    var showSys = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
     var url = '/api/history?range=' + range + '&system=' + showSys;
     if (chartNs) url += '&namespace=' + encodeURIComponent(chartNs);
     var h = await (await fetchAuth(url)).json();
@@ -856,6 +956,8 @@ async function renderFinOpsDrawer() {
     }).join('');
 
     var toolbar = '<div class="drawer-toolbar">' +
+      '<button class="grade-info-btn" id="finops-info-btn">ⓘ What these metrics mean</button>' +
+      '<div class="dtool-sep"></div>' +
       '<span class="dtool-label">Period</span>' +
       '<select class="dtool-select" id="dfinops-range">' + rangeOpts + '</select>' +
       '<div class="dtool-sep"></div>' +
@@ -940,6 +1042,28 @@ async function renderFinOpsDrawer() {
     });
 
     attachSortHandlers('', renderFinOpsDrawer);
+
+    document.getElementById('finops-info-btn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var tip = document.getElementById('finops-legend-tip');
+      if (!tip) return;
+      if (tip.classList.contains('visible')) {
+        tip.classList.remove('visible');
+      } else {
+        var rect = this.getBoundingClientRect();
+        tip.style.top = (rect.bottom + 6) + 'px';
+        tip.style.left = rect.left + 'px';
+        tip.style.bottom = 'auto';
+        tip.classList.add('visible');
+        var tipRect = tip.getBoundingClientRect();
+        if (tipRect.bottom > window.innerHeight - 10) {
+          tip.style.top = (rect.top - tipRect.height - 6) + 'px';
+        }
+        if (tipRect.right > window.innerWidth - 10) {
+          tip.style.left = (window.innerWidth - tipRect.width - 10) + 'px';
+        }
+      }
+    });
   } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error loading FinOps data: ' + esc(e.message) + '</div>'); }
 }
 
@@ -1093,8 +1217,19 @@ document.addEventListener('click', function(e) {
       closeGradeLegend();
     }
   }
+  var ftip = document.getElementById('finops-legend-tip');
+  if (ftip && ftip.classList.contains('visible')) {
+    var btn = document.getElementById('finops-info-btn');
+    if (!btn || !btn.contains(e.target)) {
+      ftip.classList.remove('visible');
+    }
+  }
 });
-window.addEventListener('scroll', closeGradeLegend, true);
+window.addEventListener('scroll', function() {
+  var ftip = document.getElementById('finops-legend-tip');
+  if (ftip) ftip.classList.remove('visible');
+  closeGradeLegend();
+}, true);
 
 function gradeColor(g) {
   return g === 'A' ? 'var(--green)' : g === 'B' ? 'var(--cyan)' : g === 'C' ? '#fbbf24' : g === 'D' ? '#f97316' : 'var(--red)';
@@ -1191,7 +1326,7 @@ async function updateEfficiency() {
     var url = '/api/efficiency' + (inclSystem ? '?system=true' : '');
     var data = await (await fetchAuth(url)).json();
     lastEfficiency = data || [];
-    
+
     var viewNs = tileNs.eff || activeNs;
     if (viewNs) {
       lastEfficiency = lastEfficiency.filter(function(n) { return n.namespace === viewNs; });
@@ -1200,10 +1335,9 @@ async function updateEfficiency() {
     var tbody = document.getElementById('eff-ns-body');
     var badge = document.getElementById('eff-badge');
     var unmBadge = document.getElementById('eff-unmanaged-badge');
-    if (!tbody) return;
 
     if (!lastEfficiency.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);padding:16px;font-size:.84em">No data</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);padding:16px;font-size:.84em">No data</td></tr>';
       return;
     }
 
@@ -1222,8 +1356,8 @@ async function updateEfficiency() {
     var managed = lastEfficiency.filter(function(n){ return !n.unmanaged; });
     if (badge) {
       if (managed.length) {
-        var worst = managed[0]; // API already sorted worst first
-        badge.textContent = 'Worst: ' + worst.namespace + ' — Grade ' + worst.grade;
+        var worst = managed[0];
+        badge.textContent = 'Worst: ' + worst.namespace + ' — ' + worst.grade;
         badge.className = 'badge';
         badge.style.cssText = gradeBadgeStyle(worst.grade);
       } else {
@@ -1232,8 +1366,68 @@ async function updateEfficiency() {
       }
     }
 
-    renderEfficiencyRows();
-    attachPanelSortHandlers('eff-thead', effSort, renderEfficiencyRows);
+    // ── Compact donut (eff-panel-compact) ─────────────────────────────
+    var grades = ['A','B','C','D','F','UNMANAGED'];
+    var gradeColorsHex = ['#00cc8f','#00b4ff','#fbbf24','#f97316','#e54949','#a855f7'];
+    var gCount = {A:0,B:0,C:0,D:0,F:0,UNMANAGED:0};
+    var totalScore = 0, scoredCount = 0;
+    lastEfficiency.forEach(function(n) {
+      if (n.grade === 'UNMANAGED' || n.unmanaged) gCount.UNMANAGED++;
+      else if (gCount[n.grade] !== undefined) gCount[n.grade]++;
+      if (!n.unmanaged && n.score > 0) { totalScore += n.score; scoredCount++; }
+    });
+    var donutLabels = grades.filter(function(g){ return gCount[g] > 0; });
+    var donutData = donutLabels.map(function(g){ return gCount[g]; });
+    var donutColors = donutLabels.map(function(g){ return gradeColorsHex[grades.indexOf(g)]; });
+    uDonut('effDonut', donutLabels, donutData, donutColors);
+    uDonut('effDonut2', donutLabels, donutData, donutColors);
+
+    var avgScore = scoredCount > 0 ? (totalScore / scoredCount) : 0;
+    var avgEl = document.getElementById('eff-avg-score');
+    if (avgEl) avgEl.textContent = avgScore.toFixed(0) + '%';
+    var avgEl2 = document.getElementById('eff-avg-score2');
+    if (avgEl2) avgEl2.textContent = avgScore.toFixed(0) + '%';
+
+    var legendEl = document.getElementById('eff-donut-legend');
+    if (legendEl) {
+      legendEl.innerHTML = donutLabels.map(function(g) {
+        return '<div class="edl"><b class="edl-dot" style="background:' + gradeColorsHex[grades.indexOf(g)] + '"></b><span class="edl-name">' + g + '</span><span class="edl-val">' + gCount[g] + '</span></div>';
+      }).join('');
+    }
+    var legendEl2 = document.getElementById('eff-donut-legend2');
+    if (legendEl2) {
+      legendEl2.innerHTML = donutLabels.map(function(g) {
+        return '<div class="edl"><b class="edl-dot" style="background:' + gradeColorsHex[grades.indexOf(g)] + '"></b><span class="edl-name">' + g + '</span><span class="edl-val">' + gCount[g] + '</span></div>';
+      }).join('');
+    }
+
+    var worstEl = document.getElementById('eff-worst');
+    if (worstEl) {
+      var worst2 = managed.slice(0, 2);
+      if (worst2.length) {
+        worstEl.innerHTML = '<span style="color:var(--text-dim)">Worst: </span>' + worst2.map(function(n) {
+          return '<span class="ns-tag" style="margin-left:4px">' + n.namespace + ' <span style="color:' + (gradeColorsHex[grades.indexOf(n.grade)] || 'var(--text-dim)') + '">' + n.score.toFixed(0) + '%</span></span>';
+        }).join('');
+      } else {
+        worstEl.innerHTML = '';
+      }
+    }
+    var worstEl2 = document.getElementById('eff-worst2');
+    if (worstEl2) {
+      var worst3 = managed.slice(0, 3);
+      if (worst3.length) {
+        worstEl2.innerHTML = '<span style="color:var(--text-dim)">Worst: </span>' + worst3.map(function(n) {
+          return '<span class="ns-tag" style="margin-left:4px">' + n.namespace + ' <span style="color:' + (gradeColorsHex[grades.indexOf(n.grade)] || 'var(--text-dim)') + '">' + n.score.toFixed(0) + '% ' + n.grade + '</span></span>';
+        }).join('');
+      } else {
+        worstEl2.innerHTML = '';
+      }
+    }
+
+    if (tbody) {
+      renderEfficiencyRows();
+      attachPanelSortHandlers('eff-thead', effSort, renderEfficiencyRows);
+    }
   } catch(e) { console.error('efficiency update error:', e); }
 }
 
@@ -1308,6 +1502,17 @@ if (_workloadsSysToggle) _workloadsSysToggle.addEventListener('change', function
   updateWorkloads();
 });
 
+var _eventsSysToggle = document.getElementById('events-show-system');
+if (_eventsSysToggle) _eventsSysToggle.addEventListener('change', function() {
+  renderDropdowns();
+  renderOverviewEvents();
+});
+
+var _eventsNsSelect = document.getElementById('tile-ns-events');
+if (_eventsNsSelect) _eventsNsSelect.addEventListener('change', function() {
+  renderOverviewEvents();
+});
+
 var _globalSysToggle = document.getElementById('global-show-system');
 if (_globalSysToggle) _globalSysToggle.addEventListener('change', function() {
   renderDropdowns();
@@ -1380,11 +1585,7 @@ function closeDrawer() {
 }
 
 function drawerHTML(html) {
-  if (typeof DOMPurify !== 'undefined') {
-    document.getElementById('drawer-body').innerHTML = DOMPurify.sanitize(html);
-  } else {
-    document.getElementById('drawer-body').innerHTML = html;
-  }
+  document.getElementById('drawer-body').innerHTML = html;
 }
 
 // sort state per drawer
@@ -1609,20 +1810,23 @@ function openAlertsDrawer() {
 
 async function renderAlertsDrawer() {
   try {
+    var showSysGlobal = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
     var incidents = await (await fetchAuth('/api/incidents')).json();
     incidents = incidents || [];
-    
-    var critIncs = incidents.filter(function(i) { return i.severity === 'CRITICAL' || i.severity === 'critical'; });
-    var warnIncs = incidents.filter(function(i) { return i.severity === 'WARNING' || i.severity === 'warning'; });
+    var nsIncidents = activeNs ? incidents.filter(function(i){ return i.namespace === activeNs; }) : incidents;
+    var healthIncidents = nsIncidents.filter(function(i) { return !i.isWaste && (showSysGlobal || !_SYSTEM_NS[i.namespace]); });
+
+    var critIncs = healthIncidents.filter(function(i) { return i.severity === 'CRITICAL' || i.severity === 'critical'; });
+    var warnIncs = healthIncidents.filter(function(i) { return i.severity === 'WARNING' || i.severity === 'warning'; });
 
     var statsHtml = '<div class="drawer-stats">' +
       dstat('Critical', critIncs.length, critIncs.length > 0 ? 'var(--red)' : 'var(--green)') +
       dstat('Warnings', warnIncs.length, warnIncs.length > 0 ? 'var(--orange)' : 'var(--green)') +
-      dstat('Total Issues', incidents.length, incidents.length > 0 ? 'var(--orange)' : 'var(--green)') +
+      dstat('Total Issues', healthIncidents.length, healthIncidents.length > 0 ? 'var(--orange)' : 'var(--green)') +
     '</div>';
 
     var alertItems = '';
-    incidents.forEach(function(inc) {
+    healthIncidents.forEach(function(inc) {
       var isCrit = (inc.severity === 'CRITICAL' || inc.severity === 'critical');
       var color = isCrit ? 'var(--red)' : 'var(--orange)';
       var icon = isCrit ? '&#9888;' : '&#9203;';
@@ -1997,7 +2201,7 @@ function openWastePodDetail(entry, allEntries) {
     '</div>' +
 
     '<div style="font-size:.7em;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px">Recommendation</div>' +
-    '<div class="pod-detail-card" style="background:rgba(245,166,35,.06);border-color:rgba(245,166,35,.3)">' +
+    '<div class="pod-detail-card" style="background:rgba(240,112,0,.06);border-color:rgba(240,112,0,.3)">' +
       '<div style="font-size:.84em;color:var(--text-bright);line-height:1.6">' +
         'This pod is using <b style="color:var(--cyan)">' + entry.cpuUsage + 'm</b> CPU but requesting <b style="color:var(--text-bright)">' + entry.cpuRequest + 'm</b>. ' +
         'Consider setting <code style="color:var(--cyan);background:rgba(0,180,255,.1);padding:1px 5px;border-radius:3px">resources.requests.cpu: ' + Math.ceil(entry.cpuUsage * 1.3) + 'm</code> ' +
@@ -2253,7 +2457,7 @@ _bindExpand('ph-alerts', openAlertsDrawer);
 _bindExpand('ph-cpu', openCpuDrawer);
 _bindExpand('ph-mem', openMemDrawer);
 _bindExpand('ph-waste', openWasteDrawer);
-_bindExpand('ph-workloads', openWorkloadsDrawer);
+_bindExpand('ph-events', openEventsDrawer);
 _bindExpand('ph-finops', openFinOpsDrawer);
 // ─── Efficiency panel interactive elements ────────────────────────────────────
 var _effExpand = document.getElementById('eff-expand-btn');
@@ -2272,7 +2476,7 @@ if (_effSysToggle) _effSysToggle.addEventListener('change', function() {
 });
 
 // ─── Per-tile namespace selects ───────────────────────────────────────────────
-['tile-ns-pods','tile-ns-cpu','tile-ns-mem','tile-ns-finops','tile-ns-eff','tile-ns-workloads'].forEach(function(id) {
+['tile-ns-pods','tile-ns-cpu','tile-ns-mem','tile-ns-finops','tile-ns-eff','tile-ns-workloads','tile-ns-events'].forEach(function(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('click', function(e) { e.stopPropagation(); });
@@ -2283,7 +2487,7 @@ if (_effSysToggle) _effSysToggle.addEventListener('change', function() {
     if (key === 'pods') updatePodsTile();
     else if (key === 'cpu') updateCpuTile();
     else if (key === 'mem') updateMemTile();
-    else if (key === 'finops') fetchChart();
+    else if (key === 'finops') { fetchChart(); updateEfficiency(); }
     else if (key === 'eff') updateEfficiency();
     else updateWorkloads();
   });
@@ -2296,6 +2500,24 @@ document.getElementById('alertsBox').addEventListener('click', openAlertsDrawer)
 document.getElementById('cpuDonutWrap').addEventListener('click', openCpuDrawer);
 document.getElementById('memDonutWrap').addEventListener('click', openMemDrawer);
 document.getElementById('finops-chart-area').addEventListener('click', openFinOpsDrawer);
+
+var _finoTab = 'fino';
+function switchFinoTab(tab) {
+  _finoTab = tab;
+  var finoContent = document.getElementById('fino-content');
+  var effContent = document.getElementById('eff-content');
+  var finoBtn = document.getElementById('fino-tab-btn');
+  var effBtn = document.getElementById('eff-tab-btn');
+  if (finoContent) finoContent.style.display = tab === 'fino' ? '' : 'none';
+  if (effContent) effContent.style.display = tab === 'eff' ? '' : 'none';
+  if (finoBtn) finoBtn.className = 'fino-eff-tab' + (tab === 'fino' ? ' active' : '');
+  if (effBtn) effBtn.className = 'fino-eff-tab' + (tab === 'eff' ? ' active' : '');
+  var nsSel = document.getElementById('tile-ns-finops');
+  if (nsSel) nsSel.style.display = tab === 'fino' ? '' : 'none';
+}
+
+document.getElementById('fino-tab-btn').addEventListener('click', function(e) { e.stopPropagation(); switchFinoTab('fino'); });
+document.getElementById('eff-tab-btn').addEventListener('click', function(e) { e.stopPropagation(); switchFinoTab('eff'); });
 
 // wasteList: delegate to waste drawer (clicks on items or empty area)
 document.getElementById('wasteList').addEventListener('click', function(e) {
