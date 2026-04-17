@@ -1,12 +1,13 @@
 {{- if not .Values.postgresql.external }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "sentinel.fullname" . }}-postgresql
   labels:
     {{- include "sentinel.labels" . | nindent 4 }}
     app.kubernetes.io/component: database
 spec:
+  serviceName: {{ include "sentinel.fullname" . }}-postgresql
   replicas: 1
   selector:
     matchLabels:

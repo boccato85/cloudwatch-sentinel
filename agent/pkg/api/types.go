@@ -122,9 +122,10 @@ type HealthStatus struct {
 }
 
 type HealthResponse struct {
-	Status  string                  `json:"status"`
-	Version string                  `json:"version"`
-	Checks  map[string]HealthStatus `json:"checks"`
+	Status         string                  `json:"status"`
+	Version        string                  `json:"version"`
+	DBBreakerState string                  `json:"db_breaker_state,omitempty"`
+	Checks         map[string]HealthStatus `json:"checks"`
 }
 
 type ForecastPoint struct {

@@ -152,7 +152,7 @@ func writeJSONError(w http.ResponseWriter, status int, msg string) {
 
 func (a *API) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !a.AuthEnabled {
+		if !a.AuthEnabled || r.URL.Path == "/health" {
 			next.ServeHTTP(w, r)
 			return
 		}

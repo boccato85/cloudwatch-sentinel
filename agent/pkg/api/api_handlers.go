@@ -49,12 +49,19 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	breakerState := store.DBBreaker.State()
+
 	resp := HealthResponse{
-		Status:  "ok",
-		Version: a.AgentVersion,
-		Checks:  make(map[string]HealthStatus),
+		Status:         "ok",
+		Version:        a.AgentVersion,
+		DBBreakerState: breakerState,
+		Checks:         make(map[string]HealthStatus),
 	}
 	httpStatus := http.StatusOK
+
+	if breakerState != "CLOSED" {
+		resp.Status = "degraded"
+	}
 
 	dbStart := time.Now()
 	pingCtx, pingCancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -63,8 +70,7 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	dbLatency := time.Since(dbStart).Milliseconds()
 	if dbErr != nil {
 		resp.Checks["database"] = HealthStatus{Status: "unhealthy", Message: dbErr.Error()}
-		resp.Status = "unhealthy"
-		httpStatus = http.StatusServiceUnavailable
+		resp.Status = "degraded"
 	} else {
 		resp.Checks["database"] = HealthStatus{Status: "ok", LatencyMs: &dbLatency}
 	}
@@ -76,10 +82,7 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	k8sLatency := time.Since(k8sStart).Milliseconds()
 	if k8sErr != nil {
 		resp.Checks["k8s_api"] = HealthStatus{Status: "unhealthy", Message: k8sErr.Error()}
-		if resp.Status == "ok" {
-			resp.Status = "degraded"
-			httpStatus = http.StatusServiceUnavailable
-		}
+		resp.Status = "degraded"
 	} else {
 		resp.Checks["k8s_api"] = HealthStatus{Status: "ok", LatencyMs: &k8sLatency}
 	}
@@ -91,10 +94,7 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	metricsLatency := time.Since(metricsStart).Milliseconds()
 	if metricsErr != nil {
 		resp.Checks["metrics_api"] = HealthStatus{Status: "unhealthy", Message: metricsErr.Error()}
-		if resp.Status == "ok" {
-			resp.Status = "degraded"
-			httpStatus = http.StatusServiceUnavailable
-		}
+		resp.Status = "degraded"
 	} else {
 		resp.Checks["metrics_api"] = HealthStatus{Status: "ok", LatencyMs: &metricsLatency}
 	}
@@ -102,10 +102,7 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	last := a.GetLastCollectTime()
 	if last.IsZero() {
 		resp.Checks["collector"] = HealthStatus{Status: "starting", Message: "no collect completed yet"}
-		if resp.Status == "ok" {
-			resp.Status = "degraded"
-			httpStatus = http.StatusServiceUnavailable
-		}
+		resp.Status = "degraded"
 	} else {
 		ago := time.Since(last)
 		agoSec := int64(ago.Seconds())
@@ -114,10 +111,7 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 				Status:  "degraded",
 				Message: fmt.Sprintf("last collect %ds ago (threshold: %ds)", agoSec, int64(a.CollectorStaleThreshold.Seconds())),
 			}
-			if resp.Status == "ok" {
-				resp.Status = "degraded"
-				httpStatus = http.StatusServiceUnavailable
-			}
+			resp.Status = "degraded"
 		} else {
 			resp.Checks["collector"] = HealthStatus{Status: "ok", LatencyMs: &agoSec}
 		}
@@ -281,7 +275,12 @@ func (a *API) handleHistory(w http.ResponseWriter, r *http.Request) {
 		}
 		queryCtx, queryCancel := context.WithTimeout(r.Context(), customTimeout)
 		defer queryCancel()
-		rows, err := store.DB.QueryContext(queryCtx, customQuery, queryArgs...)
+		var rows *sql.Rows
+		err = store.DBBreaker.Execute(func() error {
+			var e error
+			rows, e = store.DB.QueryContext(queryCtx, customQuery, queryArgs...)
+			return e
+		})
 		if err != nil {
 			writeJSONError(w, http.StatusInternalServerError, "internal server error")
 			return
@@ -348,7 +347,12 @@ func (a *API) handleHistory(w http.ResponseWriter, r *http.Request) {
 	queryCtx, queryCancel := context.WithTimeout(r.Context(), timeout)
 	defer queryCancel()
 
-	rows, err := store.DB.QueryContext(queryCtx, query, queryArgs...)
+	var rows *sql.Rows
+	err := store.DBBreaker.Execute(func() error {
+		var e error
+		rows, e = store.DB.QueryContext(queryCtx, query, queryArgs...)
+		return e
+	})
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "internal server error")
 		return
@@ -390,7 +394,12 @@ func (a *API) handleHistory(w http.ResponseWriter, r *http.Request) {
 		}
 		fbCtx, fbCancel := context.WithTimeout(r.Context(), timeout)
 		defer fbCancel()
-		fbRows, fbErr := store.DB.QueryContext(fbCtx, fallbackQuery, queryArgs...)
+		var fbRows *sql.Rows
+		fbErr := store.DBBreaker.Execute(func() error {
+			var e error
+			fbRows, e = store.DB.QueryContext(fbCtx, fallbackQuery, queryArgs...)
+			return e
+		})
 		if fbErr == nil {
 			defer fbRows.Close()
 			fbPoints, fbScanErr := scanPoints(fbRows, "01/02 15:04")
@@ -793,7 +802,12 @@ func (a *API) handleForecast(w http.ResponseWriter, r *http.Request) {
 	queryCtx, queryCancel := context.WithTimeout(r.Context(), timeout)
 	defer queryCancel()
 
-	rows, err := store.DB.QueryContext(queryCtx, histQuery, queryArgs...)
+	var rows *sql.Rows
+	err := store.DBBreaker.Execute(func() error {
+		var e error
+		rows, e = store.DB.QueryContext(queryCtx, histQuery, queryArgs...)
+		return e
+	})
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "internal server error")
 		return

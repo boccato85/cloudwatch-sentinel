@@ -36,16 +36,19 @@ func LogSQLError(operation string, err error) {
 
 func EnsureSchema(ctx context.Context) error {
 	// Migration: rename legacy 'timestamp' column to 'recorded_at' if needed
-	_, _ = DB.ExecContext(ctx, `
-		DO $$ BEGIN
-			IF EXISTS (
-				SELECT 1 FROM information_schema.columns
-				WHERE table_name='metrics' AND column_name='timestamp'
-			) THEN
-				ALTER TABLE metrics RENAME COLUMN timestamp TO recorded_at;
-			END IF;
-		END $$;
-	`)
+	_ = DBBreaker.Execute(func() error {
+		_, err := DB.ExecContext(ctx, `
+			DO $$ BEGIN
+				IF EXISTS (
+					SELECT 1 FROM information_schema.columns
+					WHERE table_name='metrics' AND column_name='timestamp'
+				) THEN
+					ALTER TABLE metrics RENAME COLUMN timestamp TO recorded_at;
+				END IF;
+			END $$;
+		`)
+		return err
+	})
 
 	schema := `
 	-- Raw metrics (retained for RETENTION_RAW_HOURS, default 24h)
@@ -111,8 +114,10 @@ func EnsureSchema(ctx context.Context) error {
 	);
 	CREATE INDEX IF NOT EXISTS idx_cost_history_recorded_at ON cost_history(recorded_at);
 	`
-	_, err := DB.ExecContext(ctx, schema)
-	return err
+	return DBBreaker.Execute(func() error {
+		_, err := DB.ExecContext(ctx, schema)
+		return err
+	})
 }
 
 // AggregateHourlyMetrics aggregates raw metrics older than 1 hour into hourly buckets
@@ -142,8 +147,10 @@ func AggregateHourlyMetrics(ctx context.Context) error {
 		avg_mem_request = EXCLUDED.avg_mem_request,
 		sample_count = EXCLUDED.sample_count
 	`
-	_, err := DB.ExecContext(ctx, query)
-	return err
+	return DBBreaker.Execute(func() error {
+		_, err := DB.ExecContext(ctx, query)
+		return err
+	})
 }
 
 // AggregateDailyMetrics aggregates hourly metrics older than 1 day into daily buckets
@@ -173,8 +180,10 @@ func AggregateDailyMetrics(ctx context.Context) error {
 		avg_mem_request = EXCLUDED.avg_mem_request,
 		sample_count = EXCLUDED.sample_count
 	`
-	_, err := DB.ExecContext(ctx, query)
-	return err
+	return DBBreaker.Execute(func() error {
+		_, err := DB.ExecContext(ctx, query)
+		return err
+	})
 }
 
 // StartRetentionWorker runs aggregation and cleanup jobs periodically
@@ -228,29 +237,42 @@ func RunRetentionJobs(rawHours, hourlyDays, dailyDays int) {
 func CleanupOldMetrics(ctx context.Context, rawHours, hourlyDays, dailyDays int) (int64, int64, int64, error) {
 	var rawDeleted, hourlyDeleted, dailyDeleted int64
 
-	// Delete raw metrics older than retention period (keep only last hour for aggregation)
-	res, err := DB.ExecContext(ctx, `DELETE FROM metrics WHERE recorded_at < NOW() - INTERVAL '1 hour' * $1`, rawHours)
+	var res sql.Result
+	err := DBBreaker.Execute(func() error {
+		var err error
+		res, err = DB.ExecContext(ctx, `DELETE FROM metrics WHERE recorded_at < NOW() - INTERVAL '1 hour' * $1`, rawHours)
+		return err
+	})
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("cleanup raw metrics: %w", err)
 	}
 	rawDeleted, _ = res.RowsAffected()
 
-	// Delete hourly aggregates older than retention period
-	res, err = DB.ExecContext(ctx, `DELETE FROM metrics_hourly WHERE hour_bucket < NOW() - INTERVAL '1 day' * $1`, hourlyDays)
+	err = DBBreaker.Execute(func() error {
+		var err error
+		res, err = DB.ExecContext(ctx, `DELETE FROM metrics_hourly WHERE hour_bucket < NOW() - INTERVAL '1 day' * $1`, hourlyDays)
+		return err
+	})
 	if err != nil {
 		return rawDeleted, 0, 0, fmt.Errorf("cleanup hourly metrics: %w", err)
 	}
 	hourlyDeleted, _ = res.RowsAffected()
 
-	// Delete daily aggregates older than retention period
-	res, err = DB.ExecContext(ctx, `DELETE FROM metrics_daily WHERE day_bucket < NOW() - INTERVAL '1 day' * $1`, dailyDays)
+	err = DBBreaker.Execute(func() error {
+		var err error
+		res, err = DB.ExecContext(ctx, `DELETE FROM metrics_daily WHERE day_bucket < NOW() - INTERVAL '1 day' * $1`, dailyDays)
+		return err
+	})
 	if err != nil {
 		return rawDeleted, hourlyDeleted, 0, fmt.Errorf("cleanup daily metrics: %w", err)
 	}
 	dailyDeleted, _ = res.RowsAffected()
 
-	// Also cleanup old cost history
-	_, err = DB.ExecContext(ctx, `DELETE FROM cost_history WHERE recorded_at < NOW() - INTERVAL '1 day' * $1`, dailyDays)
+	err = DBBreaker.Execute(func() error {
+		var err error
+		_, err = DB.ExecContext(ctx, `DELETE FROM cost_history WHERE recorded_at < NOW() - INTERVAL '1 day' * $1`, dailyDays)
+		return err
+	})
 	if err != nil {
 		return rawDeleted, hourlyDeleted, dailyDeleted, fmt.Errorf("cleanup cost history: %w", err)
 	}

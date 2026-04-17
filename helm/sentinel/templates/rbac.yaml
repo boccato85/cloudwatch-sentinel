@@ -8,7 +8,7 @@ metadata:
 rules:
   # C5: "watch" removed — Sentinel uses polling, not streaming. Reduces blast radius if SA is compromised.
   - apiGroups: [""]
-    resources: ["nodes", "pods", "namespaces"]
+    resources: ["nodes", "pods", "namespaces", "events"]
     verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["pods/log"]

@@ -1,5 +1,5 @@
 # Build stage - using Go 1.23 (latest stable on Docker Hub)
-FROM golang:1.23-alpine AS builder
+FROM golang:alpine AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN apk add --no-cache git
 
 # Copy go mod files and adjust version for container build
 COPY go.mod go.sum ./
-RUN sed -i 's/go 1.25.8/go 1.23/' go.mod && go mod download
+RUN go mod download
 
 # Copy source code
 COPY . .

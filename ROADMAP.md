@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-16 | Current version: `v0.10.20`
+> Last updated: 2026-04-16 | Current version: `v0.11`
 
 ## Product vision
 
@@ -28,8 +28,8 @@
 |---|---|---|
 | M1 — Stable core (+ M5 self-observability) | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
-| M3 — Deterministic incident intelligence | ✅ Done | `v0.10.20` |
-| M4 — Critical Resilience & Security | Not started | `v0.11` |
+| M3 — Deterministic incident intelligence | ✅ Done | `v0.11` |
+| M4 — Critical Resilience & Security | ✅ Done | `v0.11` |
 | M5 — Optional intelligence | Partial (~20%) | `v0.12` |
 | M6 — v1.0 preparation | Not started | `v0.99` |
 | M7 — Real lab / QA / Prod-like | Not started | `v1.0-rc` |
@@ -89,7 +89,7 @@
 ---
 
 <<<<<<< HEAD
-### M3 — Deterministic incident intelligence ✅ Done (`v0.10.20`)
+### M3 — Deterministic incident intelligence ✅ Done (`v0.11`)
 
 **Goal:** Sentinel generates useful diagnosis even without AI, with APIs documented and individually monitored.
 
@@ -123,13 +123,13 @@
 
 | Item | Status |
 |---|---|
-| PostgreSQL PersistentVolumeClaim by default | Pending |
-| API Authentication (AuthMiddleware) enabled by default | Pending |
-| GitHub Actions CI pipeline (go test + helm lint) | Pending |
-| Circuit breaker for PostgreSQL (staleness flag on /health) | Pending |
-| Exponential backoff in collector goroutine | Pending |
-| Document environment variables and defaults | Pending |
-| Configurable FinOps pricing (price per mCPU/MiB) | Pending |
+| PostgreSQL PersistentVolumeClaim by default | ✅ Done |
+| API Authentication (AuthMiddleware) enabled by default | ✅ Done |
+| GitHub Actions CI pipeline (go test + helm lint) | ✅ Done |
+| Circuit breaker for PostgreSQL (staleness flag on /health) | ✅ Done |
+| Exponential backoff in collector goroutine | ✅ Done |
+| Document environment variables and defaults | ✅ Done |
+| Configurable FinOps pricing (price per mCPU/MiB) | ✅ Done |
 
 **Done criterion:** ✅ Sentinel can survive a pod restart without data loss, the API requires auth outside of local environments, and CI runs on every PR.
 
@@ -249,7 +249,7 @@
 | `v0.10.14` | M2 partial | ✅ Namespace Efficiency Score (grades A→F), UX polish, inline glossaries |
 | `v0.10.15` | M2 | ✅ Waste by Deployment — M2 closed |
 | `v0.10.18` | M3 partial | ✅ `/api/incidents` consumed by dashboard, multi-instance sync |
-| `v0.10.20` | M3 + Dashboard UX | ✅ Dashboard v2: no-scroll layout, FinOps/Efficiency toggle, context bar, events drawer |
+| `v0.11` | M3 + Dashboard UX | ✅ Dashboard v2: no-scroll layout, FinOps/Efficiency toggle, context bar, events drawer |
 | `v0.11` | M4 | Resilience, PVC, Auth, CI |
 | `v0.12` | M5 | LLM as optional layer, degraded mode |
 | `v0.99` | M6 | Polish, docs, stable contracts |
@@ -259,18 +259,17 @@
 
 ## Backlog by priority
 
-### High priority (v0.11)
-- Online Boutique lab: baseline + load + comparison
-- Diary #4 (after M3/M4)
+### High priority (v0.12)
+- M5: `/incident` consumindo dados determinísticos da `/api/incidents`
+- M5: Narrativa enriquecida (LLM como explicador, não diagnosticador)
+- M7: Online Boutique lab: baseline + load + comparison
 
-### Medium priority (v0.11/v0.12)
-- CrashLoop pod + CPU correlation
-- LLM degraded mode
+### Medium priority (v0.1.x)
+- CrashLoop pod + CPU correlation (refinamento)
+- M6: API stability & full OpenAPI coverage
 
 ### Low priority / future
-- Auth (M7)
 - Multi-cluster (post-1.0)
-- Cross-cluster comparison (post-1.0)
 - Local model / Ollama (post-1.0)
 
 ---
@@ -291,3 +290,4 @@
 - If the dashboard fails, the API must still be usable
 - If the cluster changes, the contracts must hold
 - If the project grows, the core must not lose simplicity
+implicity

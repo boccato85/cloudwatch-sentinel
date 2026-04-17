@@ -6,22 +6,13 @@ timezone: "America/Sao_Paulo"
 
 image:
   repository: localhost/sentinel-gemini
-  tag: "0.10.20"
+  tag: "0.11"
   pullPolicy: Never
 
 service:
   type: NodePort
   port: 8080
-  nodePort: 30081
-
-# Resource limits
-resources:
-  limits:
-    cpu: 200m
-    memory: 128Mi
-  requests:
-    cpu: 100m
-    memory: 64Mi
+  nodePort: 30080
 
 # PostgreSQL configuration
 postgresql:
@@ -60,7 +51,7 @@ agent:
   dbTimeoutSec: 5
   auth:
     enabled: true
-    token: "changeme123"
+    token: "sentinel-secure-token"
 
 # Operational thresholds (mirrors config/thresholds.yaml)
 thresholds:

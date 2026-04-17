@@ -8,10 +8,10 @@
 > Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/sentinel_ss_0.10.20(1).png" alt="Sentinel Dashboard v0.10.20" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_0.10.20(1).png" alt="Sentinel Dashboard v0.11" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.10.20-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.11-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-agent-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
@@ -46,7 +46,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 ## Screenshots
 
-| Dashboard Overview (v0.10.20) | Recent Events Drawer |
+| Dashboard Overview (v0.11) | Recent Events Drawer |
 |---|---|
 | ![Overview](docs/screenshots/sentinel_ss_0.10.20(1).png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
 
@@ -271,6 +271,36 @@ Aggregation and cleanup run automatically every hour.
 
 ---
 
+## Environment Variables
+
+The Sentinel Go Agent can be configured via environment variables. If using Helm, these can be set via the `agent.env` values.
+
+| Variable | Default | Description |
+|---|---|---|
+| **API & Security** | | |
+| `LISTEN_ADDR` | `0.0.0.0:8080` | Bind address and port for the dashboard and API. |
+| `RATE_LIMIT_RPS` | `100` | Global rate limit in requests per second. |
+| `AUTH_ENABLED` | `true` | Enable Bearer token authentication for API endpoints (except `/health`). |
+| `AUTH_TOKEN` | `sentinel-secure-token` | The token required when `AUTH_ENABLED` is true. |
+| **FinOps Pricing** | | |
+| `USD_PER_VCPU_HOUR` | `0.04` | Cost of 1 CPU core (1000m) per hour, used for waste forecast. |
+| `USD_PER_GB_HOUR` | `0.005` | Cost of 1 GB (1024MiB) of Memory per hour. |
+| **Database** | | |
+| `DB_USER` | (Required) | PostgreSQL user. |
+| `DB_PASSWORD` | (Required) | PostgreSQL password. |
+| `DB_NAME` | `sentinel_db` | PostgreSQL database name. |
+| `DB_HOST` | `localhost` | PostgreSQL host. |
+| `DB_PORT` | `5432` | PostgreSQL port. |
+| `DB_SSLMODE` | `disable` | Set to `require` in production if connecting to an external DB. |
+| `DB_CONNECT_RETRIES`| `10` | Max connection attempts on boot. |
+| `DB_TIMEOUT_SEC` | `5` | Query timeout in seconds. |
+| **Retention** | | |
+| `RETENTION_RAW_HOURS`| `24` | Hours to keep minute-level raw data. |
+| `RETENTION_HOURLY_DAYS`| `30` | Days to keep hourly aggregated data. |
+| `RETENTION_DAILY_DAYS`| `365` | Days to keep daily aggregated data. |
+
+---
+
 ## Project Structure
 
 ```
@@ -339,7 +369,7 @@ Every final report passes through `harness/validador_saida.py`:
 
 ## Changelog
 
-### v0.10.20 — Dashboard v2: no-scroll layout + FinOps/Efficiency toggle
+### v0.11 — Dashboard v2: no-scroll layout + FinOps/Efficiency toggle
 - **Dashboard v2 layout** — scroll-free overview optimized for single-screen monitoring
 - **Tab bar removed** — replaced by thin context bar (Overview | NS | pods | warnings | status dot)
 - **Workloads/Pods tabs eliminated** — data accessible via KPI expand + drawers
@@ -455,7 +485,7 @@ Every final report passes through `harness/validador_saida.py`:
 |---|---|---|
 | M1 — Stable core (+ M5 self-observability) | ✅ Done | v0.10.1 |
 | M2 — Actionable FinOps | ✅ Done | v0.10.15 |
-| M3 — Deterministic incident intelligence | ✅ Done | v0.10.20 |
+| M3 — Deterministic incident intelligence | ✅ Done | v0.11 |
 | M4 — Real lab with Online Boutique | Not started | v0.11 |
 | M6 — Optional intelligence (LLM as a layer) | Partial (~20%) | v0.12 |
 | M7 — v1.0 preparation | Not started | v1.0 |

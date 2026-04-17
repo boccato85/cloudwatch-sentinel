@@ -43,7 +43,7 @@ var (
 	usdPerGbHour   float64
 )
 
-const agentVersion = "0.10.20"
+const agentVersion = "0.11"
 const collectorStaleThreshold = 30 * time.Second
 
 var (
@@ -129,7 +129,7 @@ func main() {
 		Level: logLevel,
 	})))
 
-	usdPerVcpuHour = getEnvFloat("usdPerVcpuHour", 0.04)
+	usdPerVcpuHour = getEnvFloat("USD_PER_VCPU_HOUR", 0.04)
 	usdPerGbHour = getEnvFloat("USD_PER_GB_HOUR", 0.005)
 
 	dbUser := requireEnv("DB_USER")
@@ -180,8 +180,8 @@ func main() {
 		}
 
 		if attempt == maxRetries {
-			slog.Error("database ping failed after all retries", "component", "db", "attempts", maxRetries, "err", lastErr)
-			os.Exit(1)
+			slog.Warn("database ping failed after all retries, starting in DEGRADED state", "component", "db", "attempts", maxRetries, "err", lastErr)
+			break
 		}
 
 		backoff := time.Duration(1<<(attempt-1)) * time.Second
@@ -194,12 +194,11 @@ func main() {
 
 	schemaCtx, schemaCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	if err = store.EnsureSchema(schemaCtx); err != nil {
-		schemaCancel()
-		slog.Error("failed to create database schema", "component", "db", "err", err)
-		os.Exit(1)
+		slog.Warn("failed to create database schema (starting in DEGRADED state)", "component", "db", "err", err)
+	} else {
+		slog.Info("database schema verified", "component", "db")
 	}
 	schemaCancel()
-	slog.Info("database schema verified", "component", "db")
 
 	slog.Info("Sentinel Intelligence Engine: Active", "component", "app", "version", agentVersion)
 
@@ -211,19 +210,23 @@ func main() {
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
 
-	authEnabled := getEnv("AUTH_ENABLED", "false") == "true"
-	authToken := getEnv("AUTH_TOKEN", "")
+	authEnabled := getEnv("AUTH_ENABLED", "true") == "true"
+	authToken := getEnv("AUTH_TOKEN", "sentinel-secure-token")
 
 	go store.StartRetentionWorker(appCtx, retentionRawHours, retentionHourlyDays, retentionDailyDays)
 
 	go func() {
+		backoff := 10 * time.Second
 		for {
 			summary := api.ClusterSummary{PodsByPhase: make(map[string]int)}
 			ctx, cancel := context.WithTimeout(appCtx, 15*time.Second)
 
+			hadError := false
+
 			nodes, err := k8s.ListNodes(ctx)
 			if err != nil {
 				slog.Error("failed to list nodes", "component", "collector", "err", err)
+				hadError = true
 			} else {
 				for _, n := range nodes.Items {
 					summary.Nodes = append(summary.Nodes, api.NodeInfo{Name: n.Name, Status: "Running"})
@@ -237,6 +240,7 @@ func main() {
 
 			if err != nil {
 				slog.Error("failed to list pods", "component", "collector", "err", err)
+				hadError = true
 			} else {
 				podSpecMap = k8s.BuildPodSpecMap(pods.Items)
 				for _, p := range pods.Items {
@@ -255,6 +259,7 @@ func main() {
 			mList, mListErr := k8s.ListPodMetricsWithRetry(ctx)
 			if mListErr != nil {
 				logCollectorError("list_pod_metrics", mListErr)
+				hadError = true
 			} else {
 				func() {
 					dbCtx, dbCancel := store.WithDBTimeout(appCtx)
@@ -333,10 +338,19 @@ func main() {
 			collectMutex.Unlock()
 
 			cancel()
+			if hadError {
+				backoff *= 2
+				if backoff > 60*time.Second {
+					backoff = 60 * time.Second
+				}
+				slog.Warn("collector backoff increased due to error", "component", "collector", "backoff", backoff)
+			} else {
+				backoff = 10 * time.Second
+			}
 			select {
 			case <-appCtx.Done():
 				return
-			case <-time.After(10 * time.Second):
+			case <-time.After(backoff):
 			}
 		}
 	}()
