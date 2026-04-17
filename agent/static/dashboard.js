@@ -1772,14 +1772,23 @@ async function renderNodeDrawer() {
         dstat('CPU Saturation', nCpuSat.toFixed(1) + '%', nCpuSat > 85 ? 'var(--red)' : nCpuSat > 75 ? 'var(--orange)' : 'var(--green)') +
         dstat('Mem Saturation', nMemSat.toFixed(1) + '%', nMemSat > 85 ? 'var(--red)' : nMemSat > 75 ? 'var(--orange)' : 'var(--purple)') +
       '</div>' + 
-      '<div style="display:flex;gap:40px;margin-bottom:20px;font-size:0.85em;color:var(--text-dim)">' +
-        '<div><b style="color:var(--text-bright)">CPU Allocatable:</b> ' + targetNode.cpuAllocatable + 'm <br> <b style="color:var(--text-bright)">CPU Requested:</b> ' + targetNode.cpuRequested + 'm</div>' +
-        '<div><b style="color:var(--text-bright)">Mem Allocatable:</b> ' + targetNode.memAllocatable + 'Mi <br> <b style="color:var(--text-bright)">Mem Requested:</b> ' + targetNode.memRequested + 'Mi</div>' +
+      '<div style="margin-bottom:24px;display:flex;flex-direction:column;gap:12px;background:var(--surface);padding:16px;border-radius:6px;border:1px solid var(--border)">' +
+        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px">CPU Requested</span>' +
+          '<span class="pod-detail-val mono" style="width:160px">' + Math.floor(targetNode.cpuRequested) + 'm / ' + Math.floor(targetNode.cpuAllocatable) + 'm</span>' +
+          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px"><div class="pod-detail-fill" style="width:' + Math.min(nCpuSat,100).toFixed(1) + '%;background:' + (nCpuSat > 85 ? 'var(--red)' : nCpuSat > 75 ? 'var(--orange)' : 'var(--cyan)') + '"></div></div>' +
+          '<span class="mono" style="margin-left:12px;font-size:0.9em;color:var(--text-bright)">' + nCpuSat.toFixed(1) + '%</span>' +
+        '</div>' +
+        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px">Memory Requested</span>' +
+          '<span class="pod-detail-val mono" style="width:160px">' + Math.floor(targetNode.memRequested) + 'Mi / ' + Math.floor(targetNode.memAllocatable) + 'Mi</span>' +
+          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px"><div class="pod-detail-fill" style="width:' + Math.min(nMemSat,100).toFixed(1) + '%;background:' + (nMemSat > 85 ? 'var(--red)' : nMemSat > 75 ? 'var(--orange)' : 'var(--purple)') + '"></div></div>' +
+          '<span class="mono" style="margin-left:12px;font-size:0.9em;color:var(--text-bright)">' + nMemSat.toFixed(1) + '%</span>' +
+        '</div>' +
       '</div>';
       
       // Filter pods to this specific node
-      if (!focusNode.startsWith('mock-node-')) {
-         // API metrics should include nodeName, but if not we show empty or the filtered list
+      if (focusNode.startsWith('mock-node-')) {
+         m = []; // mock nodes do not have real pods
+      } else {
          m = m.filter(function(p) { return p.nodeName === focusNode; });
       }
     } else {
