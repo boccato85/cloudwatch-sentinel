@@ -2580,17 +2580,3 @@ setInterval(update, 5000);
 update();
 fetchChart();
 updateEfficiency();
-oject';
-    }
-    // populate Connected tooltip with DB status from /health
-    var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
-    updateSpillTip(dbSt);
-  } catch(e) { updateSpillTip('unknown'); }
-}
-
-loadNamespaces();
-loadVersion();
-setInterval(update, 5000);
-update();
-fetchChart();
-updateEfficiency();
