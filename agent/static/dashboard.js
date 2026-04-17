@@ -427,6 +427,7 @@ async function updateOverview() {
       }
       
       d.className = hexClass;
+      d.dataset.node = n.name;
       d.title = n.name + '\nCPU: ' + cpuSat.toFixed(1) + '% | Mem: ' + memSat.toFixed(1) + '% | Pods: ' + (n.podCount || 0);
       d.textContent = 'N';
       hc.appendChild(d);
@@ -1722,18 +1723,32 @@ function attachSortHandlers(tbodyId, renderFn) {
 }
 
 // ─── Drawer: Node Health Map ───────────────────────────────────────────────────
-function openNodeDrawer() {
-  openDrawer('Node Health Map — Detail', renderNodeDrawer);
+function openNodeDrawer(focusNode) {
+  _evtDrawerState.focusNode = typeof focusNode === 'string' ? focusNode : null;
+  var title = _evtDrawerState.focusNode ? 'Node Health Map — ' + _evtDrawerState.focusNode : 'Node Health Map — Detail';
+  openDrawer(title, renderNodeDrawer);
 }
 
 async function renderNodeDrawer() {
   try {
+    var focusNode = _evtDrawerState.focusNode;
     var s = await (await fetchAuth('/api/summary')).json();
     var m = await (await fetchAuth('/api/metrics')).json();
     var nodes = s.nodes || [];
+    
+    // Fallback for mock data
+    if (nodes.length === 1 && window._mockNodes) {
+       nodes = window._mockNodes;
+    }
+    
     var pods  = s.podsByPhase || {};
     var totalPods = Object.values(pods).reduce(function(a,b){return a+b;},0);
     var reqPct = s.cpuAllocatable > 0 ? (s.cpuRequested / s.cpuAllocatable * 100) : 0;
+    
+    var targetNode = null;
+    if (focusNode) {
+      targetNode = nodes.find(function(n) { return n.name === focusNode; });
+    }
 
     var nodeInfoCard =
       '<button class="grade-info-btn" id="node-info-btn" style="margin-bottom:8px">ⓘ What these metrics mean</button>' +
@@ -1747,14 +1762,36 @@ async function renderNodeDrawer() {
         '<div class="gl-row" style="border-bottom:none"><span style="color:var(--cyan);font-weight:600;min-width:160px">Efficiency</span><span class="gl-desc">Actual CPU usage ÷ CPU requested. Low = over-provisioned; high (&gt;85%) = risk of throttling.</span></div>' +
       '</div>';
 
-    var statsHtml = '<div class="drawer-stats">' +
-      dstat('Total Nodes', nodes.length, 'var(--cyan)') +
-      dstat('Total Pods', totalPods, 'var(--green)') +
-      dstat('CPU Requested', s.cpuRequested + 'm', 'var(--orange)') +
-      dstat('CPU Allocatable', s.cpuAllocatable + 'm', 'var(--text-bright)') +
-      dstat('Memory Requested', s.memRequested + 'Mi', 'var(--purple)') +
-      dstat('Efficiency', s.efficiency.toFixed(1) + '%', s.efficiency > 85 ? 'var(--red)' : s.efficiency > 70 ? 'var(--orange)' : 'var(--cyan)') +
-    '</div>';
+    var statsHtml = '';
+    if (targetNode) {
+      var nCpuSat = targetNode.cpuAllocatable > 0 ? (targetNode.cpuRequested / targetNode.cpuAllocatable) * 100 : 0;
+      var nMemSat = targetNode.memAllocatable > 0 ? (targetNode.memRequested / targetNode.memAllocatable) * 100 : 0;
+      statsHtml = '<div class="drawer-stats" style="margin-bottom:20px">' +
+        dstat('Node Status', targetNode.status, targetNode.status === 'Running' ? 'var(--green)' : 'var(--red)') +
+        dstat('Pod Count', targetNode.podCount || 0, 'var(--cyan)') +
+        dstat('CPU Saturation', nCpuSat.toFixed(1) + '%', nCpuSat > 85 ? 'var(--red)' : nCpuSat > 75 ? 'var(--orange)' : 'var(--green)') +
+        dstat('Mem Saturation', nMemSat.toFixed(1) + '%', nMemSat > 85 ? 'var(--red)' : nMemSat > 75 ? 'var(--orange)' : 'var(--purple)') +
+      '</div>' + 
+      '<div style="display:flex;gap:40px;margin-bottom:20px;font-size:0.85em;color:var(--text-dim)">' +
+        '<div><b style="color:var(--text-bright)">CPU Allocatable:</b> ' + targetNode.cpuAllocatable + 'm <br> <b style="color:var(--text-bright)">CPU Requested:</b> ' + targetNode.cpuRequested + 'm</div>' +
+        '<div><b style="color:var(--text-bright)">Mem Allocatable:</b> ' + targetNode.memAllocatable + 'Mi <br> <b style="color:var(--text-bright)">Mem Requested:</b> ' + targetNode.memRequested + 'Mi</div>' +
+      '</div>';
+      
+      // Filter pods to this specific node
+      if (!focusNode.startsWith('mock-node-')) {
+         // API metrics should include nodeName, but if not we show empty or the filtered list
+         m = m.filter(function(p) { return p.nodeName === focusNode; });
+      }
+    } else {
+      statsHtml = '<div class="drawer-stats">' +
+        dstat('Total Nodes', nodes.length, 'var(--cyan)') +
+        dstat('Total Pods', totalPods, 'var(--green)') +
+        dstat('CPU Requested', s.cpuRequested + 'm', 'var(--orange)') +
+        dstat('CPU Allocatable', s.cpuAllocatable + 'm', 'var(--text-bright)') +
+        dstat('Memory Requested', s.memRequested + 'Mi', 'var(--purple)') +
+        dstat('Efficiency', s.efficiency.toFixed(1) + '%', s.efficiency > 85 ? 'var(--red)' : s.efficiency > 70 ? 'var(--orange)' : 'var(--cyan)') +
+      '</div>';
+    }
 
     var nodeCards = nodes.map(function(n) {
       var isOk = n.status === 'Running';
@@ -2610,7 +2647,14 @@ if (_effSysToggle) _effSysToggle.addEventListener('change', function() {
 });
 
 // ─── Chart area click → same drawer ──────────────────────────────────────────
-document.getElementById('honeycomb').addEventListener('click', openNodeDrawer);
+document.getElementById('honeycomb').addEventListener('click', function(e) {
+  var hex = e.target.closest('.hex');
+  if (hex && hex.dataset.node) {
+    openNodeDrawer(hex.dataset.node);
+  } else {
+    openNodeDrawer();
+  }
+});
 document.getElementById('phaseDonutWrap').addEventListener('click', openPodDrawer);
 document.getElementById('alertsBox').addEventListener('click', openAlertsDrawer);
 document.getElementById('cpuDonutWrap').addEventListener('click', openCpuDrawer);
