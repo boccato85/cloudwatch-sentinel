@@ -1,6 +1,14 @@
 var charts = {};
 var PCOLS = ['#00cc8f','#00b4ff','#e54949','#fbbf24','#a855f7','#f5a623','#ec4899'];
 var pageLoadTime = Date.now();
+const AUTH_TOKEN = 'sentinel-secure-token';
+
+// Helper to add auth header to all requests
+async function fetchAuth(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  opts.headers['Authorization'] = 'Bearer ' + AUTH_TOKEN;
+  return fetch(url, opts);
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
 var activeTab      = 'overview';
@@ -234,7 +242,7 @@ var allNamespaces = [];
 // ─── Namespace filter ─────────────────────────────────────────────────────────
 async function loadNamespaces() {
   try {
-    allNamespaces = await (await fetch('/api/namespaces')).json();
+    allNamespaces = await (await fetchAuth('/api/namespaces')).json();
     renderDropdowns();
   } catch(e) { console.error('loadNamespaces error:', e); }
 }
@@ -292,8 +300,8 @@ function switchTab(tab) {
 async function updateOverview() {
   try {
     var [s, incidents] = await Promise.all([
-      fetch('/api/summary').then(function(r){ return r.json(); }),
-      fetch('/api/incidents').then(function(r){ return r.json(); }).catch(function(){ return []; })
+      fetchAuth('/api/summary').then(function(r){ return r.json(); }),
+      fetchAuth('/api/incidents').then(function(r){ return r.json(); }).catch(function(){ return []; })
     ]);
     incidents = incidents || [];
     var healthIncidents = incidents.filter(function(i) { return !i.isWaste; });
@@ -395,7 +403,7 @@ async function updateOverview() {
       hdrTxt.textContent = critIncs.length > 0 ? critIncs.length + ' Critical' : totalA > 0 ? totalA + ' Alerts' : 'All OK';
     }
 
-    var m = await (await fetch('/api/metrics')).json();
+    var m = await (await fetchAuth('/api/metrics')).json();
     m = m || [];
     // Apply namespace filter to metrics
     if (activeNs) m = m.filter(function(p){ return p.namespace === activeNs; });
@@ -647,12 +655,12 @@ async function fetchChart() {
       if (chartNs) forecastUrl += '&namespace=' + encodeURIComponent(chartNs);
     }
 
-    var hResp = await fetch(url);
+    var hResp = await fetchAuth(url);
     var dataNote = hResp.headers.get('X-Sentinel-Data-Note') || '';
     var h = await hResp.json();
     var f = null;
     if (forecastUrl) {
-      try { f = await (await fetch(forecastUrl)).json(); } catch(e) { f = null; }
+      try { f = await (await fetchAuth(forecastUrl)).json(); } catch(e) { f = null; }
     }
     lastHistData = h;
     lastForecast = f;
@@ -707,7 +715,7 @@ async function updatePodsTile() {
   try {
     var ns = tileNs.pods;
     var url = ns ? '/api/pods?namespace=' + encodeURIComponent(ns) : '/api/pods';
-    var pods = await (await fetch(url)).json();
+    var pods = await (await fetchAuth(url)).json();
     pods = pods || [];
     var byPhase = {};
     pods.forEach(function(p) { byPhase[p.phase] = (byPhase[p.phase]||0)+1; });
@@ -726,7 +734,7 @@ async function updatePodsTile() {
 
 async function updatePodsAllNsTile(totalFallback, runningFallback) {
   try {
-    var allPods = await (await fetch('/api/pods')).json();
+    var allPods = await (await fetchAuth('/api/pods')).json();
     allPods = allPods || [];
     var byNs = {};
     allPods.forEach(function(p) {
@@ -767,9 +775,9 @@ async function updatePodsAllNsTile(totalFallback, runningFallback) {
 async function updateCpuTile() {
   try {
     var ns = tileNs.cpu;
-    var s = lastSummary || await (await fetch('/api/summary')).json();
+    var s = lastSummary || await (await fetchAuth('/api/summary')).json();
     var url = '/api/metrics?namespace=' + encodeURIComponent(ns);
-    var m = await (await fetch(url)).json();
+    var m = await (await fetchAuth(url)).json();
     m = m || [];
     var nsReq = m.reduce(function(sum, p) { return sum + (p.cpuRequestPresent ? p.cpuRequest : 0); }, 0);
     var alc = s.cpuAllocatable;
@@ -791,9 +799,9 @@ async function updateCpuTile() {
 async function updateMemTile() {
   try {
     var ns = tileNs.mem;
-    var s = lastSummary || await (await fetch('/api/summary')).json();
+    var s = lastSummary || await (await fetchAuth('/api/summary')).json();
     var url = '/api/metrics?namespace=' + encodeURIComponent(ns);
-    var m = await (await fetch(url)).json();
+    var m = await (await fetchAuth(url)).json();
     m = m || [];
     // memRequest per pod not in API yet — use memUsage as proxy when ns-filtered
     var nsMemUse = m.reduce(function(sum, p) { return sum + (p.memUsage || 0); }, 0);
@@ -829,10 +837,10 @@ async function renderFinOpsDrawer() {
     var showSys = _finopsSysToggle ? _finopsSysToggle.checked : false;
     var url = '/api/history?range=' + range + '&system=' + showSys;
     if (chartNs) url += '&namespace=' + encodeURIComponent(chartNs);
-    var h = await (await fetch(url)).json();
+    var h = await (await fetchAuth(url)).json();
     var fUrl = range !== 'custom' ? '/api/forecast?range=' + range + '&system=' + showSys + (chartNs ? '&namespace=' + encodeURIComponent(chartNs) : '') : null;
     var f = null;
-    if (fUrl) { try { f = await (await fetch(fUrl)).json(); } catch(e) { f = null; } }
+    if (fUrl) { try { f = await (await fetchAuth(fUrl)).json(); } catch(e) { f = null; } }
 
     h = h || [];
     var totalBudget = h.reduce(function(s, p) { return s + p.reqCost; }, 0);
@@ -938,7 +946,7 @@ async function renderFinOpsDrawer() {
 // ─── Workloads tab ────────────────────────────────────────────────────────────
 async function updateWorkloads() {
   try {
-    var data = await (await fetch(apiUrl('/api/workloads'))).json();
+    var data = await (await fetchAuth(apiUrl('/api/workloads'))).json();
     data = data || [];
     document.getElementById('wl-count').textContent = data.length + ' workload' + (data.length !== 1 ? 's' : '');
     if (data.length === 0) {
@@ -974,7 +982,7 @@ async function updateWorkloads() {
 // ─── Pods tab ─────────────────────────────────────────────────────────────────
 async function updatePods() {
   try {
-    var data = await (await fetch(apiUrl('/api/pods'))).json();
+    var data = await (await fetchAuth(apiUrl('/api/pods'))).json();
     data = data || [];
     document.getElementById('pod-count').textContent = data.length + ' pod' + (data.length !== 1 ? 's' : '');
     if (data.length === 0) {
@@ -1027,7 +1035,7 @@ async function fetchLogs() {
   var pre = document.getElementById('log-content');
   pre.textContent = 'Loading...';
   try {
-    var resp = await fetch('/api/pods/' + encodeURIComponent(logTarget.namespace) + '/' + encodeURIComponent(logTarget.name) + '/logs');
+    var resp = await fetchAuth('/api/pods/' + encodeURIComponent(logTarget.namespace) + '/' + encodeURIComponent(logTarget.name) + '/logs');
     var text = await resp.text();
     pre.textContent = text || '(no log output)';
     pre.scrollTop = pre.scrollHeight;
@@ -1181,7 +1189,7 @@ async function updateEfficiency() {
     var showSystem = document.getElementById('eff-show-system');
     var inclSystem = showSystem && showSystem.checked;
     var url = '/api/efficiency' + (inclSystem ? '?system=true' : '');
-    var data = await (await fetch(url)).json();
+    var data = await (await fetchAuth(url)).json();
     lastEfficiency = data || [];
     
     var viewNs = tileNs.eff || activeNs;
@@ -1430,8 +1438,8 @@ function openNodeDrawer() {
 
 async function renderNodeDrawer() {
   try {
-    var s = await (await fetch('/api/summary')).json();
-    var m = await (await fetch('/api/metrics')).json();
+    var s = await (await fetchAuth('/api/summary')).json();
+    var m = await (await fetchAuth('/api/metrics')).json();
     var nodes = s.nodes || [];
     var pods  = s.podsByPhase || {};
     var totalPods = Object.values(pods).reduce(function(a,b){return a+b;},0);
@@ -1507,7 +1515,7 @@ function openPodDrawer() {
 
 async function renderPodDrawer() {
   try {
-    var all = await (await fetch('/api/pods')).json();
+    var all = await (await fetchAuth('/api/pods')).json();
     all = all || [];
 
     // inherit tile NS on first render; drawer dropdown overrides on subsequent renders
@@ -1601,7 +1609,7 @@ function openAlertsDrawer() {
 
 async function renderAlertsDrawer() {
   try {
-    var incidents = await (await fetch('/api/incidents')).json();
+    var incidents = await (await fetchAuth('/api/incidents')).json();
     incidents = incidents || [];
     
     var critIncs = incidents.filter(function(i) { return i.severity === 'CRITICAL' || i.severity === 'critical'; });
@@ -1655,8 +1663,8 @@ function openCpuDrawer() {
 
 async function renderCpuDrawer() {
   try {
-    var s = await (await fetch('/api/summary')).json();
-    var m = await (await fetch(apiUrl('/api/metrics'))).json();
+    var s = await (await fetchAuth('/api/summary')).json();
+    var m = await (await fetchAuth(apiUrl('/api/metrics'))).json();
     m = m || [];
 
     var searchVal  = document.getElementById('dfilter-cpu-search')  ? document.getElementById('dfilter-cpu-search').value.toLowerCase()  : '';
@@ -1768,7 +1776,7 @@ function openWasteDrawer() {
 
 async function renderWasteDrawer() {
   try {
-    var data = await (await fetch(apiUrl('/api/waste'))).json();
+    var data = await (await fetchAuth(apiUrl('/api/waste'))).json();
     var entries = (data && data.entries) ? data.entries : [];
 
     var viewMode  = document.getElementById('waste-view-mode')    ? document.getElementById('waste-view-mode').value    : 'pod';
@@ -2012,7 +2020,7 @@ function openWorkloadsDrawer() {
 
 async function renderWorkloadsDrawer() {
   try {
-    var m = await (await fetch(apiUrl('/api/metrics'))).json();
+    var m = await (await fetchAuth(apiUrl('/api/metrics'))).json();
     m = m || [];
 
     var nsFilter3  = document.getElementById('dfilter-wl-ns')     ? document.getElementById('dfilter-wl-ns').value     : '';
@@ -2104,8 +2112,8 @@ function openMemDrawer() {
 
 async function renderMemDrawer() {
   try {
-    var s = await (await fetch('/api/summary')).json();
-    var m = await (await fetch(apiUrl('/api/metrics'))).json();
+    var s = await (await fetchAuth('/api/summary')).json();
+    var m = await (await fetchAuth(apiUrl('/api/metrics'))).json();
     m = m || [];
 
     var searchVal  = document.getElementById('dfilter-mem-search')  ? document.getElementById('dfilter-mem-search').value.toLowerCase()  : '';
@@ -2303,7 +2311,7 @@ document.getElementById('wasteList').addEventListener('click', function(e) {
 // ─── Version badge (dynamic) ──────────────────────────────────────────────────
 async function loadVersion() {
   try {
-    var data = await (await fetch('/health')).json();
+    var data = await (await fetchAuth('/health')).json();
     var v = data && data.version ? data.version : null;
     if (!v) return;
     var badge = document.getElementById('verBadge');

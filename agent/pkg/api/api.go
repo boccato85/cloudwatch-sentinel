@@ -152,10 +152,24 @@ func writeJSONError(w http.ResponseWriter, status int, msg string) {
 
 func (a *API) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !a.AuthEnabled || r.URL.Path == "/health" {
+		// Rotas públicas (estáticos, health, docs)
+		isPublic := !a.AuthEnabled ||
+			r.URL.Path == "/health" ||
+			r.URL.Path == "/" ||
+			r.URL.Path == "/dashboard.css" ||
+			r.URL.Path == "/dashboard.js" ||
+			r.URL.Path == "/icon.png" ||
+			r.URL.Path == "/status" ||
+			r.URL.Path == "/docs" ||
+			r.URL.Path == "/openapi.yaml" ||
+			r.URL.Path == "/favicon.ico"
+
+		if isPublic {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		// Apenas endpoints de API exigem Auth
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="sentinel"`)
