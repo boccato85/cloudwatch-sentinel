@@ -114,3 +114,10 @@ var PingMetricsAPI = func(ctx context.Context) error {
 	_, err := MetricsClient.Discovery().RESTClient().Get().AbsPath("/apis/metrics.k8s.io/v1beta1").DoRaw(ctx)
 	return err
 }
+
+var ListEvents = func(ctx context.Context, namespace string) (*corev1.EventList, error) {
+	if Clientset == nil {
+		return nil, fmt.Errorf("kubernetes client not initialized")
+	}
+	return Clientset.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{Limit: 200})
+}

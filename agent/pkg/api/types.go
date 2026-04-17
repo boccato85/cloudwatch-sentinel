@@ -201,3 +201,13 @@ func (sr *statusRecorder) WriteHeader(code int) {
 	sr.status = code
 	sr.ResponseWriter.WriteHeader(code)
 }
+
+type EventInfo struct {
+	Type      string `json:"type"`
+	Reason    string `json:"reason"`
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Message   string `json:"message"`
+	Age       string `json:"age"`
+	Timestamp string `json:"timestamp"`
+}

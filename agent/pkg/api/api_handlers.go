@@ -34,6 +34,7 @@ func (a *API) RegisterHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/api/pods", a.handlePods)
 	mux.HandleFunc("/api/pods/", a.handlePodLogs)
 	mux.HandleFunc("/api/forecast", a.handleForecast)
+	mux.HandleFunc("/api/events", a.handleEvents)
 	mux.HandleFunc("/api/incidents", a.handleIncidents)
 	mux.HandleFunc("/docs", a.handleSwaggerUI)
 	mux.HandleFunc("/openapi.yaml", a.handleOpenAPI)
@@ -1138,4 +1139,42 @@ func (a *API) handleDashboardJS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Write(a.DashboardJS)
+}
+
+func (a *API) handleEvents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	setSecureHeaders(w)
+	ns := r.URL.Query().Get("namespace")
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	events, err := k8s.ListEvents(ctx, ns)
+	if err != nil {
+		slog.Error("failed to list events", "component", "http", "err", err)
+		writeJSONError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	result := make([]EventInfo, 0, len(events.Items))
+	for _, e := range events.Items {
+		result = append(result, EventInfo{
+			Type:      e.Type,
+			Reason:    e.Reason,
+			Name:      e.InvolvedObject.Name,
+			Namespace: e.InvolvedObject.Namespace,
+			Message:   e.Message,
+			Age:       humanAge(e.LastTimestamp.Time),
+			Timestamp: e.LastTimestamp.Time.Format(time.RFC3339),
+		})
+	}
+	
+	// Sort by timestamp descending
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Timestamp > result[j].Timestamp
+	})
+	
+	json.NewEncoder(w).Encode(result)
 }
