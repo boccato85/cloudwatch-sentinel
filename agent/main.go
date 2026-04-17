@@ -224,14 +224,21 @@ func main() {
 			hadError := false
 
 			nodes, err := k8s.ListNodes(ctx)
+			nodeMap := make(map[string]*api.NodeInfo)
 			if err != nil {
 				slog.Error("failed to list nodes", "component", "collector", "err", err)
 				hadError = true
 			} else {
 				for _, n := range nodes.Items {
-					summary.Nodes = append(summary.Nodes, api.NodeInfo{Name: n.Name, Status: "Running"})
-					summary.CpuAllocatable += n.Status.Allocatable.Cpu().MilliValue()
-					summary.MemAllocatable += n.Status.Allocatable.Memory().Value() / 1024 / 1024
+					nodeInfo := &api.NodeInfo{
+						Name:           n.Name,
+						Status:         "Running",
+						CpuAllocatable: n.Status.Allocatable.Cpu().MilliValue(),
+						MemAllocatable: n.Status.Allocatable.Memory().Value() / 1024 / 1024,
+					}
+					nodeMap[n.Name] = nodeInfo
+					summary.CpuAllocatable += nodeInfo.CpuAllocatable
+					summary.MemAllocatable += nodeInfo.MemAllocatable
 				}
 			}
 
@@ -248,12 +255,31 @@ func main() {
 					if p.Status.Phase == "Failed" {
 						summary.FailedPods = append(summary.FailedPods, api.PodAlert{Name: p.Name, Namespace: p.Namespace})
 					}
+
+					nInfo, nodeExists := nodeMap[p.Spec.NodeName]
+					if nodeExists {
+						nInfo.PodCount++
+					}
+
 					for _, c := range p.Spec.Containers {
-						summary.CpuRequested += c.Resources.Requests.Cpu().MilliValue()
-						summary.MemRequested += c.Resources.Requests.Memory().Value() / 1024 / 1024
+						cpuReq := c.Resources.Requests.Cpu().MilliValue()
+						memReq := c.Resources.Requests.Memory().Value() / 1024 / 1024
+						summary.CpuRequested += cpuReq
+						summary.MemRequested += memReq
+						if nodeExists {
+							nInfo.CpuRequested += cpuReq
+							nInfo.MemRequested += memReq
+						}
 					}
 				}
 			}
+
+			for _, nInfo := range nodeMap {
+				summary.Nodes = append(summary.Nodes, *nInfo)
+			}
+			sort.Slice(summary.Nodes, func(i, j int) bool {
+				return summary.Nodes[i].Name < summary.Nodes[j].Name
+			})
 
 			var newStats []api.PodStats
 			mList, mListErr := k8s.ListPodMetricsWithRetry(ctx)

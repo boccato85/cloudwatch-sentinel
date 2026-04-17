@@ -373,19 +373,66 @@ async function updateOverview() {
 
     var hc = document.getElementById('honeycomb');
     hc.innerHTML = '';
+
+    var isMock = false;
+    var drawNodes = nodes;
+
+    // --- MOCK MODE FOR SINGLE NODE ---
     if (nodes.length === 1) {
-      var n = nodes[0];
-      hc.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:8px 6px;width:100%">' +
-        '<div class="hex ' + (n.status === 'Running' ? 'ok' : 'issue') + '" style="flex-shrink:0" title="' + esc(n.name) + '">N</div>' +
-        '<div style="font-size:0.8em;font-weight:500;color:var(--text-bright);word-break:break-all;line-height:1.2">' + esc(n.name) + '</div>' +
-      '</div>';
-    } else {
-      nodes.forEach(function(n) {
-        var d = document.createElement('div');
-        d.className = 'hex ' + (n.status === 'Running' ? 'ok' : 'issue');
-        d.title = n.name; d.textContent = 'N';
-        hc.appendChild(d);
-      });
+      isMock = true;
+      drawNodes = [];
+      for (var i=1; i<=24; i++) {
+         var cpuPct = Math.random() * 100;
+         var memPct = Math.random() * 100;
+         var cpuCap = 4000;
+         var memCap = 16000;
+         drawNodes.push({
+           name: 'mock-node-' + i,
+           status: Math.random() > 0.95 ? 'NotReady' : 'Running',
+           cpuAllocatable: cpuCap,
+           cpuRequested: (cpuPct / 100) * cpuCap,
+           memAllocatable: memCap,
+           memRequested: (memPct / 100) * memCap,
+           podCount: Math.floor(Math.random() * 50) + 1
+         });
+      }
+    }
+
+    drawNodes.forEach(function(n) {
+      var d = document.createElement('div');
+      
+      var cpuSat = n.cpuAllocatable > 0 ? (n.cpuRequested / n.cpuAllocatable) * 100 : 0;
+      var memSat = n.memAllocatable > 0 ? (n.memRequested / n.memAllocatable) * 100 : 0;
+      var maxSat = Math.max(cpuSat, memSat);
+      
+      var hexClass = 'hex';
+      if (n.status !== 'Running') {
+         hexClass += ' issue'; // fallback to dark with red border
+         d.style.background = '#1a1e27';
+         d.style.border = '1px solid var(--red)';
+         d.style.color = 'var(--red)';
+      } else if (maxSat > 85) {
+         d.style.background = 'var(--red)';
+         d.style.color = '#fff';
+      } else if (maxSat > 75) {
+         d.style.background = 'var(--orange)';
+      } else if (maxSat >= 60) {
+         d.style.background = '#fbbf24'; // yellow
+      } else {
+         d.style.background = 'var(--green)';
+      }
+      
+      d.className = hexClass;
+      d.title = n.name + '\nCPU: ' + cpuSat.toFixed(1) + '% | Mem: ' + memSat.toFixed(1) + '% | Pods: ' + (n.podCount || 0);
+      d.textContent = 'N';
+      hc.appendChild(d);
+    });
+
+    if (isMock) {
+       var mockLabel = document.createElement('div');
+       mockLabel.style = 'width:100%;text-align:center;font-size:0.65em;color:var(--text-dim);margin-top:6px;text-transform:uppercase;letter-spacing:1px';
+       mockLabel.textContent = 'Mock Data (Single-Node)';
+       hc.appendChild(mockLabel);
     }
     var nb = document.getElementById('nbadge');
     nb.textContent = issues > 0 ? issues + ' Issues' : 'All OK';
@@ -430,14 +477,28 @@ async function updateOverview() {
     // top CPU consumer KPI
     var topByUsage = m.slice().sort(function(a,b){ return b.cpuUsage - a.cpuUsage; });
     if (topByUsage.length > 0) {
-      document.getElementById('kT').textContent  = topByUsage[0].cpuUsage + 'm';
-      document.getElementById('kTs').textContent = topByUsage[0].name || '--';
+      var topCpuPod = topByUsage[0];
+      document.getElementById('kT').textContent  = topCpuPod.cpuUsage + 'm';
+      document.getElementById('kTs').textContent = topCpuPod.name || '--';
+      
+      var reqCpu = topCpuPod.cpuRequest > 0 ? topCpuPod.cpuRequest : topCpuPod.cpuUsage;
+      var fillPct = Math.min(100, (topCpuPod.cpuUsage / reqCpu) * 100);
+      if(fillPct === Infinity || isNaN(fillPct)) fillPct = 0;
+      var cCard = document.getElementById('kCpuCard');
+      if (cCard) cCard.style.backgroundImage = 'linear-gradient(to right, rgba(0, 180, 255, 0.12) ' + fillPct.toFixed(0) + '%, transparent ' + fillPct.toFixed(0) + '%)';
     }
     // top memory consumer KPI
     var topByMem = m.slice().sort(function(a,b){ return (b.memUsage||0) - (a.memUsage||0); });
     if (topByMem.length > 0) {
-      document.getElementById('kMem').textContent  = (topByMem[0].memUsage || 0) + 'Mi';
-      document.getElementById('kMems').textContent = topByMem[0].name || '--';
+      var topMemPod = topByMem[0];
+      document.getElementById('kMem').textContent  = (topMemPod.memUsage || 0) + 'Mi';
+      document.getElementById('kMems').textContent = topMemPod.name || '--';
+      
+      var reqMem = topMemPod.memRequest > 0 ? topMemPod.memRequest : topMemPod.memUsage;
+      var fillPctM = Math.min(100, (topMemPod.memUsage / reqMem) * 100);
+      if(fillPctM === Infinity || isNaN(fillPctM)) fillPctM = 0;
+      var mCard = document.getElementById('kMemCard');
+      if (mCard) mCard.style.backgroundImage = 'linear-gradient(to right, rgba(168, 85, 247, 0.12) ' + fillPctM.toFixed(0) + '%, transparent ' + fillPctM.toFixed(0) + '%)';
     }
     renderOverviewEvents();
 

@@ -7,8 +7,13 @@ import (
 )
 
 type NodeInfo struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	Name           string `json:"name"`
+	Status         string `json:"status"`
+	CpuAllocatable int64  `json:"cpuAllocatable"`
+	CpuRequested   int64  `json:"cpuRequested"`
+	MemAllocatable int64  `json:"memAllocatable"`
+	MemRequested   int64  `json:"memRequested"`
+	PodCount       int    `json:"podCount"`
 }
 
 type PodAlert struct {
