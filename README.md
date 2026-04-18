@@ -122,12 +122,12 @@ podman build -t localhost/sentinel:0.10.18 agent/
 podman save localhost/sentinel:0.10.18 | minikube image load -
 
 # Deploy (PostgreSQL spins up automatically as a pod)
-helm install sentinel helm/sentinel -n sentinel --create-namespace \
+helm install sentinel helm/sentinel -n sentinel-gemini --create-namespace \
   --set image.tag=0.10.18 \
   --set image.pullPolicy=Never
 
 # Check pods
-kubectl get pods -n sentinel
+kubectl get pods -n sentinel-gemini
 
 # Access (default NodePort: 30080)
 minikube ip   # → use http://<minikube-ip>:30080

@@ -30,6 +30,12 @@ var lastForecast   = null;         // cache last forecast data for finops drawer
 var lastDbStatus   = null;         // persisted DB status from /health (used by 5s tick)
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
+function fmtMoney(val) {
+  if (val === 0) return '0.0000';
+  if (Math.abs(val) < 0.0001) return val.toFixed(6);
+  return val.toFixed(4);
+}
+
 function esc(s) {
   var d = document.createElement('div');
   d.appendChild(document.createTextNode(String(s)));
@@ -103,13 +109,13 @@ function uLine(id, hData, fData) {
     var forecastUse = fData && fData.length > 0
       ? fData.reduce(function(sum, p) { return sum + p.useCost; }, 0) : 0;
     var forecastStr = fData && fData.length > 0
-      ? ' | <span style="color:var(--purple)">Forecast Budget: $' + forecastTotal.toFixed(4) +
-        '</span> | <span style="color:#00b4ff">Forecast Usage: $' + forecastUse.toFixed(4) + '</span>'
+      ? ' | <span style="color:var(--purple)">Forecast Budget: $' + fmtMoney(forecastTotal) +
+        '</span> | <span style="color:#00b4ff">Forecast Usage: $' + fmtMoney(forecastUse) + '</span>'
       : '';
     summaryEl.innerHTML =
-      '<span style="color:var(--red)">Budget: $' + totalBudget.toFixed(4) + '</span> | ' +
-      '<span style="color:var(--green)">Actual: $' + totalActual.toFixed(4) + '</span> | ' +
-      '<span style="color:var(--orange)">Waste: $' + totalSaved.toFixed(4) + ' (' + savingsPct.toFixed(0) + '%)</span>' +
+      '<span style="color:var(--red)">Budget: $' + fmtMoney(totalBudget) + '</span> | ' +
+      '<span style="color:var(--green)">Actual: $' + fmtMoney(totalActual) + '</span> | ' +
+      '<span style="color:var(--orange)">Waste: $' + fmtMoney(totalSaved) + ' (' + savingsPct.toFixed(0) + '%)</span>' +
       forecastStr;
   }
 
@@ -898,9 +904,9 @@ function updateForecastCard(fData) {
   var projUsage  = fData.reduce(function(s, p) { return s + p.useCost; }, 0);
   var projWaste  = projBudget - projUsage;
   var projPct    = projBudget > 0 ? (projWaste / projBudget * 100) : 0;
-  document.getElementById('fcProjBudget').textContent = '$' + projBudget.toFixed(4);
-  document.getElementById('fcProjUsage').textContent  = '$' + projUsage.toFixed(4);
-  document.getElementById('fcProjWaste').textContent  = '$' + projWaste.toFixed(4) + ' (' + projPct.toFixed(0) + '%)';
+  document.getElementById('fcProjBudget').textContent = '$' + fmtMoney(projBudget);
+  document.getElementById('fcProjUsage').textContent  = '$' + fmtMoney(projUsage);
+  document.getElementById('fcProjWaste').textContent  = '$' + fmtMoney(projWaste) + ' (' + projPct.toFixed(0) + '%)';
   document.getElementById('fcPeriod').textContent = fData[0].time + ' → ' + fData[fData.length - 1].time;
 }
 
@@ -1059,9 +1065,9 @@ async function renderFinOpsDrawer() {
     '</div>';
 
     var statsHtml = '<div class="drawer-stats">' +
-      dstat('Total Budget', '$' + totalBudget.toFixed(4), 'var(--red)') +
-      dstat('Total Actual', '$' + totalActual.toFixed(4), 'var(--green)') +
-      dstat('Total Waste',  '$' + totalWaste.toFixed(4), wastePct > 40 ? 'var(--red)' : wastePct > 20 ? 'var(--orange)' : 'var(--yellow)') +
+      dstat('Total Budget', '$' + fmtMoney(totalBudget), 'var(--red)') +
+      dstat('Total Actual', '$' + fmtMoney(totalActual), 'var(--green)') +
+      dstat('Total Waste',  '$' + fmtMoney(totalWaste), wastePct > 40 ? 'var(--red)' : wastePct > 20 ? 'var(--orange)' : 'var(--yellow)') +
       dstat('Waste %', wastePct.toFixed(1) + '%', wastePct > 40 ? 'var(--red)' : wastePct > 20 ? 'var(--orange)' : 'var(--green)') +
     '</div>';
 
@@ -1074,9 +1080,9 @@ async function renderFinOpsDrawer() {
       forecastHtml =
         '<div style="font-size:.72em;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px">Forecast (' + f[0].time + ' → ' + f[f.length-1].time + ')</div>' +
         '<div class="drawer-stats">' +
-        dstat('Proj. Budget', '$' + projBudget.toFixed(4), 'var(--purple)') +
-        dstat('Proj. Usage',  '$' + projUsage.toFixed(4),  'var(--cyan)') +
-        dstat('Proj. Waste',  '$' + projWaste.toFixed(4) + ' (' + projPct.toFixed(0) + '%)', 'var(--orange)') +
+        dstat('Proj. Budget', '$' + fmtMoney(projBudget), 'var(--purple)') +
+        dstat('Proj. Usage',  '$' + fmtMoney(projUsage),  'var(--cyan)') +
+        dstat('Proj. Waste',  '$' + fmtMoney(projWaste) + ' (' + projPct.toFixed(0) + '%)', 'var(--orange)') +
         '</div>' +
         '<div style="font-size:.65em;color:var(--text-dim);text-align:center;margin-top:-6px;font-style:italic">Linear regression &bull; ±1.5σ confidence band</div>';
     }
@@ -2164,7 +2170,7 @@ async function renderWasteDrawer() {
       dstat('Wasted Pods', data.wastedPods||0, data.wastedPods>0?'var(--orange)':'var(--green)') +
       dstat('CPU Saveable', (data.totalSavingMCpu||0) + 'm', 'var(--orange)') +
       dstat('Mem Allocated, Not Used', memOverLabel, 'var(--purple)') +
-      dstat('Est. Cost Save', '$' + (data.totalSavingUSD||0).toFixed(4)+'/hr', 'var(--yellow)') +
+      dstat('Est. Cost Save', '$' + fmtMoney(data.totalSavingUSD||0)+'/hr', 'var(--yellow)') +
     '</div>';
 
     var nsSet = {};
@@ -2729,3 +2735,4 @@ setInterval(update, 5000);
 update();
 fetchChart();
 updateEfficiency();
+
