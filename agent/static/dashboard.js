@@ -1,7 +1,11 @@
 var charts = {};
 var PCOLS = ['#00cc8f','#00b4ff','#e54949','#fbbf24','#a855f7','#f5a623','#ec4899'];
 var pageLoadTime = Date.now();
-const AUTH_TOKEN = 'sentinel-secure-token';
+let AUTH_TOKEN = new URLSearchParams(window.location.search).get('token') || localStorage.getItem('sentinel_token') || 'sentinel-secure-token';
+if (new URLSearchParams(window.location.search).has('token')) {
+  localStorage.setItem('sentinel_token', AUTH_TOKEN);
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
 
 // Helper to add auth header to all requests
 async function fetchAuth(url, opts = {}) {
