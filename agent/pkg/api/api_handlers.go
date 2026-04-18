@@ -1089,7 +1089,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		incs = []Incident{}
 	}
 
-	fmt.Printf("DEBUG: Incidents count: %d, first inc: %+v\n", len(incs), incs[0])
+	fmt.Printf("DEBUG: Incidents count: %d\n", len(incs))
 	json.NewEncoder(w).Encode(incs)
 }
 
@@ -1170,11 +1170,11 @@ func (a *API) handleEvents(w http.ResponseWriter, r *http.Request) {
 			Timestamp: e.LastTimestamp.Time.Format(time.RFC3339),
 		})
 	}
-	
+
 	// Sort by timestamp descending
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Timestamp > result[j].Timestamp
 	})
-	
+
 	json.NewEncoder(w).Encode(result)
 }
