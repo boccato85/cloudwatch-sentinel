@@ -1760,8 +1760,18 @@ async function renderNodeDrawer() {
       targetNode = nodes.find(function(n) { return n.name === focusNode; });
     }
 
-    var nodeInfoCard =
-      '<button class="grade-info-btn" id="node-info-btn" style="margin-bottom:8px">ⓘ What these metrics mean</button>' +
+    var nodeInfoCard = '';
+    if (focusNode) {
+      nodeInfoCard = '<button class="grade-info-btn" id="node-info-btn" style="margin-bottom:8px">ⓘ What these metrics mean</button>' +
+      '<div id="node-info-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-size:.82em;line-height:1.6">' +
+        '<div class="gl-title" style="margin-bottom:8px">Node Detail — metric glossary</div>' +
+        '<div class="gl-row"><span style="color:var(--green);font-weight:600;min-width:160px">Node Status</span><span class="gl-desc">Current condition of the Kubelet. Red indicates network/system unreachability.</span></div>' +
+        '<div class="gl-row"><span style="color:var(--cyan);font-weight:600;min-width:160px">Pod Count</span><span class="gl-desc">Total pods assigned to this node, regardless of phase.</span></div>' +
+        '<div class="gl-row"><span style="color:var(--orange);font-weight:600;min-width:160px">CPU Saturation</span><span class="gl-desc">Total CPU Requested ÷ Node CPU Allocatable. High values (&gt;85%) risk scheduling delays.</span></div>' +
+        '<div class="gl-row" style="border-bottom:none"><span style="color:var(--purple);font-weight:600;min-width:160px">Mem Saturation</span><span class="gl-desc">Total Memory Requested ÷ Node Mem Allocatable. High values risk OOM.</span></div>' +
+      '</div>';
+    } else {
+      nodeInfoCard = '<button class="grade-info-btn" id="node-info-btn" style="margin-bottom:8px">ⓘ What these metrics mean</button>' +
       '<div id="node-info-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-size:.82em;line-height:1.6">' +
         '<div class="gl-title" style="margin-bottom:8px">Node Health Map — metric glossary</div>' +
         '<div class="gl-row"><span style="color:var(--cyan);font-weight:600;min-width:160px">Total Nodes</span><span class="gl-desc">Number of worker nodes registered and reporting to the cluster.</span></div>' +
@@ -1771,6 +1781,7 @@ async function renderNodeDrawer() {
         '<div class="gl-row"><span style="color:var(--purple);font-weight:600;min-width:160px">Memory Requested</span><span class="gl-desc">Total memory reserved across all pods. High values risk OOM evictions.</span></div>' +
         '<div class="gl-row" style="border-bottom:none"><span style="color:var(--cyan);font-weight:600;min-width:160px">Efficiency</span><span class="gl-desc">Actual CPU usage ÷ CPU requested. Low = over-provisioned; high (&gt;85%) = risk of throttling.</span></div>' +
       '</div>';
+    }
 
     var statsHtml = '';
     if (targetNode) {
@@ -1779,18 +1790,18 @@ async function renderNodeDrawer() {
       statsHtml = '<div class="drawer-stats" style="margin-bottom:20px">' +
         dstat('Node Status', targetNode.status, targetNode.status === 'Running' ? 'var(--green)' : 'var(--red)') +
         dstat('Pod Count', targetNode.podCount || 0, 'var(--cyan)') +
-        dstat('CPU Saturation', nCpuSat.toFixed(1) + '%', nCpuSat > 85 ? 'var(--red)' : nCpuSat > 75 ? 'var(--orange)' : 'var(--green)') +
+        dstat('CPU Saturation', nCpuSat.toFixed(1) + '%', nCpuSat > 85 ? 'var(--red)' : nCpuSat > 75 ? 'var(--orange)' : 'var(--red)') +
         dstat('Mem Saturation', nMemSat.toFixed(1) + '%', nMemSat > 85 ? 'var(--red)' : nMemSat > 75 ? 'var(--orange)' : 'var(--purple)') +
       '</div>' + 
       '<div style="margin-bottom:24px;display:flex;flex-direction:column;gap:12px;background:var(--surface);padding:16px;border-radius:6px;border:1px solid var(--border)">' +
-        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px">CPU Requested</span>' +
+        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px;color:var(--text-dim);font-size:.75em;text-transform:uppercase;letter-spacing:1px">CPU Requested</span>' +
           '<span class="pod-detail-val mono" style="width:160px">' + Math.floor(targetNode.cpuRequested) + 'm / ' + Math.floor(targetNode.cpuAllocatable) + 'm</span>' +
-          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px"><div class="pod-detail-fill" style="width:' + Math.min(nCpuSat,100).toFixed(1) + '%;background:' + (nCpuSat > 85 ? 'var(--red)' : nCpuSat > 75 ? 'var(--orange)' : 'var(--cyan)') + '"></div></div>' +
+          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px;background:rgba(255,255,255,.12)"><div class="pod-detail-fill" style="width:' + Math.min(nCpuSat,100).toFixed(1) + '%;background:var(--red)"></div></div>' +
           '<span class="mono" style="margin-left:12px;font-size:0.9em;color:var(--text-bright)">' + nCpuSat.toFixed(1) + '%</span>' +
         '</div>' +
-        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px">Memory Requested</span>' +
+        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px;color:var(--text-dim);font-size:.75em;text-transform:uppercase;letter-spacing:1px">Memory Requested</span>' +
           '<span class="pod-detail-val mono" style="width:160px">' + Math.floor(targetNode.memRequested) + 'Mi / ' + Math.floor(targetNode.memAllocatable) + 'Mi</span>' +
-          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px"><div class="pod-detail-fill" style="width:' + Math.min(nMemSat,100).toFixed(1) + '%;background:' + (nMemSat > 85 ? 'var(--red)' : nMemSat > 75 ? 'var(--orange)' : 'var(--purple)') + '"></div></div>' +
+          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px;background:rgba(255,255,255,.12)"><div class="pod-detail-fill" style="width:' + Math.min(nMemSat,100).toFixed(1) + '%;background:var(--purple)"></div></div>' +
           '<span class="mono" style="margin-left:12px;font-size:0.9em;color:var(--text-bright)">' + nMemSat.toFixed(1) + '%</span>' +
         '</div>' +
       '</div>';
@@ -1801,6 +1812,7 @@ async function renderNodeDrawer() {
       } else {
          m = m.filter(function(p) { return p.nodeName === focusNode; });
       }
+
     } else {
       statsHtml = '<div class="drawer-stats">' +
         dstat('Total Nodes', nodes.length, 'var(--cyan)') +
@@ -1833,21 +1845,28 @@ async function renderNodeDrawer() {
     }
 
     // Top pods on this node
-    var topPods = (m || []).slice(0,8);
-    var podRows = topPods.map(function(p,i) {
-      var pct = p.cpuRequestPresent && p.cpuRequest > 0 ? (p.cpuUsage / p.cpuRequest * 100) : 0;
-      return '<tr><td class="mono">' + (i+1) + '</td>' +
-        '<td class="mono" style="color:var(--text-bright)">' + esc(p.name||'--') + '</td>' +
-        '<td><span class="ns-tag">' + esc(p.namespace||'--') + '</span></td>' +
-        '<td class="mono" style="color:var(--cyan)">' + p.cpuUsage + 'm</td>' +
-        '<td class="mono" style="color:var(--text-dim)">' + (p.cpuRequestPresent ? p.cpuRequest+'m' : 'N/A') + '</td>' +
-        '<td class="mono" style="color:' + (pct>85?'var(--red)':pct>70?'var(--orange)':'var(--green)') + '">' + pct.toFixed(0) + '%</td></tr>';
-    }).join('');
+    m = m || [];
+    m.sort(function(a,b){ return b.cpuUsage - a.cpuUsage; }); // sort desc by usage
+    var podRows = '';
+    if (m.length === 0) {
+      podRows = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px">No data</td></tr>';
+    } else {
+      podRows = m.slice(0,10).map(function(p, i) {
+        var pctStr = p.cpuRequestPresent && p.cpuRequest > 0 ? (p.cpuUsage / p.cpuRequest * 100).toFixed(1) + '%' : 'N/A';
+        return '<tr class="waste-row-clickable">' +
+          '<td class="mono" style="color:var(--text-dim)">' + (i+1) + '</td>' +
+          '<td class="mono" style="color:var(--text-bright)">' + esc(p.name||'--') + '</td>' +
+          '<td><span class="ns-tag">' + esc(p.namespace||'--') + '</span></td>' +
+          '<td class="mono" style="color:var(--orange)">' + p.cpuUsage + 'm</td>' +
+          '<td class="mono" style="color:var(--text-dim)">' + (p.cpuRequestPresent ? p.cpuRequest+'m' : 'N/A') + '</td>' +
+          '<td class="mono" style="color:var(--cyan)">' + pctStr + '</td></tr>';
+      }).join('');
+    }
 
     drawerHTML(nodeInfoCard + statsHtml + nodeCards +
-      '<div style="font-size:.72em;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;margin-top:4px">Top Pods by CPU</div>' +
-      '<div class="drawer-table-wrap"><table class="wtable"><thead><tr><th>#</th><th>Pod</th><th>Namespace</th><th>CPU Usage</th><th>CPU Request</th><th>Utilization</th></tr></thead>' +
-      '<tbody>' + (podRows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No data</td></tr>') + '</tbody></table></div>');
+      '<div style="font-size:.72em;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:16px">Top Pods by CPU</div>' +
+      '<div class="drawer-table-wrap" style="padding-bottom:10px"><table class="wtable" style="font-size:0.85em;margin-bottom:20px"><thead><tr><th>#</th><th>Pod</th><th>Namespace</th><th>CPU Usage</th><th>CPU Request</th><th>Utilization</th></tr></thead>' +
+      '<tbody>' + podRows + '</tbody></table></div>');
 
     document.getElementById('node-info-btn').addEventListener('click', function() {
       var c = document.getElementById('node-info-card');
