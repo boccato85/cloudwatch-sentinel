@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -19,7 +20,8 @@ import (
 )
 
 func (a *API) RegisterHandlers(mux *http.ServeMux) {
-	h := md5.Sum(a.IconPNG)
+	iconData, _ := fs.ReadFile(a.StaticFS, "static/icon.png")
+	h := md5.Sum(iconData)
 	a.IconETag = `"` + hex.EncodeToString(h[:]) + `"`
 
 	mux.HandleFunc("/health", a.handleHealth)
@@ -40,8 +42,11 @@ func (a *API) RegisterHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/openapi.yaml", a.handleOpenAPI)
 	mux.HandleFunc("/status", a.handleStatusHTML)
 	mux.HandleFunc("/", a.handleDashboardHTML)
-	mux.HandleFunc("/static/dashboard.css", a.handleDashboardCSS)
-	mux.HandleFunc("/static/dashboard.js", a.handleDashboardJS)
+
+	// Serve all remaining static assets (CSS, JS modules, etc.) via embedded FS.
+	// /static/icon.png is handled separately above for ETag caching support.
+	sub, _ := fs.Sub(a.StaticFS, "static")
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(sub))))
 }
 
 func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +75,8 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	dbErr := store.DB.PingContext(pingCtx)
 	dbLatency := time.Since(dbStart).Milliseconds()
 	if dbErr != nil {
-		resp.Checks["database"] = HealthStatus{Status: "unhealthy", Message: dbErr.Error()}
+		slog.Error("database ping failed", "component", "health", "err", dbErr)
+		resp.Checks["database"] = HealthStatus{Status: "unhealthy", Message: "database unreachable"}
 		resp.Status = "degraded"
 	} else {
 		resp.Checks["database"] = HealthStatus{Status: "ok", LatencyMs: &dbLatency}
@@ -82,7 +88,8 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	k8sErr := k8s.PingK8sAPI(k8sCtx)
 	k8sLatency := time.Since(k8sStart).Milliseconds()
 	if k8sErr != nil {
-		resp.Checks["k8s_api"] = HealthStatus{Status: "unhealthy", Message: k8sErr.Error()}
+		slog.Error("k8s api ping failed", "component", "health", "err", k8sErr)
+		resp.Checks["k8s_api"] = HealthStatus{Status: "unhealthy", Message: "kubernetes api unreachable"}
 		resp.Status = "degraded"
 	} else {
 		resp.Checks["k8s_api"] = HealthStatus{Status: "ok", LatencyMs: &k8sLatency}
@@ -94,7 +101,8 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	metricsErr := k8s.PingMetricsAPI(metricsCtx)
 	metricsLatency := time.Since(metricsStart).Milliseconds()
 	if metricsErr != nil {
-		resp.Checks["metrics_api"] = HealthStatus{Status: "unhealthy", Message: metricsErr.Error()}
+		slog.Error("metrics api ping failed", "component", "health", "err", metricsErr)
+		resp.Checks["metrics_api"] = HealthStatus{Status: "unhealthy", Message: "metrics api unreachable"}
 		resp.Status = "degraded"
 	} else {
 		resp.Checks["metrics_api"] = HealthStatus{Status: "ok", LatencyMs: &metricsLatency}
@@ -134,10 +142,15 @@ func (a *API) handleIcon(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
+	iconData, err := fs.ReadFile(a.StaticFS, "static/icon.png")
+	if err != nil {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "public, max-age=3600, must-revalidate")
 	w.Header().Set("ETag", a.IconETag)
-	w.Write(a.IconPNG)
+	w.Write(iconData)
 }
 
 func (a *API) handleSummary(w http.ResponseWriter, r *http.Request) {
@@ -1089,7 +1102,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		incs = []Incident{}
 	}
 
-	fmt.Printf("DEBUG: Incidents count: %d\n", len(incs))
+	slog.Debug("incidents computed", "component", "http", "count", len(incs))
 	json.NewEncoder(w).Encode(incs)
 }
 
@@ -1098,11 +1111,12 @@ func (a *API) handleStatusHTML(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	data, _ := fs.ReadFile(a.StaticFS, "static/status.html")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:")
-	w.Write(a.StatusHTML)
+	w.Write(data)
 }
 
 func (a *API) handleDashboardHTML(w http.ResponseWriter, r *http.Request) {
@@ -1110,35 +1124,12 @@ func (a *API) handleDashboardHTML(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	data, _ := fs.ReadFile(a.StaticFS, "static/dashboard.html")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; connect-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:")
-	w.Write(a.DashboardHTML)
-}
-
-func (a *API) handleDashboardCSS(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	w.Header().Set("Content-Type", "text/css; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("X-Frame-Options", "DENY")
-	w.Write(a.DashboardCSS)
-}
-
-func (a *API) handleDashboardJS(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("X-Frame-Options", "DENY")
-	w.Write(a.DashboardJS)
+	w.Write(data)
 }
 
 func (a *API) handleEvents(w http.ResponseWriter, r *http.Request) {

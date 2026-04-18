@@ -29,6 +29,12 @@ FORBIDDEN_PATTERNS = [
     "> /dev/",
     "format c:",
     ":(){:|:&};:",  # fork bomb
+    # M5 remediation guard: commands that appear safe but are destructive in runbook context
+    "kubectl apply -f -",          # applying manifests piped from stdin (untrusted input)
+    "kubectl scale --replicas=0",  # scaling down to zero (service outage)
+    "helm uninstall",              # uninstalling a release (data loss risk)
+    "helm delete",                 # alias for helm uninstall
+    "kubectl exec",                # arbitrary command execution inside pods
 ]
 
 FORBIDDEN_REGEX_PATTERNS = [
@@ -42,6 +48,12 @@ FORBIDDEN_REGEX_PATTERNS = [
     (r">\s*/dev/", "> /dev/"),
     (r"\bformat\s+c:", "format c:"),
     (r":\(\)\{\s*:\|:&\s*\};:", ":(){:|:&};:"),
+    # M5 remediation guard: regex equivalents for runbook command blocks
+    (r"\bkubectl\s+apply\s+-f\s+-\b", "kubectl apply -f -"),
+    (r"\bkubectl\s+scale\b.*--replicas\s*=\s*0\b", "kubectl scale --replicas=0"),
+    (r"\bhelm\s+(?:uninstall|delete)\b", "helm uninstall/delete"),
+    (r"\bkubectl\s+exec\b", "kubectl exec"),
+    (r"\bkubectl\s+patch\b.*replicas.*:\s*0\b", "kubectl patch replicas=0"),
 ]
 
 REQUIRED_SECTION = "## Resumo Executivo"

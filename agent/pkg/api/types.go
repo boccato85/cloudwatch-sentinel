@@ -150,6 +150,7 @@ type Incident struct {
 	Type      string `json:"type"`
 	Severity  string `json:"severity"`
 	Message   string `json:"message"`
+	Narrative string `json:"narrative,omitempty"` // LLM-generated explanation; empty until M5 intelligence layer is active
 	Age       string `json:"age"`
 	IsWaste   bool   `json:"isWaste"`
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	_ "embed"
+	"embed"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -23,27 +23,15 @@ import (
 	_ "github.com/lib/pq"
 )
 
-//go:embed static/icon.png
-var iconPNG []byte
-
-//go:embed static/dashboard.html
-var dashboardHTML []byte
-
-//go:embed static/dashboard.css
-var dashboardCSS []byte
-
-//go:embed static/dashboard.js
-var dashboardJS []byte
-
-//go:embed static/status.html
-var statusHTML []byte
+//go:embed static
+var staticFS embed.FS
 
 var (
 	usdPerVcpuHour float64
 	usdPerGbHour   float64
 )
 
-const agentVersion = "0.11"
+const agentVersion = "0.12"
 const collectorStaleThreshold = 30 * time.Second
 
 var (
@@ -211,7 +199,11 @@ func main() {
 	defer appCancel()
 
 	authEnabled := getEnv("AUTH_ENABLED", "true") == "true"
-	authToken := getEnv("AUTH_TOKEN", "sentinel-secure-token")
+	authToken := getEnv("AUTH_TOKEN", "")
+	if authEnabled && authToken == "" {
+		slog.Error("AUTH_TOKEN must be set when AUTH_ENABLED=true — refusing to start with no token", "component", "app")
+		os.Exit(1)
+	}
 
 	go store.StartRetentionWorker(appCtx, retentionRawHours, retentionHourlyDays, retentionDailyDays)
 
@@ -401,11 +393,7 @@ func main() {
 			defer collectMutex.Unlock()
 			return lastCollectTime
 		},
-		IconPNG:       iconPNG,
-		DashboardHTML: dashboardHTML,
-		DashboardCSS:  dashboardCSS,
-		DashboardJS:   dashboardJS,
-		StatusHTML:    statusHTML,
+		StaticFS: staticFS,
 	}
 
 	apiService.RegisterHandlers(mux)

@@ -11,11 +11,11 @@
   <img src="docs/screenshots/sentinel_ss_0.10.20(1).png" alt="Sentinel Dashboard v0.11" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.11-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.12-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
-![Go](https://img.shields.io/badge/Go-agent-00ADD8)
+![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
-![Tests](https://img.shields.io/badge/tests-25%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-33%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 ---
@@ -118,13 +118,14 @@ cd Sentinel
 
 ```bash
 # Build the image
-podman build -t localhost/sentinel:0.10.18 agent/
-podman save localhost/sentinel:0.10.18 | minikube image load -
+podman build -t localhost/sentinel:0.12 agent/
+podman save localhost/sentinel:0.12 | minikube image load -
 
 # Deploy (PostgreSQL spins up automatically as a pod)
 helm install sentinel helm/sentinel -n sentinel-gemini --create-namespace \
-  --set image.tag=0.10.18 \
-  --set image.pullPolicy=Never
+  --set image.tag=0.12 \
+  --set image.pullPolicy=Never \
+  --set agent.auth.token=<your-secret-token>
 
 # Check pods
 kubectl get pods -n sentinel-gemini
@@ -281,7 +282,7 @@ The Sentinel Go Agent can be configured via environment variables. If using Helm
 | `LISTEN_ADDR` | `0.0.0.0:8080` | Bind address and port for the dashboard and API. |
 | `RATE_LIMIT_RPS` | `100` | Global rate limit in requests per second. |
 | `AUTH_ENABLED` | `true` | Enable Bearer token authentication for API endpoints (except `/health`). |
-| `AUTH_TOKEN` | `sentinel-secure-token` | The token required when `AUTH_ENABLED` is true. |
+| `AUTH_TOKEN` | **(Required when auth enabled)** | The token required when `AUTH_ENABLED` is true. Agent refuses to start if empty. No default is provided — operator must supply a secret value. |
 | **FinOps Pricing** | | |
 | `USD_PER_VCPU_HOUR` | `0.04` | Cost of 1 CPU core (1000m) per hour, used for waste forecast. |
 | `USD_PER_GB_HOUR` | `0.005` | Cost of 1 GB (1024MiB) of Memory per hour. |
@@ -332,9 +333,16 @@ sentinel/
 │   │       ├── store.go
 │   │       └── store_test.go
 │   └── static/
-│       ├── dashboard.html           # Dashboard (embedded in binary)
+│       ├── dashboard.html           # Dashboard (embedded in binary via embed.FS)
 │       ├── dashboard.css
-│       ├── dashboard.js
+│       ├── js/                      # Dashboard JS modules (loaded in order)
+│       │   ├── 01-init.js           # State, auth, utilities
+│       │   ├── 02-charts.js         # Chart.js wrappers
+│       │   ├── 03-namespace.js      # Namespace/tab management
+│       │   ├── 04-overview.js       # Overview tab + tile updaters
+│       │   ├── 05-workloads.js      # Workloads, pods, efficiency, FinOps drawer
+│       │   ├── 06-drawers.js        # Drawer engine + all 9 drawer renderers
+│       │   └── 07-polling.js        # Event bindings, init calls
 │       ├── status.html              # Status page (embedded)
 │       └── icon.png
 ├── helm/sentinel/                   # Kubernetes Helm chart
@@ -357,17 +365,37 @@ sentinel/
 
 ## Harness Engineering
 
-Every final report passes through `harness/validador_saida.py`:
+Every final report passes through `harness/validador_saida.py` before being written:
 
 | Rule | Behavior |
 |---|---|
-| Blocks destructive commands | `rm -rf`, `kubectl delete`, `DROP TABLE`, fork bombs etc. |
+| Blocks destructive commands | `rm -rf`, `kubectl delete`, `DROP TABLE`, fork bombs, `> /dev/` redirects |
+| Blocks M5 remediation risks | `kubectl exec`, `kubectl apply -f -` (stdin), `kubectl scale --replicas=0`, `kubectl patch` with `replicas: 0`, `helm uninstall`, `helm delete` |
 | Requires `## Resumo Executivo` | Reports without this section are rejected |
 | Minimum size | Content under 100 characters is rejected |
+| Maximum size | Content over 10 MB is rejected |
+| Unicode normalization | NFKC + invisible character removal before pattern matching — prevents evasion via lookalike chars |
+
+23 automated tests cover all patterns: `python3 harness/test_validador_saida.py`
 
 ---
 
 ## Changelog
+
+### v0.12 — Security hardening + M5 foundation + JS modularization
+
+**Security (M4 gap closure):**
+- **AUTH_TOKEN fail-fast** — agent refuses to start if `AUTH_ENABLED=true` and `AUTH_TOKEN` is empty; no default provided (`main.go`, Helm `required` guard)
+- **`/health` disclosure fix** — raw internal error strings (containing IPs/ports) replaced with static `"database unreachable"` etc.; raw errors logged server-side only
+- **XSS hardening** — DOMPurify restored in `drawerHTML()` as safety net; `entry.opportunity`, `n.namespace` and `n.grade` now escaped with `esc()` before `innerHTML`
+- **Helm `required` guard** — `agent.auth.token` must be set at install time; chart renders fail if empty
+
+**M5 foundation:**
+- **`Narrative` field** on `Incident` struct (`omitempty`, backward-compatible) — wired for LLM enrichment; Alerts drawer renders it as a collapsible "Why?" block when present
+- **Harness M5 remediation guard** — harness blocks `kubectl exec`, `kubectl apply -f -`, `kubectl scale --replicas=0`, `helm uninstall/delete`, `kubectl patch replicas:0`; 23 automated tests cover all patterns
+
+**Infrastructure:**
+- **JS modularization** — `dashboard.js` (2,786 lines) split into 7 ordered modules under `static/js/`; `//go:embed static` replaces 5 individual embed directives; `embed.FS` + `http.FileServer` replace byte-slice handlers
 
 ### v0.11 — Dashboard v2: no-scroll layout + FinOps/Efficiency toggle
 - **Dashboard v2 layout** — scroll-free overview optimized for single-screen monitoring
@@ -481,14 +509,15 @@ Every final report passes through `harness/validador_saida.py`:
 
 ## Roadmap
 
-| Milestone | Status | Target version |
+| Milestone | Status | Version |
 |---|---|---|
-| M1 — Stable core (+ M5 self-observability) | ✅ Done | v0.10.1 |
+| M1 — Stable core | ✅ Done | v0.10.1 |
 | M2 — Actionable FinOps | ✅ Done | v0.10.15 |
 | M3 — Deterministic incident intelligence | ✅ Done | v0.11 |
-| M4 — Real lab with Online Boutique | Not started | v0.11 |
-| M6 — Optional intelligence (LLM as a layer) | Partial (~20%) | v0.12 |
-| M7 — v1.0 preparation | Not started | v1.0 |
+| M4 — Critical Resilience & Security | ✅ Done | v0.11.3 → v0.12 |
+| M5 — Optional intelligence (LLM as a layer) | Partial (~40%) | v0.12 |
+| M6 — v1.0 preparation | Not started | v0.99 |
+| M7 — Real lab / QA / Prod-like | Not started | v1.0-rc |
 
 See [ROADMAP.md](ROADMAP.md) for full details.
 
