@@ -2,11 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"io/fs"
 	"log/slog"
 	"net"
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,16 +24,11 @@ type API struct {
 	Thresholds              incidents.Thresholds
 	AuthEnabled             bool
 	AuthToken               string
+	StaticFS                fs.FS
+	IconETag                string // computed in RegisterHandlers
 
 	GetLatestStats     func() ([]PodStats, ClusterSummary)
 	GetLastCollectTime func() time.Time
-
-	IconPNG       []byte
-	DashboardHTML []byte
-	DashboardCSS  []byte
-	DashboardJS   []byte
-	StatusHTML    []byte
-	IconETag      string
 }
 
 func WithMiddleware(handler http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
@@ -156,9 +153,7 @@ func (a *API) AuthMiddleware(next http.Handler) http.Handler {
 		isPublic := !a.AuthEnabled ||
 			r.URL.Path == "/health" ||
 			r.URL.Path == "/" ||
-			r.URL.Path == "/static/dashboard.css" ||
-			r.URL.Path == "/static/dashboard.js" ||
-			r.URL.Path == "/static/icon.png" ||
+			strings.HasPrefix(r.URL.Path, "/static/") ||
 			r.URL.Path == "/status" ||
 			r.URL.Path == "/docs" ||
 			r.URL.Path == "/openapi.yaml" ||

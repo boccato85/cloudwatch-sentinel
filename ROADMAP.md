@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-16 | Current version: `v0.11`
+> Last updated: 2026-04-18 | Current version: `v0.12`
 
 ## Product vision
 
@@ -29,8 +29,8 @@
 | M1 — Stable core (+ M5 self-observability) | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
 | M3 — Deterministic incident intelligence | ✅ Done | `v0.11` |
-| M4 — Critical Resilience & Security | ✅ Done | `v0.11` |
-| M5 — Optional intelligence | Partial (~20%) | `v0.12` |
+| M4 — Critical Resilience & Security | ✅ Done | `v0.11.3` |
+| M5 — Optional intelligence | Partial (~40%) | `v0.12` |
 | M6 — v1.0 preparation | Not started | `v0.99` |
 | M7 — Real lab / QA / Prod-like | Not started | `v1.0-rc` |
 
@@ -88,7 +88,6 @@
 
 ---
 
-<<<<<<< HEAD
 ### M3 — Deterministic incident intelligence ✅ Done (`v0.11`)
 
 **Goal:** Sentinel generates useful diagnosis even without AI, with APIs documented and individually monitored.
@@ -103,7 +102,6 @@
 | Simple correlation (pod in CrashLoop + high CPU usage) | ✅ Done |
 | Deterministic operational summary at `/api/incidents` | ✅ Done |
 | Consumption of `/api/incidents` by the Dashboard UI | ✅ Done |
-| `/incident` integration with new endpoint (not LLM-only) | ✅ Done (moved to M6) |
 | Per-endpoint health check in `/health` (`checks.apis`) with individual latency | ✅ Done |
 | `/status` page displays per-component status (APIM-style) | ✅ Done |
 | `openapi.yaml` embedded in binary covering all endpoints | ✅ Done |
@@ -115,7 +113,7 @@
 
 ---
 
-### M4 — Critical Resilience & Security (`v0.11`)
+### M4 — Critical Resilience & Security ✅ Done (`v0.11.3` → `v0.12`)
 
 **Goal:** Secure the agent for public release and ensure data resilience before pushing to production-like environments.
 
@@ -130,8 +128,14 @@
 | Exponential backoff in collector goroutine | ✅ Done |
 | Document environment variables and defaults | ✅ Done |
 | Configurable FinOps pricing (price per mCPU/MiB) | ✅ Done |
+| **Busting Cache System** for UI scripts | ✅ Done |
+| **Security gap — AUTH_TOKEN**: fail-fast on boot if `AUTH_ENABLED=true` and token empty | ✅ Done (`v0.12`) |
+| **Security gap — /health**: strip raw internal error strings from unauthenticated response | ✅ Done (`v0.12`) |
+| **Security gap — XSS**: restore DOMPurify in `drawerHTML()`; escape `opportunity`, `namespace`, `grade` in innerHTML | ✅ Done (`v0.12`) |
+| **Security gap — Helm**: `required` guard on `agent.auth.token`; remove hardcoded default | ✅ Done (`v0.12`) |
+| **JS modularization**: split 2,786-line `dashboard.js` into 7 modules under `static/js/`; switch to `embed.FS` | ✅ Done (`v0.12`) |
 
-**Done criterion:** ✅ Sentinel can survive a pod restart without data loss, the API requires auth outside of local environments, and CI runs on every PR.
+**Done criterion:** ✅ Sentinel can survive a pod restart without data loss, the API requires auth outside of local environments, CI runs on every PR, and no hardcoded credentials exist in the codebase.
 
 **Dependencies:** M3 ✅
 
@@ -146,14 +150,17 @@
 | Item | Status |
 |---|---|
 | `/incident` consumes deterministic `/api/incidents` first | Pending |
-| Narrative enrichment for context, doesn't replace diagnosis | Partial |
+| `Narrative string` field in `Incident` struct (`omitempty`, backward-compatible) | ✅ Done (`v0.12`) |
+| Narrative rendered in Alerts drawer when populated (collapsible "Why?" block) | ✅ Done (`v0.12`) |
 | Degraded mode: if intelligence layer unavailable, returns deterministic analysis | Pending |
+| Harness M5 remediation guard: block `kubectl exec`, `kubectl scale --replicas=0`, `helm uninstall`, `kubectl apply -f -`, `kubectl patch replicas:0` | ✅ Done (`v0.12`) |
 | Possible local model support (Ollama) | Future |
 | Automatic runbooks based on templates + variables | Pending |
+| **Datadog-style UI Alignment** (Node Health pods) | Partial |
 
 **Done criterion:** `/incident` works without external models and produces usable diagnosis.
 
-**Dependencies:** M4
+**Dependencies:** M4 ✅
 
 ---
 
@@ -197,47 +204,6 @@
 
 **Dependencies:** M6
 
-### M6 — Optional intelligence (`v0.12`)
-
-**Goal:** The intelligence layer improves the experience but is not required for the core.
-
-**Deliverables:**
-
-| Item | Status |
-|---|---|
-| `/incident` consumes deterministic `/api/incidents` first | Pending |
-| Narrative enrichment for context, doesn't replace diagnosis | Partial |
-| Degraded mode: if intelligence layer unavailable, returns deterministic analysis | Pending |
-| Possible local model support (Ollama) | Future |
-| Automatic runbooks based on templates + variables | Pending |
-
-**Done criterion:** `/incident` works without external models and produces usable diagnosis.
-
-**Dependencies:** M3
-
----
-
-### M7 — v1.0 preparation (`v1.0`)
-
-**Goal:** You'd call it 1.0 without technical embarrassment.
-
-**Deliverables:**
-
-| Item | Status |
-|---|---|
-| Documentation for all endpoints (OpenAPI or Markdown) | Pending |
-| Stable API contracts (no breaking changes) | Pending |
-| Revised dashboard UX (visual consistency, responsiveness) | Pending |
-| Clean configuration (no undocumented env vars) | Pending |
-| README reflecting real project state | Pending |
-| Predictable failure behavior (graceful degradation) | Pending |
-| Minimal auth (at least BasicAuth or static token) | Pending |
-| AGENTS.md + MINIMAX.md agent instruction files | ✅ Done |
-
-**Done criterion:** Another developer can clone, configure and run Sentinel without help.
-
-**Dependencies:** Previous milestones reasonably complete
-
 ---
 
 ## Version → milestone mapping
@@ -250,8 +216,9 @@
 | `v0.10.15` | M2 | ✅ Waste by Deployment — M2 closed |
 | `v0.10.18` | M3 partial | ✅ `/api/incidents` consumed by dashboard, multi-instance sync |
 | `v0.11` | M3 + Dashboard UX | ✅ Dashboard v2: no-scroll layout, FinOps/Efficiency toggle, context bar, events drawer |
-| `v0.11` | M4 | Resilience, PVC, Auth, CI |
-| `v0.12` | M5 | LLM as optional layer, degraded mode |
+| `v0.11.3` | M4 | ✅ Resilience, PVC, Auth, CI, Cache Busting |
+| `v0.12` | M4 gaps + M5 foundation | ✅ Security fixes, Narrative hook, harness M5 guard, JS modularization |
+| `v0.12.x` | M5 | LLM as optional layer, degraded mode, UI alignment |
 | `v0.99` | M6 | Polish, docs, stable contracts |
 | `v1.0-rc` | M7 | Online Boutique lab (QA/Prod-like) |
 
@@ -261,7 +228,8 @@
 
 ### High priority (v0.12)
 - M5: `/incident` consumindo dados determinísticos da `/api/incidents`
-- M5: Narrativa enriquecida (LLM como explicador, não diagnosticador)
+- M5: UI: Align node health pods (honeycomb) with Datadog style
+- M5: UI: Add "Memory Requested" bar to global node list drawer
 - M7: Online Boutique lab: baseline + load + comparison
 
 ### Medium priority (v0.1.x)
@@ -290,4 +258,3 @@
 - If the dashboard fails, the API must still be usable
 - If the cluster changes, the contracts must hold
 - If the project grows, the core must not lose simplicity
-implicity

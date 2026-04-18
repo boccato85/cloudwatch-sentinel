@@ -51,7 +51,9 @@ agent:
   dbTimeoutSec: 5
   auth:
     enabled: true
-    token: "sentinel-secure-token"
+    # REQUIRED: set to a secret value — no default is provided intentionally.
+    # Override via: --set agent.auth.token=<your-secret>
+    token: ""
 
 # Operational thresholds (mirrors config/thresholds.yaml)
 thresholds:

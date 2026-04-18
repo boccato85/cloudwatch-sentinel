@@ -75,6 +75,37 @@ class TestValidadorSaida(unittest.TestCase):
         errors = validate(huge)
         self.assertTrue(any("limite máximo" in e.lower() for e in errors))
 
+    # ===== M5 remediation guard tests =====
+    def test_blocks_kubectl_apply_stdin(self):
+        errors = validate(valid_report_with("Run: kubectl apply -f - < manifest.yaml"))
+        self.assertTrue(any("kubectl apply -f -" in e for e in errors))
+
+    def test_blocks_kubectl_scale_zero(self):
+        errors = validate(valid_report_with("kubectl scale deployment/api --replicas=0"))
+        self.assertTrue(any("replicas=0" in e.lower() or "scale" in e.lower() for e in errors))
+
+    def test_blocks_helm_uninstall(self):
+        errors = validate(valid_report_with("helm uninstall sentinel -n sentinel-gemini"))
+        self.assertTrue(any("helm uninstall" in e.lower() or "helm" in e.lower() for e in errors))
+
+    def test_blocks_helm_delete(self):
+        errors = validate(valid_report_with("helm delete sentinel"))
+        self.assertTrue(any("helm" in e.lower() for e in errors))
+
+    def test_blocks_kubectl_exec(self):
+        errors = validate(valid_report_with("kubectl exec -it pod/myapp -- /bin/sh"))
+        self.assertTrue(any("kubectl exec" in e.lower() for e in errors))
+
+    def test_accepts_kubectl_apply_from_file(self):
+        # kubectl apply -f <filename> (not stdin) should NOT be blocked
+        errors = validate(valid_report_with("kubectl apply -f deployment.yaml"))
+        self.assertEqual(errors, [])
+
+    def test_accepts_kubectl_scale_nonzero(self):
+        # scaling to a non-zero replica count should NOT be blocked
+        errors = validate(valid_report_with("kubectl scale deployment/api --replicas=3"))
+        self.assertEqual(errors, [])
+
     # ===== Unicode normalization tests =====
     def test_normalize_unicode_removes_invisible_chars(self):
         # Zero-width space (U+200B) should be removed
