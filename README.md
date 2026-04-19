@@ -427,25 +427,7 @@ Every final report passes through `harness/validador_saida.py` before being writ
 - **Per-package tests** — `go test ./...` covers all 5 packages (25 tests total)
 - **Security hardening preserved** — all 21 items from commit `f6e6b1d` intact after refactoring
 
-### v0.10.15 — M2: Waste by Deployment
-- **By Deployment view** in Waste Intelligence drawer — aggregates by `app` label: Deployment · Namespaces · Pods · CPU Saveable · Mem Not Used · Est. Saving
-- **By Pod | By Deployment toggle** with tab-style UI in drawer
-- `appLabel` field added to `WasteEntry` Go struct and propagated via `/api/waste` (no new route)
-- Namespace and "Show system NS" filters work across both views
-
-### v0.10.14 — Namespace Efficiency Score + UX Polish
-- **Namespace Efficiency Score** — full-width panel with A→F grades, "Worst" badge, fixed-position "How grades work" tooltip
-- **"ⓘ What these metrics mean" card** — inline glossary in all 5 drawers
-- **"Show system NS" toggle** in Waste, CPU, Mem and Pod Distribution drawers
-- **Pod Distribution drawer** — inherits NS from tile, own dropdown, filtered stats
-- **ph-expand always visible** — opacity 0.4 base, cyan on hover — all panels
-- **gradeBadgeStyle()** helper with literal colors per grade
-- **CPU drawer** — metrics renamed to CPU Free + CPU Pressure
-- **WasteEntry Go struct** — `MemUsage`, `MemRequest`, `IsSystem` fields added
-
-### v0.10.13 — Status Page
-- **`/status` page** — animated health cards for 4 components: Sentinel Agent, Database, Metrics Collector, Kubernetes API
-- Dynamic green/orange/red banner from `/health`; auto-refresh 10s
+## Changelog
 
 ### v0.33
 - **Auto-scaling Honeycomb Map** — Datadog-inspired visual density map for cluster health.
@@ -458,58 +440,33 @@ Every final report passes through `harness/validador_saida.py` before being writ
 - **Harness Remediation Guard** — 23 automated tests blocking high-risk operations (exec, replicas=0).
 - **JS Modularization** — Dashboard JS split into 7 maintainable modules.
 
+### v0.11.3
+- **Busting Cache System** — Asset synchronization for UI scripts across builds.
+
+### v0.11.0 — M3 closed
+- **Deterministic Incident Intelligence** — `/api/incidents` without LLM.
+- **OpenAPI / Swagger UI** — embedded documentation at `/docs`.
+
+### v0.10.15 — M2: Waste by Deployment
+- **By Deployment view** in Waste Intelligence drawer — aggregates by `app` label.
+- **By Pod | By Deployment toggle** with tab-style UI.
+
+### v0.10.14 — Namespace Efficiency Score + UX Polish
+- **Namespace Efficiency Score** — full-width panel with A→F grades.
+- **"ⓘ What these metrics mean" card** — inline glossary.
+
+### v0.10.13 — Status Page
+- **`/status` page** — animated health cards for 4 components.
+
 ### v0.10.11
-- **Connected badge tooltip** — hover shows Cluster, Endpoint, Version, Session uptime, Last sync, Database
-
-### v0.10.10
-- **Real `memRequest` per pod** — `PodStats` gained `MemRequest int64` field; DB INSERT uses real value (previously hardcoded `0`)
-
-### v0.10.9
-- **Fix Pod Distribution** — `ReferenceError: pods is not defined` blocked all KPI updates
-
-### v0.10.8
-- **Header Alert Badge** — animated dot: green "All OK" / orange / pulsing red
-- **Full KPI strip** — 6 clickable cards opening drawers
-
-### v0.10.6 — v0.10.7
-- **row-4 layout** — Node Health | Pod Distribution | CPU compact | Memory compact
-
-### v0.10.5
-- **Per-tile namespace filters** — independent per panel
-- **Financial Correlation hero** — full-width with FinOps orange border
-
-### v0.10.4
-- **Memory Resource Allocation tile** — purple donut, pressure ratio, Optimal/High/Critical badge
+- **Connected badge tooltip** — cluster details on hover.
 
 ### v0.10.1 — M1 closed
-- `/health` endpoint with DB and collector status
-- Structured logging with `slog`
-- **22 automated tests** (collection + waste calculation)
-- Thresholds loaded from `config/thresholds.yaml` via ConfigMap
-
-### v0.10.0
-- **Cost Forecast** — OLS linear regression, ±1.5σ confidence band
-
-### v0.7.3
-- Fix Utilization bar — real `usage / request` calculation
-
-### v0.7
-- **Fully standalone** — all Prometheus/Grafana/AlertManager dependencies removed
-
-### v0.6
-- 3-layer retention (raw/hourly/daily) with automatic cleanup
-
-### v0.5
-- Complete Helm chart; automatic InClusterConfig; security hardening
-
-### v0.4
-- Go agent with real-time web dashboard (port 8080)
-- FinOps: waste per pod + cost history in PostgreSQL
+- `/health` endpoint with DB and collector status.
+- **22 automated tests**.
 
 ### v0.1 — v0.3
-- Initial release: orchestrator + parallel sub-agents
-- Automatic runbook and report generation
-- MCP Server kubectl integration
+- Initial release: orchestrator + sub-agents.
 
 ---
 
@@ -520,8 +477,8 @@ Every final report passes through `harness/validador_saida.py` before being writ
 | M1 — Stable core | ✅ Done | v0.10.1 |
 | M2 — Actionable FinOps | ✅ Done | v0.10.15 |
 | M3 — Deterministic incident intelligence | ✅ Done | v0.11 |
-| M4 — Critical Resilience & Security | ✅ Done | v0.11.3 → v0.12 |
-| M5 — Optional intelligence (LLM as a layer) | Partial (~40%) | v0.12 |
+| M4 — Critical Resilience & Security | ✅ Done | v0.12 |
+| M5 — Optional intelligence (LLM as a layer) | Partial (~65%) | v0.33 |
 | M6 — v1.0 preparation | Not started | v0.99 |
 | M7 — Real lab / QA / Prod-like | Not started | v1.0-rc |
 
