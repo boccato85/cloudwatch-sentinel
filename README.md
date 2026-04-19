@@ -11,11 +11,11 @@
   <img src="docs/screenshots/sentinel_ss_0.10.20(1).png" alt="Sentinel Dashboard v0.11" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.12-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.33-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
-![Tests](https://img.shields.io/badge/tests-33%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-56%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 ---
@@ -447,10 +447,16 @@ Every final report passes through `harness/validador_saida.py` before being writ
 - **`/status` page** — animated health cards for 4 components: Sentinel Agent, Database, Metrics Collector, Kubernetes API
 - Dynamic green/orange/red banner from `/health`; auto-refresh 10s
 
-### v0.10.12
-- **Unified panel** — Waste Intelligence + Top Workloads merged into "Top Workloads — CPU & Waste Analysis" (full-width)
-- **Pod Detail Drawer** — click on pod name opens individual analysis: CPU/Mem bars, savings opportunity with concrete rightsizing suggestion (`ceil(usage × 1.2)`)
-- **Waste row highlight** in amber (`.waste-row-hl`)
+### v0.33
+- **Auto-scaling Honeycomb Map** — Datadog-inspired visual density map for cluster health.
+- **Node Detail Drawer** — Individual node analysis with CPU/Memory saturation bars and pod list.
+- **Improved UX** — Back buttons for seamless navigation between node details and global lists.
+- **Event Delegation** — Robust UI interactions that survive dynamic re-renders and DOM sanitization.
+
+### v0.12
+- **Security Hardening** — `AUTH_TOKEN` required when `AUTH_ENABLED=true`; no hardcoded defaults.
+- **Harness Remediation Guard** — 23 automated tests blocking high-risk operations (exec, replicas=0).
+- **JS Modularization** — Dashboard JS split into 7 maintainable modules.
 
 ### v0.10.11
 - **Connected badge tooltip** — hover shows Cluster, Endpoint, Version, Session uptime, Last sync, Database

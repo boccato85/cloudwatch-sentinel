@@ -14,9 +14,40 @@ async function updateOverview() {
     var byPhase = {};
     filteredPods.forEach(function(p){ byPhase[p.phase] = (byPhase[p.phase]||0)+1; });
     var nodes   = s.nodes || [];
+    var isMock  = false;
+    
+    if (nodes.length === 1) {
+      isMock = true;
+      if (!window._mockNodes) {
+        window._mockNodes = [];
+        for (var i=1; i<=24; i++) {
+           var cpuPct = (i - 1) / 23 * 100 + (Math.random() * 12 - 6);
+           var memPct = Math.random() * 100;
+           var cpuCap = 4000;
+           var memCap = 16000;
+           window._mockNodes.push({
+             name: 'mock-node-' + i,
+             status: i === 19 ? 'NotReady' : 'Running',
+             cpuAllocatable: cpuCap,
+             cpuRequested: Math.max(0, Math.min(cpuCap, (cpuPct / 100) * cpuCap)),
+             memAllocatable: memCap,
+             memRequested: (memPct / 100) * memCap,
+             podCount: Math.floor(Math.random() * 50) + 1
+           });
+        }
+      }
+      nodes = window._mockNodes;
+    }
+
     var eff     = s.efficiency || 0;
     var running = byPhase['Running'] || 0;
     var total   = Object.values(byPhase).reduce(function(a,b){ return a+b; }, 0);
+    
+    if (isMock) {
+      total = nodes.reduce(function(acc, n){ return acc + (n.podCount || 0); }, 0);
+      running = Math.floor(total * 0.95);
+    }
+
     var issues  = nodes.filter(function(n){ return n.status !== 'Running'; }).length;
 
     incidents = incidents || [];
@@ -77,71 +108,79 @@ async function updateOverview() {
     var hc = document.getElementById('honeycomb');
     hc.innerHTML = '';
 
-    var isMock = false;
     var drawNodes = nodes;
 
-    // --- MOCK MODE FOR SINGLE NODE ---
-    if (nodes.length === 1) {
-      isMock = true;
-      if (window._mockNodes) {
-        drawNodes = window._mockNodes;
-      } else {
-        drawNodes = [];
-        for (var i=1; i<=24; i++) {
-           var cpuPct = Math.random() * 100;
-           var memPct = Math.random() * 100;
-           var cpuCap = 4000;
-           var memCap = 16000;
-           drawNodes.push({
-             name: 'mock-node-' + i,
-             status: Math.random() > 0.95 ? 'NotReady' : 'Running',
-             cpuAllocatable: cpuCap,
-             cpuRequested: (cpuPct / 100) * cpuCap,
-             memAllocatable: memCap,
-             memRequested: (memPct / 100) * memCap,
-             podCount: Math.floor(Math.random() * 50) + 1
-           });
+    // ── Honeycomb: Auto-Scaling and dynamic packing ──────────────────────────
+    hc.style.display = 'none';
+    var containerWidth = hc.parentElement ? hc.parentElement.clientWidth - 28 : 300;
+    hc.style.display = 'flex';
+    if (containerWidth < 100) containerWidth = 300;
+
+    var count = drawNodes.length;
+    var hexW = 40;
+    if (count > 24) hexW = 32;
+    if (count > 50) hexW = 24;
+    if (count > 100) hexW = 16;
+    if (count > 250) hexW = 10;
+
+    var hexesPerRow = Math.max(1, Math.floor((containerWidth - (hexW/2)) / hexW));
+    hc.style.setProperty('--hex-w', hexW + 'px');
+
+    var gridWrap = document.createElement('div');
+    gridWrap.style.display = 'flex';
+    gridWrap.style.flexDirection = 'column';
+    gridWrap.style.alignItems = 'flex-start';
+
+    var totalRows = Math.ceil(count / hexesPerRow);
+    for (var rowIdx = 0; rowIdx < totalRows; rowIdx++) {
+      var rowEl = document.createElement('div');
+      rowEl.className = 'hcomb-row' + (rowIdx % 2 === 1 ? ' odd' : '');
+      var rowStart = rowIdx * hexesPerRow;
+      var rowEnd = Math.min(rowStart + hexesPerRow, count);
+      for (var ni = rowStart; ni < rowEnd; ni++) {
+        var nd = drawNodes[ni];
+        var d = document.createElement('div');
+        var cpuSat = nd.cpuAllocatable > 0 ? (nd.cpuRequested / nd.cpuAllocatable) * 100 : 0;
+        var memSat = nd.memAllocatable > 0 ? (nd.memRequested / nd.memAllocatable) * 100 : 0;
+        var maxSat = Math.max(cpuSat, memSat);
+
+        var hexClass = 'hex';
+        if (nd.status !== 'Running') {
+          hexClass += ' issue';
+          d.style.background = '#dc2626';
+          d.style.color = '#fff';
+        } else {
+          var hue = Math.round(120 - maxSat * 1.2);
+          d.style.background = 'hsl(' + hue + ',72%,40%)';
+          d.style.color = '#fff';
         }
-        window._mockNodes = drawNodes;
-      }
-    }
 
-    drawNodes.forEach(function(n) {
-      var d = document.createElement('div');
-      
-      var cpuSat = n.cpuAllocatable > 0 ? (n.cpuRequested / n.cpuAllocatable) * 100 : 0;
-      var memSat = n.memAllocatable > 0 ? (n.memRequested / n.memAllocatable) * 100 : 0;
-      var maxSat = Math.max(cpuSat, memSat);
-      
-      var hexClass = 'hex';
-      if (n.status !== 'Running') {
-         hexClass += ' issue';
-         d.style.background = '#4b5563'; // distinct dark slate
-         d.style.color = '#ff4d4d'; // red text to indicate error
-      } else if (maxSat > 85) {
-         d.style.background = 'var(--red)';
-         d.style.color = '#fff';
-      } else if (maxSat > 75) {
-         d.style.background = 'var(--orange)';
-      } else if (maxSat >= 60) {
-         d.style.background = '#fbbf24'; // yellow
-      } else {
-         d.style.background = 'var(--green)';
+        d.className = hexClass;
+        d.dataset.node = nd.name;
+        d.title = nd.name + '\nCPU: ' + cpuSat.toFixed(1) + '% | Mem: ' + memSat.toFixed(1) + '% | Pods: ' + (nd.podCount || 0);
+        var _abbrev = (function(nm) {
+          var m = nm.match(/(\d+)$/);
+          if (m) return '#' + m[1];
+          return nm.length <= 5 ? nm : nm.slice(-4);
+        })(nd.name);
+        var showText = (hexW >= 30);
+        d.innerHTML = showText ?
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+          'line-height:1.2;gap:0;pointer-events:none">' +
+          '<span style="font-size:7px;font-family:monospace;font-weight:600;letter-spacing:-.2px;opacity:.85">' + esc(_abbrev) + '</span>' +
+          '<span style="font-size:11px;font-weight:900;opacity:.95">' + (nd.podCount || 0) + '</span>' +
+          '</div>' : '';
+        d.style.cursor = 'pointer';
+        d.onclick = function(e) {
+          e.stopPropagation();
+          if (typeof openNodeDrawer === 'function') openNodeDrawer(this.dataset.node);
+        };
+        rowEl.appendChild(d);
       }
-      
-      d.className = hexClass;
-      d.dataset.node = n.name;
-      d.title = n.name + '\nCPU: ' + cpuSat.toFixed(1) + '% | Mem: ' + memSat.toFixed(1) + '% | Pods: ' + (n.podCount || 0);
-      d.textContent = 'N';
-      hc.appendChild(d);
-    });
-
-    if (isMock) {
-       var mockLabel = document.createElement('div');
-       mockLabel.style = 'width:100%;text-align:center;font-size:0.65em;color:var(--text-dim);margin-top:6px;text-transform:uppercase;letter-spacing:1px';
-       mockLabel.textContent = 'Mock Data (Single-Node)';
-       hc.appendChild(mockLabel);
+      gridWrap.appendChild(rowEl);
     }
+    hc.appendChild(gridWrap);
+
     var nb = document.getElementById('nbadge');
     nb.textContent = issues > 0 ? issues + ' Issues' : 'All OK';
     nb.className = 'badge ' + (issues > 0 ? 'b-crit' : 'b-ok');

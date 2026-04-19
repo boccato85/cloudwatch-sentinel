@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-18 | Current version: `v0.12`
+> Last updated: 2026-04-18 | Current version: `v0.33`
 
 ## Product vision
 
@@ -141,7 +141,7 @@
 
 ---
 
-### M5 — Optional intelligence (`v0.12`)
+### M5 — Optional intelligence (`v0.12` → `v0.33`)
 
 **Goal:** The intelligence layer improves the experience but is not required for the core.
 
@@ -149,16 +149,18 @@
 
 | Item | Status |
 |---|---|
-| `/incident` consumes deterministic `/api/incidents` first | Pending |
+| `/incident` consumes deterministic `/api/incidents` first | 🚧 In Progress |
 | `Narrative string` field in `Incident` struct (`omitempty`, backward-compatible) | ✅ Done (`v0.12`) |
 | Narrative rendered in Alerts drawer when populated (collapsible "Why?" block) | ✅ Done (`v0.12`) |
-| Degraded mode: if intelligence layer unavailable, returns deterministic analysis | Pending |
+| Degraded mode: if intelligence layer unavailable, returns deterministic analysis | 🚧 In Progress |
 | Harness M5 remediation guard: block `kubectl exec`, `kubectl scale --replicas=0`, `helm uninstall`, `kubectl apply -f -`, `kubectl patch replicas:0` | ✅ Done (`v0.12`) |
+| **Honeycomb UI**: Datadog-style auto-scaling visual maps | ✅ Done (`v0.33`) |
+| **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.33`) |
+| **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.33`) |
 | Possible local model support (Ollama) | Future |
 | Automatic runbooks based on templates + variables | Pending |
-| **Datadog-style UI Alignment** (Node Health pods) | Partial |
 
-**Done criterion:** `/incident` works without external models and produces usable diagnosis.
+**Done criterion:** `/incident` works without external models and produces usable diagnosis with a visual-first UI that scales.
 
 **Dependencies:** M4 ✅
 
@@ -218,7 +220,8 @@
 | `v0.11` | M3 + Dashboard UX | ✅ Dashboard v2: no-scroll layout, FinOps/Efficiency toggle, context bar, events drawer |
 | `v0.11.3` | M4 | ✅ Resilience, PVC, Auth, CI, Cache Busting |
 | `v0.12` | M4 gaps + M5 foundation | ✅ Security fixes, Narrative hook, harness M5 guard, JS modularization |
-| `v0.12.x` | M5 | LLM as optional layer, degraded mode, UI alignment |
+| `v0.23` | M5 | ✅ Honeycomb auto-scaling and dynamic packing |
+| `v0.23.x` | M5 | LLM as optional layer, degraded mode, UI details |
 | `v0.99` | M6 | Polish, docs, stable contracts |
 | `v1.0-rc` | M7 | Online Boutique lab (QA/Prod-like) |
 
@@ -226,9 +229,8 @@
 
 ## Backlog by priority
 
-### High priority (v0.12)
-- M5: `/incident` consumindo dados determinísticos da `/api/incidents`
-- M5: UI: Align node health pods (honeycomb) with Datadog style
+### High priority (v0.23+)
+- M5: `/incident` consumindo dados determinísticos da `/api/incidents` (Modo Degradado)
 - M5: UI: Add "Memory Requested" bar to global node list drawer
 - M7: Online Boutique lab: baseline + load + comparison
 
@@ -258,3 +260,5 @@
 - If the dashboard fails, the API must still be usable
 - If the cluster changes, the contracts must hold
 - If the project grows, the core must not lose simplicity
+ject grows, the core must not lose simplicity
+simplicity
