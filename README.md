@@ -8,7 +8,7 @@
 > Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/sentinel_ss_0.10.20(1).png" alt="Sentinel Dashboard v0.11" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.33" width="900"/>
 </p>
 
 ![Status](https://img.shields.io/badge/status-v0.33-brightgreen)
@@ -46,9 +46,9 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 ## Screenshots
 
-| Dashboard Overview (v0.11) | Recent Events Drawer |
+| Dashboard Overview (v0.33) | Recent Events Drawer |
 |---|---|
-| ![Overview](docs/screenshots/sentinel_ss_0.10.20(1).png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
+| ![Overview](docs/screenshots/sentinel_ss_0.10.33.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
 
 | Efficiency Tab | Waste Intelligence |
 |---|---|
