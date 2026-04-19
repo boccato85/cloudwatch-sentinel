@@ -420,7 +420,7 @@ Every final report passes through `harness/validador_saida.py` before being writ
 | M2 — Actionable FinOps | ✅ Done | v0.10.15 |
 | M3 — Deterministic incident intelligence | ✅ Done | v0.11 |
 | M4 — Critical Resilience & Security | ✅ Done | v0.12 |
-| M5 — Optional intelligence (LLM as a layer) | Partial (~65%) | v0.33 |
+| M5 — Optional intelligence (LLM as a layer) | Partial (~65%) | v0.12 → v0.50 |
 | M6 — v1.0 preparation | Not started | v0.99 |
 | M7 — Real lab / QA / Prod-like | Not started | v1.0-rc |
 
