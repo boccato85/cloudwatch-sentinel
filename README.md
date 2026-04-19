@@ -382,70 +382,21 @@ Every final report passes through `harness/validador_saida.py` before being writ
 
 ## Changelog
 
-### v0.12 — Security hardening + M5 foundation + JS modularization
-
-**Security (M4 gap closure):**
-- **AUTH_TOKEN fail-fast** — agent refuses to start if `AUTH_ENABLED=true` and `AUTH_TOKEN` is empty; no default provided (`main.go`, Helm `required` guard)
-- **`/health` disclosure fix** — raw internal error strings (containing IPs/ports) replaced with static `"database unreachable"` etc.; raw errors logged server-side only
-- **XSS hardening** — DOMPurify restored in `drawerHTML()` as safety net; `entry.opportunity`, `n.namespace` and `n.grade` now escaped with `esc()` before `innerHTML`
-- **Helm `required` guard** — `agent.auth.token` must be set at install time; chart renders fail if empty
-
-**M5 foundation:**
-- **`Narrative` field** on `Incident` struct (`omitempty`, backward-compatible) — wired for LLM enrichment; Alerts drawer renders it as a collapsible "Why?" block when present
-- **Harness M5 remediation guard** — harness blocks `kubectl exec`, `kubectl apply -f -`, `kubectl scale --replicas=0`, `helm uninstall/delete`, `kubectl patch replicas:0`; 23 automated tests cover all patterns
-
-**Infrastructure:**
-- **JS modularization** — `dashboard.js` (2,786 lines) split into 7 ordered modules under `static/js/`; `//go:embed static` replaces 5 individual embed directives; `embed.FS` + `http.FileServer` replace byte-slice handlers
-
-### v0.11 — Dashboard v2: no-scroll layout + FinOps/Efficiency toggle
-- **Dashboard v2 layout** — scroll-free overview optimized for single-screen monitoring
-- **Tab bar removed** — replaced by thin context bar (Overview | NS | pods | warnings | status dot)
-- **Workloads/Pods tabs eliminated** — data accessible via KPI expand + drawers
-- **Compact layout** — main gap 14→10px, panel padding 14→10px, KPI padding 14→10px, donuts 88→72px
-- **Recent Events tile** — full drawer with search debounce, NS selector, sortable columns, 220px height
-- **FinOps/Efficiency toggle** — CSP-safe (addEventListener), fixed height 270px, line chart 140px
-- **Efficiency tab** — donut 130px no text below, "How grades work" tooltip (A→F/UNMANAGED), NS breakdown table with sortable columns
-- **FinOps drawer** — "What these metrics mean" glossary tooltip (Budget, Actual, Waste, Waste%, Proj., ±1.5σ)
-- **Node Health legend removed** — badge OK/Issue already explains
-- **Footer credits** — "Built with OpenCode + Go + JS • Kubernetes Dashboard"
-
-### v0.10.18 — Multi-instance sync + UI parity + `/api/incidents` in dashboard
-- **Sync from gemini instance** — `AuthMiddleware` + `AuthEnabled`/`AuthToken`, types extracted to `types.go`, `BuildPodSpecMap()` in `pkg/k8s`, `SystemNamespaces` exported
-- **Dashboard parity with gemini** — all new UI elements added to opencode: global "Show system NS" toggle in header, "Critical / Warnings" KPI, per-tile namespace filters + system toggles in FinOps, Efficiency and Top Workloads panels
-- **Metrics API card in `/status`** — 5th service card (Sentinel Agent, Database, Metrics Collector, Kubernetes API, Metrics API)
-- **Native select/checkbox CSS** — `appearance: none`, custom dropdown arrows for `ns-select` and `tile-ns-select`
-- **`/api/incidents` consumed by dashboard** — `updateOverview()` now fetches `/api/incidents`, distinguishes CRITICAL from WARNING, renders health incidents instead of failed/pending pod list
-- **`tileNs` expanded** — 6 keys: `pods`, `cpu`, `mem`, `finops`, `eff`, `workloads` (was 3)
-- **`loadNamespaces()` + `renderDropdowns()`** — system namespace filtering on all dropdowns; `sysNsList` array for consistent filtering
-- **`fetchChart()` passes `system=` param** — backend respects include/exclude system NS in FinOps queries
-
-### v0.10.17 — Packages + `/api/incidents` + Swagger UI
-- **Refactored monolith → 4 packages** — `pkg/api`, `pkg/k8s`, `pkg/store`, `pkg/incidents`; `main.go` reduced from 2,282 to ~220 lines
-- **`/api/incidents`** — deterministic incident detection: Pending pods, CrashLoop, OOMKilled, HighCPU, HighMemory, ResourceWaste (with severity and remediation hints)
-- **Swagger UI at `/docs`** — served via CDN unpkg.com, no external build dependency
-- **`/openapi.yaml`** — OpenAPI spec embedded in binary covering all endpoints
-- **Per-package tests** — `go test ./...` covers all 5 packages (25 tests total)
-- **Security hardening preserved** — all 21 items from commit `f6e6b1d` intact after refactoring
-
-## Changelog
-
 ### v0.33
 - **Auto-scaling Honeycomb Map** — Datadog-inspired visual density map for cluster health.
 - **Node Detail Drawer** — Individual node analysis with CPU/Memory saturation bars and pod list.
 - **Improved UX** — Back buttons for seamless navigation between node details and global lists.
 - **Event Delegation** — Robust UI interactions that survive dynamic re-renders and DOM sanitization.
 
-### v0.12
-- **Security Hardening** — `AUTH_TOKEN` required when `AUTH_ENABLED=true`; no hardcoded defaults.
-- **Harness Remediation Guard** — 23 automated tests blocking high-risk operations (exec, replicas=0).
-- **JS Modularization** — Dashboard JS split into 7 maintainable modules.
+### v0.12 — Security hardening + M5 foundation + JS modularization
+- **Security (M4 gap closure):** `AUTH_TOKEN` fail-fast, `/health` disclosure fix, XSS hardening, Helm `required` guard.
+- **M5 foundation:** `Narrative` field on `Incident` struct, Harness M5 remediation guard (23 automated tests).
+- **Infrastructure:** JS modularization (7 modules), `embed.FS` + `http.FileServer`.
 
-### v0.11.3
-- **Busting Cache System** — Asset synchronization for UI scripts across builds.
-
-### v0.11.0 — M3 closed
-- **Deterministic Incident Intelligence** — `/api/incidents` without LLM.
-- **OpenAPI / Swagger UI** — embedded documentation at `/docs`.
+### v0.11 — Dashboard v2: no-scroll layout
+- **Dashboard v2 layout** — scroll-free overview optimized for single-screen monitoring.
+- **FinOps/Efficiency toggle** — line chart + donut breakdown.
+- **Recent Events tile** — full drawer with search and filters.
 
 ### v0.10.15 — M2: Waste by Deployment
 - **By Deployment view** in Waste Intelligence drawer — aggregates by `app` label.
@@ -455,18 +406,9 @@ Every final report passes through `harness/validador_saida.py` before being writ
 - **Namespace Efficiency Score** — full-width panel with A→F grades.
 - **"ⓘ What these metrics mean" card** — inline glossary.
 
-### v0.10.13 — Status Page
-- **`/status` page** — animated health cards for 4 components.
-
-### v0.10.11
-- **Connected badge tooltip** — cluster details on hover.
-
 ### v0.10.1 — M1 closed
 - `/health` endpoint with DB and collector status.
 - **22 automated tests**.
-
-### v0.1 — v0.3
-- Initial release: orchestrator + sub-agents.
 
 ---
 
