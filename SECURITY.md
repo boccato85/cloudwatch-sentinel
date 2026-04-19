@@ -14,8 +14,9 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 
 | Version | Supported |
 |---|---|
-| `v0.10.x` (current) | ✅ Yes |
-| `< v0.10` | ❌ No |
+| `v0.33` (current) | ✅ Yes |
+| `v0.12.x` | ✅ Yes |
+| `< v0.12` | ❌ No |
 
 ---
 
@@ -37,8 +38,10 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 - [ ] Rate limiting is enabled by default (100 RPS per IP) — adjust `RATE_LIMIT_RPS` if needed
 
 ### Authentication
-- [ ] Sentinel has **no built-in authentication** in `v0.x` — planned for M7 (`v1.0`)
-- [ ] Until auth is implemented: restrict network access at the infrastructure level (VPN, private subnet, ingress auth)
+- [ ] **`AUTH_TOKEN` is implemented** in `v0.12+`. 
+- [ ] Set `AUTH_ENABLED=true` and provide a hex token via `AUTH_TOKEN`.
+- [ ] The agent will refuse to start if auth is enabled but no token is provided.
+- [ ] Use `localStorage` or `?token=` query parameter to authenticate in the browser.
 
 ### Secrets
 - [ ] Never log the `connStr` variable — it contains the DB password in plaintext
@@ -54,7 +57,6 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 
 | Area | Status |
 |---|---|
-| Authentication | Not implemented — planned M7/v1.0 |
 | TLS between agent and DB | Disabled by default (`DB_SSLMODE=disable`) |
 | CSRF protection | N/A — no state-changing endpoints currently |
 | Audit logging | Not implemented |
@@ -65,6 +67,8 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 
 | Variable | Default | Notes |
 |---|---|---|
+| `AUTH_ENABLED` | `false` | Enable/disable authentication |
+| `AUTH_TOKEN` | (none) | Required if `AUTH_ENABLED=true` |
 | `DB_SSLMODE` | `disable` | Set to `require` in production |
 | `DB_PASSWORD` | (required) | Use a strong, unique password |
 | `RATE_LIMIT_RPS` | `100` | Per-IP rate limit |
