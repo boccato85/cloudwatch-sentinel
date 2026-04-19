@@ -29,8 +29,8 @@
 | M1 — Stable core (+ M5 self-observability) | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
 | M3 — Deterministic incident intelligence | ✅ Done | `v0.11` |
-| M4 — Critical Resilience & Security | ✅ Done | `v0.11.3` |
-| M5 — Optional intelligence | Partial (~40%) | `v0.12` |
+| M4 — Critical Resilience & Security | ✅ Done | `v0.12` |
+| M5 — Optional intelligence | Partial (~65%) | `v0.33` |
 | M6 — v1.0 preparation | Not started | `v0.99` |
 | M7 — Real lab / QA / Prod-like | Not started | `v1.0-rc` |
 
