@@ -14,7 +14,7 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 
 | Version | Supported |
 |---|---|
-| `v0.33` (current) | ✅ Yes |
+| `v0.34` (current) | ✅ Yes |
 | `v0.12.x` | ✅ Yes |
 | `< v0.12` | ❌ No |
 

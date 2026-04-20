@@ -8,14 +8,14 @@
 > Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.33" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_0.10.34.png" alt="Sentinel Dashboard v0.34" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.33-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.35-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
-![Tests](https://img.shields.io/badge/tests-56%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-37%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 ---
@@ -46,9 +46,9 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 ## Screenshots
 
-| Dashboard Overview (v0.33) | Recent Events Drawer |
+| Dashboard Overview (v0.34) | Recent Events Drawer |
 |---|---|
-| ![Overview](docs/screenshots/sentinel_ss_0.10.33.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
+| ![Overview](docs/screenshots/sentinel_ss_0.10.34.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
 
 | Efficiency Tab | Waste Intelligence |
 |---|---|
@@ -329,6 +329,9 @@ sentinel/
 │   │   ├── k8s/                     # Kubernetes client + Metrics API wrappers
 │   │   │   ├── k8s.go
 │   │   │   └── k8s_test.go
+│   │   ├── llm/                     # LLM provider interface + Ollama skeleton
+│   │   │   ├── client.go            # Provider interface, NewClient(), ollamaProvider
+│   │   │   └── client_test.go
 │   │   └── store/                   # PostgreSQL: schema, aggregation, retention
 │   │       ├── store.go
 │   │       └── store_test.go
@@ -382,7 +385,14 @@ Every final report passes through `harness/validador_saida.py` before being writ
 
 ## Changelog
 
-### v0.33
+### v0.35 — M5 code review fixes
+- **Security (JS):** Copy button in Alerts drawer now uses `data-runbook` + `addEventListener` — previously the `onclick` attribute was silently stripped by DOMPurify, rendering the button non-functional.
+- **Runbooks:** `ErrImagePull` and `CreateContainerConfigError` now produce `kubectl describe pod` instead of `kubectl logs` (container never started; logs return nothing).
+- **LLM skeleton:** Fixed latent nil-pointer panic when `LLM_PROVIDER=gemini` — now correctly returns `Enabled: false` like other unimplemented providers.
+- **Tests:** Added 4 unit tests for `pkg/llm` covering all `NewClient()` branches (Go: 14 tests; harness: 23 tests; total: 37).
+- **Roadmap:** Swapped M6/M7 — Real lab/QA before docs/polish; rationale in ROADMAP.md.
+
+### v0.34
 - **Auto-scaling Honeycomb Map** — Datadog-inspired visual density map for cluster health.
 - **Node Detail Drawer** — Individual node analysis with CPU/Memory saturation bars and pod list.
 - **Improved UX** — Back buttons for seamless navigation between node details and global lists.
@@ -421,8 +431,8 @@ Every final report passes through `harness/validador_saida.py` before being writ
 | M3 — Deterministic incident intelligence | ✅ Done | v0.11 |
 | M4 — Critical Resilience & Security | ✅ Done | v0.12 |
 | M5 — Optional intelligence (LLM as a layer) | Partial (~65%) | v0.12 → v0.50 |
-| M6 — v1.0 preparation | Not started | v0.99 |
-| M7 — Real lab / QA / Prod-like | Not started | v1.0-rc |
+| M6 — Real lab / QA / Prod-like | Not started | v0.50 |
+| M7 — v1.0 preparation | Not started | v0.99 |
 
 See [ROADMAP.md](ROADMAP.md) for full details.
 
