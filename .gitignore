@@ -32,3 +32,4 @@ refactor_store.py
 refactor_store_import.py
 test_draft.py
 gemini_usage.py
+tools/check_quota.py
