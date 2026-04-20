@@ -32,6 +32,8 @@ func NewClient() *Client {
 		p = newOllamaProvider()
 	case "gemini":
 		// p = newGeminiProvider() // Future implementation
+		slog.Warn("Gemini provider not yet implemented, falling back to deterministic mode", "provider", providerName)
+		return &Client{Enabled: false}
 	default:
 		slog.Warn("Unknown LLM provider, falling back to deterministic mode", "provider", providerName)
 		return &Client{Enabled: false}

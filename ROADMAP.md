@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-18 | Current version: `v0.34`
+> Last updated: 2026-04-20 | Current version: `v0.35`
 
 ## Product vision
 
@@ -31,8 +31,8 @@
 | M3 — Deterministic incident intelligence | ✅ Done | `v0.11` |
 | M4 — Critical Resilience & Security | ✅ Done | `v0.12` |
 | M5 — Optional intelligence | Partial (~65%) | `v0.12 → v0.50` |
-| M6 — v1.0 preparation | Not started | `v0.99` |
-| M7 — Real lab / QA / Prod-like | Not started | `v1.0-rc` |
+| M6 — Real lab / QA / Prod-like | Not started | `v0.50` |
+| M7 — v1.0 preparation | Not started | `v0.99` |
 
 ---
 
@@ -166,9 +166,29 @@
 
 ---
 
-### M6 — v1.0 preparation (`v0.99`)
+### M6 — Real lab / QA / Prod-Like (`v0.50`)
 
-**Goal:** You'd call it 1.0 without technical embarrassment.
+**Goal:** Validate Sentinel against a realistic workload before any documentation or contract is frozen. Surface gaps in the API, UX and observability that only emerge under real traffic.
+
+**Deliverables:**
+
+| Item | Status |
+|---|---|
+| Documented Online Boutique baseline (namespace `google-demo`) | Pending |
+| Controlled load (e.g. hey, k6) on microservices | Pending |
+| Burst and fault injection documented | Pending |
+| Before/after comparison in dashboard | Pending |
+| Lab incident report with generated runbook | Pending |
+
+**Done criterion:** Report comparing normal vs degraded cluster state produced by Sentinel, serving as community proof-of-concept. API and UI gaps identified for M7 stabilization.
+
+**Dependencies:** M5
+
+---
+
+### M7 — v1.0 preparation (`v0.99`)
+
+**Goal:** You'd call it 1.0 without technical embarrassment. Stabilize and document based on what M6 revealed under real load.
 
 **Deliverables:**
 
@@ -183,26 +203,6 @@
 | Integration tests for API contracts | Pending |
 
 **Done criterion:** Another developer can clone, configure and run Sentinel without help.
-
-**Dependencies:** M5
-
----
-
-### M7 — Real lab / QA / Prod-Like (`v1.0-rc`)
-
-**Goal:** Final QA validation. Shows a clear difference between a normal and a degraded cluster before 1.0 launch.
-
-**Deliverables:**
-
-| Item | Status |
-|---|---|
-| Documented Online Boutique baseline (namespace `google-demo`) | Pending |
-| Controlled load (e.g. hey, k6) on microservices | Pending |
-| Burst and fault injection documented | Pending |
-| Before/after comparison in dashboard | Pending |
-| Lab incident report with generated runbook | Pending |
-
-**Done criterion:** Report comparing normal vs degraded state produced by Sentinel, serving as proof-of-concept for the community.
 
 **Dependencies:** M6
 
@@ -221,20 +221,21 @@
 | `v0.11.3` | M4 | ✅ Resilience, PVC, Auth, CI, Cache Busting |
 | `v0.12` | M4 gaps + M5 foundation | ✅ Security fixes, Narrative hook, harness M5 guard, JS modularization |
 | `v0.23` | M5 | ✅ Honeycomb auto-scaling and dynamic packing |
-| `v0.23.x` | M5 | LLM as optional layer, degraded mode, UI details |
-| `v0.99` | M6 | Polish, docs, stable contracts |
-| `v1.0-rc` | M7 | Online Boutique lab (QA/Prod-like) |
+| `v0.34` | M5 | ✅ Deterministic runbooks + LLM provider skeleton |
+| `v0.35` | M5 | ✅ Code review fixes: copy button XSS, runbooks, nil-pointer, pkg/llm tests |
+| `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
+| `v0.99` | M7 | Polish, docs, stable contracts |
 
 ---
 
 ## Backlog by priority
 
-### High priority (v0.23+)
-- M7: Online Boutique lab: baseline + load + comparison
+### High priority (v0.50)
+- M6: Online Boutique lab: baseline + load + comparison
 
-### Medium priority (v0.1.x)
+### Medium priority (v0.50+)
 - CrashLoop pod + CPU correlation (refinamento)
-- M6: API stability & full OpenAPI coverage
+- M7: API stability & full OpenAPI coverage (after M6 reveals gaps)
 
 ### Low priority / future
 - Multi-cluster (post-1.0)
@@ -258,10 +259,3 @@
 - If the dashboard fails, the API must still be usable
 - If the cluster changes, the contracts must hold
 - If the project grows, the core must not lose simplicity
-ject grows, the core must not lose simplicity
-simplicity
-ll be usable
-- If the cluster changes, the contracts must hold
-- If the project grows, the core must not lose simplicity
-ject grows, the core must not lose simplicity
-simplicity

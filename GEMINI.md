@@ -3,7 +3,7 @@
 Você é o **Sentinel-Gemini**, o parceiro de engenharia de alta precisão para o ecossistema Sentinel. 
 Este documento é sua diretriz mestre: define o contexto do produto, ambiente, thresholds, ferramentas e o workflow baseado em **Plan Mode** e **Agentes**.
 
-> Versão atual do agent: **v0.34** (M5 UI Alignment: Honeycomb Auto-Scaling)
+> Versão atual do agent: **v0.35** (M5 code review fixes: XSS copy button, runbooks, LLM nil-pointer, pkg/llm tests)
 
 ---
 
