@@ -504,6 +504,7 @@ async function renderAlertsDrawer() {
       var msg = esc(inc.message || '');
       if (inc.age) msg += ' <span style="opacity:0.7">(' + esc(inc.age) + ')</span>';
       if (inc.narrative) msg += '<div style="font-size:.74em;color:var(--text-dim);margin-top:6px;font-style:italic;border-left:2px solid var(--orange);padding-left:8px">' + esc(inc.narrative) + '</div>';
+      if (inc.runbook) msg += '<div style="margin-top:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:6px 10px;font-family:monospace;font-size:0.75em;color:var(--text-bright);display:flex;justify-content:space-between;align-items:center"><span style="overflow-x:auto;white-space:nowrap;padding-right:10px">' + esc(inc.runbook) + '</span><button onclick="navigator.clipboard.writeText(\'' + esc(inc.runbook).replace(/'/g, "\\'") + '\');this.innerHTML=\'Copied!\';setTimeout(()=>this.innerHTML=\'Copy\',2000)" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text-dim);border-radius:3px;padding:2px 6px;cursor:pointer;font-size:0.9em">Copy</button></div>';
 
       alertItems += alertCard(inc.podName || inc.name || '--', inc.namespace, typeStr, cls, color, icon, msg);
     });

@@ -944,6 +944,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				Severity:  "WARNING",
 				Message:   fmt.Sprintf("Pod stuck in Pending for %s", ageStr),
 				Narrative: "Pod aguardando agendamento. Causas comuns: falta de recursos nos nós, seletores de nós (labels) incompatíveis ou falha na montagem de volumes (PVC).",
+				Runbook:   fmt.Sprintf("kubectl describe pod %s -n %s", p.Name, p.Namespace),
 				Age:       ageStr,
 			})
 			continue
@@ -973,6 +974,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 							Severity:  "CRITICAL",
 							Message:   fmt.Sprintf("Container %s in %s", cs.Name, reason),
 							Narrative: narrative,
+							Runbook:   fmt.Sprintf("kubectl logs pod/%s -c %s -n %s", p.Name, cs.Name, p.Namespace),
 							Age:       ageStr,
 						})
 					}
@@ -987,6 +989,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("Container %s OOMKilled", cs.Name),
 					Narrative: "O container foi terminado por exceder o limite de memória. Se recorrente, aumente o resources.limits.memory.",
+					Runbook:   fmt.Sprintf("kubectl describe pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
 			}
@@ -995,6 +998,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		// Correlation: CrashLoop + CPU
 		if crashLoopFound {
 			narrative := "O container está falhando consecutivamente. Verifique os logs para erros fatais da aplicação ou configurações ausentes (env vars, secrets)."
+			runbook := fmt.Sprintf("kubectl logs pod/%s -n %s --previous", p.Name, p.Namespace)
 			if cpuPct >= a.Thresholds.CPU.Warning {
 				incs = append(incs, Incident{
 					PodName:   p.Name,
@@ -1003,6 +1007,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("%s correlated with High CPU (%.1f%%)", crashLoopMsg, cpuPct),
 					Narrative: "O container está em CrashLoop e consumindo CPU excessiva durante o boot. Isso pode indicar um loop infinito no código de inicialização.",
+					Runbook:   runbook,
 					Age:       ageStr,
 				})
 			} else if a.Thresholds.Pods.CrashLoopCritical {
@@ -1013,6 +1018,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  "CRITICAL",
 					Message:   crashLoopMsg,
 					Narrative: narrative,
+					Runbook:   runbook,
 					Age:       ageStr,
 				})
 			} else {
@@ -1023,6 +1029,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  "WARNING",
 					Message:   crashLoopMsg,
 					Narrative: narrative,
+					Runbook:   runbook,
 					Age:       ageStr,
 				})
 			}
@@ -1039,6 +1046,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("CPU usage at %.1f%% of LIMIT (danger of throttling)", cpuLimPct),
 					Narrative: "Uso de CPU atingiu o limite configurado. Isso causa throttling severo e degradação de performance. Aumente o limite de CPU.",
+					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
 			} else if cpuPct >= a.Thresholds.CPU.Warning {
@@ -1058,6 +1066,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  sev,
 					Message:   msg,
 					Narrative: narrative,
+					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
 			}
@@ -1071,6 +1080,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("Memory usage at %.1f%% of LIMIT (danger of OOMKill)", memLimPct),
 					Narrative: "Uso de memória próximo ao limite fatal. O container corre risco iminente de OOMKill. Aumente o limite de memória imediatamente.",
+					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
 			} else if memPct >= a.Thresholds.Memory.Warning {
@@ -1090,6 +1100,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Severity:  sev,
 					Message:   msg,
 					Narrative: narrative,
+					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
 			}
@@ -1110,6 +1121,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				Severity:  sev,
 				Message:   s.Opportunity,
 				Narrative: "Esta carga está superprovisionada. Reduzir as reservas de recursos para patamares mais próximos do uso real pode gerar economia significativa.",
+				Runbook:   fmt.Sprintf("kubectl get pod %s -n %s -o yaml", s.Name, s.Namespace),
 				Age:       "-",
 				IsWaste:   true,
 			})
