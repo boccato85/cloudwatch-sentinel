@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-18 | Current version: `v0.33`
+> Last updated: 2026-04-18 | Current version: `v0.34`
 
 ## Product vision
 
@@ -154,9 +154,9 @@
 | Narrative rendered in Alerts drawer when populated (collapsible "Why?" block) | ✅ Done (`v0.12`) |
 | Degraded mode: if intelligence layer unavailable, returns deterministic analysis | 🚧 In Progress |
 | Harness M5 remediation guard: block `kubectl exec`, `kubectl scale --replicas=0`, `helm uninstall`, `kubectl apply -f -`, `kubectl patch replicas:0` | ✅ Done (`v0.12`) |
-| **Honeycomb UI**: Datadog-style auto-scaling visual maps | ✅ Done (`v0.33`) |
-| **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.33`) |
-| **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.33`) |
+| **Honeycomb UI**: Datadog-style auto-scaling visual maps | ✅ Done (`v0.34`) |
+| **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.34`) |
+| **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.34`) |
 | Possible local model support (Ollama) | Future |
 | Automatic runbooks based on templates + variables | Pending |
 

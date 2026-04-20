@@ -8,10 +8,10 @@
 > Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.33" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_0.10.34.png" alt="Sentinel Dashboard v0.34" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.33-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.34-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
@@ -46,9 +46,9 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 ## Screenshots
 
-| Dashboard Overview (v0.33) | Recent Events Drawer |
+| Dashboard Overview (v0.34) | Recent Events Drawer |
 |---|---|
-| ![Overview](docs/screenshots/sentinel_ss_0.10.33.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
+| ![Overview](docs/screenshots/sentinel_ss_0.10.34.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
 
 | Efficiency Tab | Waste Intelligence |
 |---|---|
@@ -382,7 +382,7 @@ Every final report passes through `harness/validador_saida.py` before being writ
 
 ## Changelog
 
-### v0.33
+### v0.34
 - **Auto-scaling Honeycomb Map** — Datadog-inspired visual density map for cluster health.
 - **Node Detail Drawer** — Individual node analysis with CPU/Memory saturation bars and pod list.
 - **Improved UX** — Back buttons for seamless navigation between node details and global lists.
