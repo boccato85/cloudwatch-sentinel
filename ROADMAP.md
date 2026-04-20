@@ -149,16 +149,16 @@
 
 | Item | Status |
 |---|---|
-| `/incident` consumes deterministic `/api/incidents` first | 🚧 In Progress |
+| `/incident` consumes deterministic `/api/incidents` first | ✅ Done |
 | `Narrative string` field in `Incident` struct (`omitempty`, backward-compatible) | ✅ Done (`v0.12`) |
 | Narrative rendered in Alerts drawer when populated (collapsible "Why?" block) | ✅ Done (`v0.12`) |
-| Degraded mode: if intelligence layer unavailable, returns deterministic analysis | 🚧 In Progress |
+| Degraded mode: if intelligence layer unavailable, returns deterministic analysis | ✅ Done |
 | Harness M5 remediation guard: block `kubectl exec`, `kubectl scale --replicas=0`, `helm uninstall`, `kubectl apply -f -`, `kubectl patch replicas:0` | ✅ Done (`v0.12`) |
 | **Honeycomb UI**: Datadog-style auto-scaling visual maps | ✅ Done (`v0.34`) |
 | **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.34`) |
 | **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.34`) |
 | Possible local model support (Ollama) | Future |
-| Automatic runbooks based on templates + variables | Pending |
+| Automatic runbooks based on templates + variables | ✅ Done |
 
 **Done criterion:** `/incident` works without external models and produces usable diagnosis with a visual-first UI that scales.
 
@@ -230,8 +230,6 @@
 ## Backlog by priority
 
 ### High priority (v0.23+)
-- M5: `/incident` consumindo dados determinísticos da `/api/incidents` (Modo Degradado)
-- M5: UI: Add "Memory Requested" bar to global node list drawer
 - M7: Online Boutique lab: baseline + load + comparison
 
 ### Medium priority (v0.1.x)
@@ -258,6 +256,11 @@
 
 - If the LLM goes down, Sentinel stays useful
 - If the dashboard fails, the API must still be usable
+- If the cluster changes, the contracts must hold
+- If the project grows, the core must not lose simplicity
+ject grows, the core must not lose simplicity
+simplicity
+ll be usable
 - If the cluster changes, the contracts must hold
 - If the project grows, the core must not lose simplicity
 ject grows, the core must not lose simplicity
