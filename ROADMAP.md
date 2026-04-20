@@ -30,7 +30,7 @@
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
 | M3 — Deterministic incident intelligence | ✅ Done | `v0.11` |
 | M4 — Critical Resilience & Security | ✅ Done | `v0.12` |
-| M5 — Optional intelligence | Partial (~65%) | `v0.12 → v0.50` |
+| M5 — Optional intelligence | ✅ Done | `v0.35` |
 | M6 — Real lab / QA / Prod-like | Not started | `v0.50` |
 | M7 — v1.0 preparation | Not started | `v0.99` |
 
@@ -141,7 +141,7 @@
 
 ---
 
-### M5 — Optional intelligence (`v0.12` → `v0.50`)
+### M5 — Optional intelligence ✅ Done (`v0.35`)
 
 **Goal:** The intelligence layer improves the experience but is not required for the core.
 
@@ -157,10 +157,14 @@
 | **Honeycomb UI**: Datadog-style auto-scaling visual maps | ✅ Done (`v0.34`) |
 | **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.34`) |
 | **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.34`) |
-| Possible local model support (Ollama) | Future |
-| Automatic runbooks based on templates + variables | ✅ Done |
+| Automatic runbooks based on templates + variables | ✅ Done (`v0.34`) |
+| **LLM provider interface** (`pkg/llm`): `Provider` interface + Ollama skeleton + graceful fallback | ✅ Done (`v0.35`) |
+| **Copy button XSS fix**: `data-runbook` + `addEventListener` (DOMPurify-safe) | ✅ Done (`v0.35`) |
+| **Runbook accuracy**: `ErrImagePull` / `CreateContainerConfigError` → `kubectl describe` | ✅ Done (`v0.35`) |
+| **Tests for `pkg/llm`**: 4 unit tests covering all `NewClient()` branches | ✅ Done (`v0.35`) |
+| Possible local model support (Ollama — full implementation) | Future (post-M6) |
 
-**Done criterion:** `/incident` works without external models and produces usable diagnosis with a visual-first UI that scales.
+**Done criterion:** ✅ `/incident` works without external models and produces usable diagnosis with a visual-first UI that scales. LLM provider interface in place for future enrichment without blocking deterministic mode.
 
 **Dependencies:** M4 ✅
 
