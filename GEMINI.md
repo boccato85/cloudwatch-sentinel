@@ -82,14 +82,14 @@ O Gemini CLI opera em ciclos de **Pesquisa -> Estratégia -> Execução**.
 
 ---
 
-## 📝 Próximos Passos (Backlog M5 - Intelligence & UI)
+## 📝 Próximos Passos (M6 — Real Lab / QA)
 
-- [x] **Modo Degradado**: Garantir que `/api/incidents` retorne análise determinística sólida sem LLM.
-- [x] **Integração Gemini**: Enriquecer incidentes com narrativa (explicar o *porquê* da falha).
-- [ ] **UI Alignment**: Estilizar pods no *honeycomb* do Node Health para refletir Datadog pods.
-- [x] **UI Detail**: Adicionar barra de "Memory Requested" no drawer global de nós (lista de todos os nós).
-- [x] **UI Pressure Indicator**: Adicionar badge "Pressure" ou borda vermelha em nós com 100% de CPU/Memoria no drawer (ex: mock-node-24/20).
-- [ ] **Online Boutique**: Testes de detecção de incidentes em lab real.
+- [ ] **Online Boutique baseline**: Deploy do namespace `google-demo`, documentar estado normal do cluster.
+- [ ] **Load test**: Rodar `hey` ou `k6` nos microserviços, gerar pressão controlada.
+- [ ] **Fault injection**: Matar pods, causar OOM, simular CrashLoop — capturar resposta do Sentinel.
+- [ ] **Comparação before/after**: Dashboard deve mostrar delta visível entre estado normal e degradado.
+- [ ] **Lab incident report**: Gerar runbook via Sentinel com base em incidente real; validar via harness.
+- [ ] **Identificar gaps de API/UX** que só aparecem com carga real — alimenta estabilização do M7.
 
 ---
 
