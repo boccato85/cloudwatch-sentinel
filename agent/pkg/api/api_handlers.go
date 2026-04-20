@@ -943,6 +943,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				Type:      "Pending",
 				Severity:  "WARNING",
 				Message:   fmt.Sprintf("Pod stuck in Pending for %s", ageStr),
+				Narrative: "Pod aguardando agendamento. Causas comuns: falta de recursos nos nós, seletores de nós (labels) incompatíveis ou falha na montagem de volumes (PVC).",
 				Age:       ageStr,
 			})
 			continue
@@ -956,6 +957,11 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 			if cs.State.Waiting != nil {
 				reason := cs.State.Waiting.Reason
 				if reason == "CrashLoopBackOff" || reason == "CreateContainerConfigError" || reason == "ErrImagePull" {
+					narrative := "Falha ao iniciar o container. Verifique os logs para erros fatais ou configurações ausentes."
+					if reason == "ErrImagePull" {
+						narrative = "O Kubernetes não conseguiu baixar a imagem. Verifique se o nome da imagem está correto e se o cluster tem permissão de acesso ao registro."
+					}
+
 					if reason == "CrashLoopBackOff" {
 						crashLoopFound = true
 						crashLoopMsg = fmt.Sprintf("Container %s in %s", cs.Name, reason)
@@ -966,6 +972,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 							Type:      reason,
 							Severity:  "CRITICAL",
 							Message:   fmt.Sprintf("Container %s in %s", cs.Name, reason),
+							Narrative: narrative,
 							Age:       ageStr,
 						})
 					}
@@ -979,6 +986,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "OOMKilled",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("Container %s OOMKilled", cs.Name),
+					Narrative: "O container foi terminado por exceder o limite de memória. Se recorrente, aumente o resources.limits.memory.",
 					Age:       ageStr,
 				})
 			}
@@ -986,6 +994,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 
 		// Correlation: CrashLoop + CPU
 		if crashLoopFound {
+			narrative := "O container está falhando consecutivamente. Verifique os logs para erros fatais da aplicação ou configurações ausentes (env vars, secrets)."
 			if cpuPct >= a.Thresholds.CPU.Warning {
 				incs = append(incs, Incident{
 					PodName:   p.Name,
@@ -993,6 +1002,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "CrashLoopCpuThrottling",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("%s correlated with High CPU (%.1f%%)", crashLoopMsg, cpuPct),
+					Narrative: "O container está em CrashLoop e consumindo CPU excessiva durante o boot. Isso pode indicar um loop infinito no código de inicialização.",
 					Age:       ageStr,
 				})
 			} else if a.Thresholds.Pods.CrashLoopCritical {
@@ -1002,6 +1012,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "CrashLoopBackOff",
 					Severity:  "CRITICAL",
 					Message:   crashLoopMsg,
+					Narrative: narrative,
 					Age:       ageStr,
 				})
 			} else {
@@ -1011,6 +1022,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "CrashLoopBackOff",
 					Severity:  "WARNING",
 					Message:   crashLoopMsg,
+					Narrative: narrative,
 					Age:       ageStr,
 				})
 			}
@@ -1026,15 +1038,18 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "HighCPU",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("CPU usage at %.1f%% of LIMIT (danger of throttling)", cpuLimPct),
+					Narrative: "Uso de CPU atingiu o limite configurado. Isso causa throttling severo e degradação de performance. Aumente o limite de CPU.",
 					Age:       ageStr,
 				})
 			} else if cpuPct >= a.Thresholds.CPU.Warning {
 				// Above request is always a warning, but only critical if it hits limit or is extremely high
 				sev := "WARNING"
 				msg := fmt.Sprintf("CPU usage at %.1f%% of request", cpuPct)
+				narrative := "O uso de CPU está acima da reserva solicitada. Isso pode causar latência se outros pods no mesmo nó também demandarem recursos."
 				if cpuPct > 200 {
 					sev = "CRITICAL" // Extreme case, probably misconfigured
 					msg = fmt.Sprintf("CPU usage at %.1f%% of request (Extreme over-usage)", cpuPct)
+					narrative = "O uso de CPU está drasticamente acima da reserva. Risco alto de instabilidade. Revise o dimensionamento do pod."
 				}
 				incs = append(incs, Incident{
 					PodName:   p.Name,
@@ -1042,6 +1057,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "HighCPU",
 					Severity:  sev,
 					Message:   msg,
+					Narrative: narrative,
 					Age:       ageStr,
 				})
 			}
@@ -1054,17 +1070,17 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "HighMemory",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("Memory usage at %.1f%% of LIMIT (danger of OOMKill)", memLimPct),
+					Narrative: "Uso de memória próximo ao limite fatal. O container corre risco iminente de OOMKill. Aumente o limite de memória imediatamente.",
 					Age:       ageStr,
 				})
 			} else if memPct >= a.Thresholds.Memory.Warning {
 				sev := "WARNING"
 				msg := fmt.Sprintf("Memory usage at %.1f%% of request", memPct)
-				// If usage > 100% of request, it's a warning.
-				// It only becomes CRITICAL if it's near limit (handled above)
-				// or if it's ridiculously high relative to request and no limit is set.
+				narrative := "Uso de memória acima da reserva solicitada. Risco de expulsão (eviction) pelo Kubelet se o nó ficar sem memória livre."
 				if st.MemLimit == 0 && memPct > 250 {
 					sev = "CRITICAL"
 					msg = fmt.Sprintf("Memory usage at %.1f%% of request (No limit set, risk of eviction)", memPct)
+					narrative = "O pod não possui limite de memória e está consumindo muito além da reserva. Isso ameaça a estabilidade de outros pods no nó."
 				}
 
 				incs = append(incs, Incident{
@@ -1073,6 +1089,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "HighMemory",
 					Severity:  sev,
 					Message:   msg,
+					Narrative: narrative,
 					Age:       ageStr,
 				})
 			}
@@ -1092,6 +1109,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				Type:      "ResourceWaste",
 				Severity:  sev,
 				Message:   s.Opportunity,
+				Narrative: "Esta carga está superprovisionada. Reduzir as reservas de recursos para patamares mais próximos do uso real pode gerar economia significativa.",
 				Age:       "-",
 				IsWaste:   true,
 			})

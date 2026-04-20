@@ -242,13 +242,26 @@ async function renderNodeDrawer() {
          displayPods = mData.filter(function(p) { return p.nodeName === focusNode; });
       }
     } else {
-      statsHtml = '<div class="drawer-stats">' +
+      var clusterMemSat = s.memAllocatable > 0 ? (s.memRequested / s.memAllocatable * 100) : 0;
+      var clusterCpuSat = s.cpuAllocatable > 0 ? (s.cpuRequested / s.cpuAllocatable * 100) : 0;
+
+      statsHtml = '<div class="drawer-stats" style="margin-bottom:20px">' +
         dstat('Total Nodes', nodes.length, 'var(--cyan)') +
         dstat('Total Pods', totalPods, 'var(--green)') +
         dstat('CPU Requested', s.cpuRequested + 'm', 'var(--orange)') +
         dstat('CPU Allocatable', s.cpuAllocatable + 'm', 'var(--text-bright)') +
         dstat('Memory Requested', s.memRequested + 'Mi', 'var(--purple)') +
         dstat('Efficiency', s.efficiency.toFixed(1) + '%', s.efficiency > 85 ? 'var(--red)' : s.efficiency > 70 ? 'var(--orange)' : 'var(--cyan)') +
+      '</div>' +
+      '<div style="margin-bottom:24px;display:flex;flex-direction:column;gap:12px;background:var(--surface);padding:16px;border-radius:6px;border:1px solid var(--border)">' +
+        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px;color:var(--text-dim);font-size:.75em;text-transform:uppercase;letter-spacing:1px">Cluster CPU Reservation</span>' +
+          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px;background:rgba(255,255,255,.12)"><div class="pod-detail-fill" style="width:' + Math.min(clusterCpuSat,100).toFixed(1) + '%;background:' + (clusterCpuSat > 85 ? 'var(--red)' : clusterCpuSat > 70 ? 'var(--orange)' : 'var(--cyan)') + '"></div></div>' +
+          '<span class="mono" style="margin-left:12px;font-size:0.9em;color:var(--text-bright)">' + clusterCpuSat.toFixed(1) + '%</span>' +
+        '</div>' +
+        '<div class="pod-detail-row" style="border:none;padding:0;margin:0"><span class="pod-detail-label" style="width:140px;color:var(--text-dim);font-size:.75em;text-transform:uppercase;letter-spacing:1px">Cluster Mem Reservation</span>' +
+          '<div class="pod-detail-bar" style="max-width:300px;flex-grow:1;height:8px;background:rgba(255,255,255,.12)"><div class="pod-detail-fill" style="width:' + Math.min(clusterMemSat,100).toFixed(1) + '%;background:var(--purple)"></div></div>' +
+          '<span class="mono" style="margin-left:12px;font-size:0.9em;color:var(--text-bright)">' + clusterMemSat.toFixed(1) + '%</span>' +
+        '</div>' +
       '</div>';
 
       nodeCards = nodes.slice().sort(function(a,b){
@@ -259,13 +272,19 @@ async function renderNodeDrawer() {
         var isOk = n.status === 'Running';
         var nCpuSat = n.cpuAllocatable > 0 ? (n.cpuRequested / n.cpuAllocatable * 100) : 0;
         var nMemSat = n.memAllocatable > 0 ? (n.memRequested / n.memAllocatable * 100) : 0;
+        var hasPressure = nCpuSat >= 100 || nMemSat >= 100;
         var cpuBarColor = nCpuSat > 85 ? 'var(--red)' : nCpuSat > 70 ? 'var(--orange)' : 'var(--cyan)';
         var memBarColor = nMemSat > 90 ? 'var(--red)' : nMemSat > 75 ? 'var(--orange)' : 'var(--purple)';
-        return '<div class="pod-detail-card node-card-clickable" data-node="' + esc(n.name) + '" style="cursor:pointer">' +
+        
+        var cardStyle = 'cursor:pointer';
+        if (hasPressure) cardStyle += ';border:1px solid var(--red);background:rgba(220,38,38,0.05)';
+
+        return '<div class="pod-detail-card node-card-clickable" data-node="' + esc(n.name) + '" style="' + cardStyle + '">' +
           '<div class="pod-detail-row">' +
             '<span class="pod-detail-label">Node</span>' +
             '<span class="pod-detail-val" style="color:var(--cyan)">' + esc(n.name) + '</span>' +
             '<span class="badge ' + (isOk ? 'b-ok' : 'b-crit') + '" style="font-size:.7em;margin-left:8px">' + (isOk ? 'Ready' : 'NotReady') + '</span>' +
+            (hasPressure ? '<span class="badge b-crit" style="font-size:.7em;margin-left:8px">PRESSURE</span>' : '') +
             '<span style="color:var(--text-dim);font-size:.78em;margin-left:auto">' + (n.podCount || 0) + ' pods</span>' +
           '</div>' +
           '<div class="pod-detail-row" style="align-items:center">' +
