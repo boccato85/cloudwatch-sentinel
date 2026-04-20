@@ -966,7 +966,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					if reason == "CrashLoopBackOff" {
 						crashLoopFound = true
 						crashLoopMsg = fmt.Sprintf("Container %s in %s", cs.Name, reason)
-					} else {
+					} else if reason == "ErrImagePull" {
 						incs = append(incs, Incident{
 							PodName:   p.Name,
 							Namespace: p.Namespace,
@@ -974,7 +974,19 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 							Severity:  "CRITICAL",
 							Message:   fmt.Sprintf("Container %s in %s", cs.Name, reason),
 							Narrative: narrative,
-							Runbook:   fmt.Sprintf("kubectl logs pod/%s -c %s -n %s", p.Name, cs.Name, p.Namespace),
+							Runbook:   fmt.Sprintf("kubectl describe pod %s -n %s", p.Name, p.Namespace),
+							Age:       ageStr,
+						})
+					} else {
+						// CreateContainerConfigError and other init failures
+						incs = append(incs, Incident{
+							PodName:   p.Name,
+							Namespace: p.Namespace,
+							Type:      reason,
+							Severity:  "CRITICAL",
+							Message:   fmt.Sprintf("Container %s in %s", cs.Name, reason),
+							Narrative: narrative,
+							Runbook:   fmt.Sprintf("kubectl describe pod %s -n %s", p.Name, p.Namespace),
 							Age:       ageStr,
 						})
 					}
@@ -1132,6 +1144,11 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		incs = []Incident{}
 	}
 
+	// TODO(arch): LLM enrichment must NOT be called synchronously here.
+	// Calling GenerateEnrichment() inline would block this handler goroutine for
+	// the full LLM round-trip (potentially 5-30s on Ollama), degrading all
+	// concurrent dashboard requests. The correct pattern: enrich incidents in a
+	// background goroutine during the collector cycle and cache the result here.
 	slog.Debug("incidents computed", "component", "http", "count", len(incs))
 	json.NewEncoder(w).Encode(incs)
 }
