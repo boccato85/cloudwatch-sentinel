@@ -1,7 +1,7 @@
 # Sentinel
 
 <p align="center">
-  <img src="cw_sentinel_logo.png" alt="Sentinel Logo" width="180"/>
+  <img src="docs/assets/cw_sentinel_logo.png" alt="Sentinel Logo" width="180"/>
 </p>
 
 > **Kubernetes SRE intelligence for teams that can't afford a dedicated specialist.**
