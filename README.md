@@ -8,7 +8,7 @@
 > Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/sentinel_ss_0.10.34.png" alt="Sentinel Dashboard v0.34" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.35" width="900"/>
 </p>
 
 ![Status](https://img.shields.io/badge/status-v0.35-brightgreen)
@@ -48,7 +48,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 | Dashboard Overview (v0.34) | Recent Events Drawer |
 |---|---|
-| ![Overview](docs/screenshots/sentinel_ss_0.10.34.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
+| ![Overview](docs/screenshots/sentinel_ss_0.10.33.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
 
 | Efficiency Tab | Waste Intelligence |
 |---|---|
@@ -424,17 +424,7 @@ Every final report passes through `harness/validador_saida.py` before being writ
 
 ## Roadmap
 
-| Milestone | Status | Version |
-|---|---|---|
-| M1 — Stable core | ✅ Done | v0.10.1 |
-| M2 — Actionable FinOps | ✅ Done | v0.10.15 |
-| M3 — Deterministic incident intelligence | ✅ Done | v0.11 |
-| M4 — Critical Resilience & Security | ✅ Done | v0.12 |
-| M5 — Optional intelligence (LLM as a layer) | ✅ Done | v0.35 |
-| M6 — Real lab / QA / Prod-like | Not started | v0.50 |
-| M7 — v1.0 preparation | Not started | v0.99 |
-
-See [ROADMAP.md](ROADMAP.md) for full details.
+See [ROADMAP.md](ROADMAP.md) for the full milestone breakdown (M1→M7, deliverables, done criteria and version history).
 
 ---
 
