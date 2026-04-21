@@ -409,9 +409,9 @@ async function renderEventsDrawer() {
         '<th>Message</th>' +
         '</tr></thead><tbody>';
 
-      filtered.forEach(function(e) {
+      filtered.forEach(function(e, i) {
         var typeClass = e.type === 'Warning' ? 'b-warn' : e.type === 'Normal' ? 'b-ok' : 'b-warn';
-        tableHTML += '<tr>' +
+        tableHTML += '<tr class="waste-row-clickable" data-evt-idx="' + i + '">' +
           '<td><span class="badge ' + typeClass + '" style="font-size:.7em">' + esc(e.type||'--') + '</span></td>' +
           '<td style="font-size:.78em;color:var(--text-dim)">' + esc(e.reason||'--') + '</td>' +
           '<td style="font-size:.78em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
@@ -479,7 +479,43 @@ async function renderEventsDrawer() {
         });
       });
     }
+
+    document.querySelectorAll('#devt-table .waste-row-clickable').forEach(function(row) {
+      row.addEventListener('click', function() {
+        var ev = filtered[this.dataset.evtIdx];
+        if (ev && typeof openEventDetailDrawer === 'function') openEventDetailDrawer(ev);
+      });
+    });
   } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
+}
+
+// ─── Event Detail Drawer ──────────────────────────────────────────────────────
+function openEventDetailDrawer(ev) {
+  var title = 'Event Detail — ' + esc(ev.name||'--');
+  openDrawer(title, function() {
+    var typeClass = ev.type === 'Warning' ? 'b-warn' : ev.type === 'Normal' ? 'b-ok' : 'b-warn';
+    var backBtnHtml = '<button id="event-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em">&larr; Back to events</button>';
+
+    var html = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:16px;line-height:1.6;font-size:0.9em;color:var(--text-bright)">' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">' +
+        '<span class="badge ' + typeClass + '">' + esc(ev.type||'--') + '</span>' +
+        '<span class="ns-tag">' + esc(ev.namespace||'--') + '</span>' +
+      '</div>' +
+      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Reason:</b> ' + esc(ev.reason||'--') + '</div>' +
+      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Object:</b> ' + esc(ev.name||'--') + '</div>' +
+      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Age:</b> ' + esc(ev.age||'--') + '</div>' +
+      '<div style="margin-bottom:12px;padding:12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05);border-radius:4px;font-family:\'JetBrains Mono\',monospace;color:var(--cyan);white-space:pre-wrap;word-wrap:break-word">' + esc(ev.message||'--') + '</div>' +
+      '</div>';
+
+    drawerHTML(backBtnHtml + html);
+    
+    var backBtn = document.getElementById('event-detail-back');
+    if (backBtn) {
+      backBtn.addEventListener('click', function() {
+        if (typeof openEventsDrawer === 'function') openEventsDrawer();
+      });
+    }
+  });
 }
 
 // ─── Pod Detail Drawer ────────────────────────────────────────────────────────
@@ -731,6 +767,13 @@ async function updateMemTile() {
     memBar.style.background = usePct > 90 ? 'var(--red)' : usePct > 75 ? 'var(--orange)' : 'var(--purple)';
     var memBadge = document.getElementById('membadge');
     memBadge.textContent = usePct > 90 ? 'Critical' : usePct > 75 ? 'High' : 'Optimal';
+    memBadge.className   = 'badge ' + (usePct > 90 ? 'b-crit' : usePct > 75 ? 'b-warn' : 'b-ok');
+    uDonut('memDonut', ['Usage','Free'],
+      [nsMemUse, Math.max(0, alc - nsMemUse)], ['#a855f7','#2d3347']);
+  } catch(e) { console.error('updateMemTile error:', e); }
+}
+
+'High' : 'Optimal';
     memBadge.className   = 'badge ' + (usePct > 90 ? 'b-crit' : usePct > 75 ? 'b-warn' : 'b-ok');
     uDonut('memDonut', ['Usage','Free'],
       [nsMemUse, Math.max(0, alc - nsMemUse)], ['#a855f7','#2d3347']);
