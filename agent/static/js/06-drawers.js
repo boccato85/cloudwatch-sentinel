@@ -94,7 +94,27 @@ function closeDrawer() {
 
 function drawerHTML(html) {
   var clean = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(html) : html;
+  
+  var activeId = null;
+  var selStart = 0;
+  var selEnd = 0;
+  if (document.activeElement && document.activeElement.tagName === 'INPUT' && document.activeElement.id) {
+    activeId = document.activeElement.id;
+    try {
+      selStart = document.activeElement.selectionStart;
+      selEnd = document.activeElement.selectionEnd;
+    } catch(e) {}
+  }
+  
   document.getElementById('drawer-body').innerHTML = clean;
+
+  if (activeId) {
+    var el = document.getElementById(activeId);
+    if (el) {
+      el.focus();
+      try { el.setSelectionRange(selStart, selEnd); } catch(e) {}
+    }
+  }
 }
 
 // sort state per drawer
