@@ -122,6 +122,7 @@ podman build -t localhost/sentinel:0.12 agent/
 podman save localhost/sentinel:0.12 | minikube image load -
 
 # Deploy (PostgreSQL spins up automatically as a pod)
+# IMPORTANT: The deployment name MUST be 'sentinel'
 helm install sentinel helm/sentinel -n sentinel-gemini --create-namespace \
   --set image.tag=0.12 \
   --set image.pullPolicy=Never \
