@@ -325,7 +325,7 @@ async function renderOverviewEvents() {
         '<td style="font-size:.78em;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
         '<td style="font-size:.72em"><span class="ns-tag">' + esc(e.namespace||'--') + '</span></td>' +
         '<td style="font-size:.72em;color:var(--text-dim)">' + esc(e.age||'--') + '</td>' +
-        '<td style="font-size:.72em;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'') + '">' + msg + '</td>' +
+        '<td style="font-size:.72em;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'').replace(/"/g, '&quot;') + '">' + msg + '</td>' +
         '</tr>';
     });
     document.getElementById('evtbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No events</td></tr>';
