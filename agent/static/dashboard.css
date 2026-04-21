@@ -277,7 +277,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .pod-detail-bar{flex:1;min-width:80px;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
 .pod-detail-fill{height:100%;border-radius:3px;transition:width .5s}
 /* clickable waste row */
-.waste-row-clickable{cursor:pointer;transition:background .12s}
+.waste-row-clickable{cursor:pointer!important;transition:background .12s}
 .waste-row-clickable:hover{background:rgba(0,180,255,.06)!important}
 /* sort th */
 .th-sort{cursor:pointer;user-select:none;white-space:nowrap}

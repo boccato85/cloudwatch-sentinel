@@ -494,7 +494,7 @@ function openEventDetailDrawer(ev) {
   var title = 'Event Detail — ' + esc(ev.name||'--');
   openDrawer(title, function() {
     var typeClass = ev.type === 'Warning' ? 'b-warn' : ev.type === 'Normal' ? 'b-ok' : 'b-warn';
-    var backBtnHtml = '<button id="event-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em">&larr; Back to events</button>';
+    var backBtnHtml = '<button id="event-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em;align-self:flex-start">&larr; Back to events</button>';
 
     var html = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:16px;line-height:1.6;font-size:0.9em;color:var(--text-bright)">' +
       '<div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">' +
@@ -578,7 +578,7 @@ function openPodDetailDrawer(p) {
   openDrawer(title, function() {
     var backBtnHtml = '';
     if (typeof _evtDrawerState !== 'undefined' && _evtDrawerState.focusNode) {
-      backBtnHtml = '<button id="pod-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em">&larr; Back to node</button>';
+      backBtnHtml = '<button id="pod-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em;align-self:flex-start">&larr; Back to node</button>';
     }
     drawerHTML(backBtnHtml + html);
     if (document.getElementById('pod-detail-back')) {
