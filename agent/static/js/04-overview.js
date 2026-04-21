@@ -319,7 +319,7 @@ async function renderOverviewEvents() {
       var typeClass = e.type === 'Warning' ? 'b-warn' : e.type === 'Normal' ? 'b-ok' : 'b-warn';
       var msg = esc(e.message || '--');
       if (msg.length > 80) msg = msg.substring(0, 77) + '...';
-      rows += '<tr>' +
+      rows += '<tr class="waste-row-clickable" data-evt-idx="' + i + '">' +
         '<td><span class="badge ' + typeClass + '" style="font-size:.7em">' + esc(e.type||'--') + '</span></td>' +
         '<td style="font-size:.78em;color:var(--text-dim)">' + esc(e.reason||'--') + '</td>' +
         '<td style="font-size:.78em;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
@@ -329,6 +329,13 @@ async function renderOverviewEvents() {
         '</tr>';
     });
     document.getElementById('evtbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No events</td></tr>';
+
+    document.querySelectorAll('#evtbody .waste-row-clickable').forEach(function(row) {
+      row.addEventListener('click', function() {
+        var ev = lastEvents[this.dataset.evtIdx];
+        if (ev && typeof openEventDetailDrawer === 'function') openEventDetailDrawer(ev);
+      });
+    });
   } catch(e) { console.error('events error:', e); }
 }
 
