@@ -773,10 +773,3 @@ async function updateMemTile() {
   } catch(e) { console.error('updateMemTile error:', e); }
 }
 
-'High' : 'Optimal';
-    memBadge.className   = 'badge ' + (usePct > 90 ? 'b-crit' : usePct > 75 ? 'b-warn' : 'b-ok');
-    uDonut('memDonut', ['Usage','Free'],
-      [nsMemUse, Math.max(0, alc - nsMemUse)], ['#a855f7','#2d3347']);
-  } catch(e) { console.error('updateMemTile error:', e); }
-}
-
