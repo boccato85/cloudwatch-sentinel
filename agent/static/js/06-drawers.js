@@ -169,7 +169,7 @@ async function renderNodeDrawer() {
     var nodeInfoCard = '';
     if (focusNode) {
       nodeInfoCard = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
-        '<button class="btn-refresh" id="node-detail-back" style="font-size:.72em">&#8592; Back to node list</button>' +
+        '<button id="node-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;font-size:.72em">&larr; Back to node list</button>' +
       '</div>' +
       '<button class="grade-info-btn" id="node-info-btn" style="margin-bottom:16px;width:100%;padding:10px;text-align:center;font-size:.8em;background:rgba(0,180,255,.08)">ⓘ What these metrics mean</button>' +
       '<div id="node-info-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-size:.82em;line-height:1.6">' +
