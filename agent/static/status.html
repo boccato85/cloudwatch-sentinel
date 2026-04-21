@@ -196,7 +196,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 <div class="footer">
   <div class="footer-sync">
     <span class="footer-dot"></span>
-    Auto-refreshing every 10s · last update: <span id="lastCheck">—</span>
+    Auto-refreshing every 5s · last update: <span id="lastCheck">—</span>
   </div>
   <div class="footer-link">
     <a href="/">← Back to Dashboard</a>
@@ -292,7 +292,7 @@ async function refresh() {
 }
 
 refresh();
-setInterval(refresh, 10000);
+setInterval(refresh, 5000);
 </script>
 </body>
 </html>

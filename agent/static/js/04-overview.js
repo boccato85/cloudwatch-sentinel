@@ -14,39 +14,10 @@ async function updateOverview() {
     var byPhase = {};
     filteredPods.forEach(function(p){ byPhase[p.phase] = (byPhase[p.phase]||0)+1; });
     var nodes   = s.nodes || [];
-    var isMock  = false;
-    
-    if (nodes.length === 1) {
-      isMock = true;
-      if (!window._mockNodes) {
-        window._mockNodes = [];
-        for (var i=1; i<=24; i++) {
-           var cpuPct = (i - 1) / 23 * 100 + (Math.random() * 12 - 6);
-           var memPct = Math.random() * 100;
-           var cpuCap = 4000;
-           var memCap = 16000;
-           window._mockNodes.push({
-             name: 'mock-node-' + i,
-             status: i === 19 ? 'NotReady' : 'Running',
-             cpuAllocatable: cpuCap,
-             cpuRequested: Math.max(0, Math.min(cpuCap, (cpuPct / 100) * cpuCap)),
-             memAllocatable: memCap,
-             memRequested: (memPct / 100) * memCap,
-             podCount: Math.floor(Math.random() * 50) + 1
-           });
-        }
-      }
-      nodes = window._mockNodes;
-    }
 
     var eff     = s.efficiency || 0;
     var running = byPhase['Running'] || 0;
     var total   = Object.values(byPhase).reduce(function(a,b){ return a+b; }, 0);
-    
-    if (isMock) {
-      total = nodes.reduce(function(acc, n){ return acc + (n.podCount || 0); }, 0);
-      running = Math.floor(total * 0.95);
-    }
 
     var issues  = nodes.filter(function(n){ return n.status !== 'Running'; }).length;
 
@@ -157,7 +128,9 @@ async function updateOverview() {
 
         d.className = hexClass;
         d.dataset.node = nd.name;
-        d.title = nd.name + '\nCPU: ' + cpuSat.toFixed(1) + '% | Mem: ' + memSat.toFixed(1) + '% | Pods: ' + (nd.podCount || 0);
+        var nsPodsOnNode = activeNs ? nsPods.filter(function(p) { return p.node === nd.name; }).length : 0;
+        var podInfoText = activeNs ? 'Total Pods: ' + (nd.podCount || 0) + ' (' + nsPodsOnNode + ' in ' + activeNs + ')' : 'Pods: ' + (nd.podCount || 0);
+        d.title = nd.name + '\nCPU: ' + cpuSat.toFixed(1) + '% | Mem: ' + memSat.toFixed(1) + '% | ' + podInfoText;
         var _abbrev = (function(nm) {
           var m = nm.match(/(\d+)$/);
           if (m) return '#' + m[1];
@@ -306,7 +279,8 @@ async function updateOverview() {
       wc.className = 'badge ' + (waste.length > 0 ? 'b-warn' : 'b-ok');
     }
 
-    document.getElementById('lastUp').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+    var topClock = document.getElementById('lastUp');
+    if (topClock) topClock.textContent = 'Updated: ' + new Date().toLocaleTimeString();
 
     var ctxNs = document.getElementById('ctx-ns');
     if (ctxNs) ctxNs.textContent = (activeNs || 'All Namespaces');
@@ -321,8 +295,6 @@ async function updateOverview() {
       ctxWarn.style.color = warnCount > 0 ? 'var(--orange)' : 'var(--green)';
     }
 
-    var ctxUpdated = document.getElementById('ctx-updated');
-    if (ctxUpdated) ctxUpdated.textContent = new Date().toLocaleTimeString();
   } catch(e) { console.error('Sentinel overview error:', e); }
 }
 
@@ -540,7 +512,7 @@ function openPodDetailDrawer(p) {
       '<span class="badge ' + severityClass + '" style="font-size:.76em">' + severityText + '</span>' +
     '</div>' +
 
-    '<div style="font-size:.80em;color:var(--text-dim);margin-bottom:14px">Real-time snapshot &bull; data collected every ~10s</div>' +
+    '<div style="font-size:.80em;color:var(--text-dim);margin-bottom:14px">Real-time snapshot &bull; data collected every ~5s</div>' +
 
     '<div style="margin-bottom:14px">' +
       '<div style="display:flex;justify-content:space-between;font-size:.82em;margin-bottom:4px">' +
