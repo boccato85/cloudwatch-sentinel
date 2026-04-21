@@ -309,6 +309,7 @@ func main() {
 							Name:              m.Name,
 							Namespace:         m.Namespace,
 							NodeName:          spec.NodeName,
+							Phase:             spec.Phase,
 							AppLabel:          spec.AppLabel,
 							CPUUsage:          podCPU,
 							CPURequest:        spec.CPUReq,

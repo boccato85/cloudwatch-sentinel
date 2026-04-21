@@ -400,7 +400,7 @@ async function renderEventsDrawer() {
     if (!filtered.length) {
       tableHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px">No events matching filters</div>';
     } else {
-      tableHTML = '<table class="wtable"><thead><tr id="devthead">' +
+      tableHTML = '<table class="wtable" style="table-layout:fixed"><thead><tr id="devthead">' +
         makeSortHeader('Type', 'type', eventsSort) +
         makeSortHeader('Reason', 'reason', eventsSort) +
         makeSortHeader('Object', 'name', eventsSort) +
@@ -484,7 +484,16 @@ async function renderEventsDrawer() {
 
 // ─── Pod Detail Drawer ────────────────────────────────────────────────────────
 function openPodDetailDrawer(p) {
-  var hasSaving   = Number(p.potentialSavingMCpu || 0) > 0;
+  var title = 'Pod Detail — Waste Analysis';
+  openDrawer(title, function() {
+    var isWarning = p.potentialSavingMCpu > 50 || p.wastePct > 60;
+    
+    var backBtnHtml = '';
+    if (_evtDrawerState && _evtDrawerState.focusNode) {
+      backBtnHtml = '<button id="pod-detail-back" style="background:transparent;border:1px solid var(--border);color:var(--cyan);border-radius:4px;padding:4px 10px;cursor:pointer;margin-bottom:14px;font-size:.8em">&larr; Back to node list</button>';
+    }
+
+    var hasSaving   = Number(p.potentialSavingMCpu || 0) > 0;
   var utilPct     = (p.cpuRequestPresent && p.cpuRequest > 0) ? (p.cpuUsage / p.cpuRequest * 100) : 0;
   var memUtilPct  = (p.memRequest && p.memRequest > 0) ? ((p.memUsage||0) / p.memRequest * 100) : 0;
   var cpuBarColor = utilPct > 70 ? 'var(--green)' : utilPct > 40 ? 'var(--orange)' : 'var(--red)';
@@ -716,6 +725,16 @@ async function updateMemTile() {
     document.getElementById('memEffBig').textContent = usePct.toFixed(1) + '%';
     var memBar = document.getElementById('memReqB');
     memBar.style.width      = Math.min(usePct, 100) + '%';
+    memBar.style.background = usePct > 90 ? 'var(--red)' : usePct > 75 ? 'var(--orange)' : 'var(--purple)';
+    var memBadge = document.getElementById('membadge');
+    memBadge.textContent = usePct > 90 ? 'Critical' : usePct > 75 ? 'High' : 'Optimal';
+    memBadge.className   = 'badge ' + (usePct > 90 ? 'b-crit' : usePct > 75 ? 'b-warn' : 'b-ok');
+    uDonut('memDonut', ['Usage','Free'],
+      [nsMemUse, Math.max(0, alc - nsMemUse)], ['#a855f7','#2d3347']);
+  } catch(e) { console.error('updateMemTile error:', e); }
+}
+
+yle.width      = Math.min(usePct, 100) + '%';
     memBar.style.background = usePct > 90 ? 'var(--red)' : usePct > 75 ? 'var(--orange)' : 'var(--purple)';
     var memBadge = document.getElementById('membadge');
     memBadge.textContent = usePct > 90 ? 'Critical' : usePct > 75 ? 'High' : 'Optimal';
