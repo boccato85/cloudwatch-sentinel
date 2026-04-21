@@ -478,9 +478,9 @@ async function renderPodDrawer() {
 
     document.getElementById('dpod-count').textContent = filtered.length + ' pods';
     document.getElementById('dfilter-pod-ns').addEventListener('change', renderPodDrawer);
-    document.getElementById('dfilter-cpu-ns').addEventListener('change', renderCpuDrawer);
-    document.getElementById('dfilter-cpu-search').addEventListener('input', debounce(renderCpuDrawer, 300));
-    document.getElementById('cpu-show-system').addEventListener('change', renderCpuDrawer);
+    document.getElementById('dfilter-pod-phase').addEventListener('change', renderPodDrawer);
+    document.getElementById('dfilter-pod-search').addEventListener('input', debounce(renderPodDrawer, 300));
+    document.getElementById('pod-show-system').addEventListener('change', renderPodDrawer);
     attachSortHandlers('', renderPodDrawer);
   } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
 }
@@ -525,7 +525,7 @@ async function renderAlertsDrawer() {
       var typeStr = esc(inc.type || 'ALERT').toUpperCase();
       var msg = esc(inc.message || '');
       if (inc.age) msg += ' <span style="opacity:0.7">(' + esc(inc.age) + ')</span>';
-      if (inc.narrative) msg += '<div style="font-size:.74em;color:var(--text-dim);margin-top:6px;font-style:italic;border-left:2px solid var(--orange);padding-left:8px">' + esc(inc.narrative) + '</div>';
+      if (inc.narrative) msg += '<div style="font-size:.92em;color:var(--text-dim);margin-top:6px;font-style:italic;border-left:2px solid var(--orange);padding-left:8px">' + esc(inc.narrative) + '</div>';
       if (inc.runbook) msg += '<div style="margin-top:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:6px 10px;font-family:monospace;font-size:0.75em;color:var(--text-bright);display:flex;justify-content:space-between;align-items:center"><span style="overflow-x:auto;white-space:nowrap;padding-right:10px">' + esc(inc.runbook) + '</span><button class="runbook-copy-btn" data-runbook="' + esc(inc.runbook) + '" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text-dim);border-radius:3px;padding:2px 6px;cursor:pointer;font-size:0.9em;flex-shrink:0">Copy</button></div>';
 
       alertItems += alertCard(inc.podName || inc.name || '--', inc.namespace, typeStr, cls, color, icon, msg);
@@ -817,12 +817,14 @@ async function renderWasteDrawer() {
     drawerHTML(wasteInfoCard + statsHtml + toolbar + tableHtml);
 
     // View toggle listeners
-    document.getElementById('waste-tab-pod').addEventListener('click', function() {
+    var wpBtn = document.getElementById('waste-tab-pod');
+    if (wpBtn) wpBtn.addEventListener('click', function() {
       document.getElementById('waste-view-mode').value = 'pod';
       drawerSort = { col: 'potentialSavingMCpu', dir: 'desc' };
       renderWasteDrawer();
     });
-    document.getElementById('waste-tab-dep').addEventListener('click', function() {
+    var wdBtn = document.getElementById('waste-tab-dep');
+    if (wdBtn) wdBtn.addEventListener('click', function() {
       document.getElementById('waste-view-mode').value = 'dep';
       renderWasteDrawer();
     });
@@ -832,11 +834,14 @@ async function renderWasteDrawer() {
 
     var sevEl = document.getElementById('dfilter-waste-sev');
     if (sevEl) sevEl.addEventListener('change', renderWasteDrawer);
-    document.getElementById('dfilter-waste-ns').addEventListener('change', renderWasteDrawer);
+    var dwns = document.getElementById('dfilter-waste-ns');
+    if (dwns) dwns.addEventListener('change', renderWasteDrawer);
     var searchEl = document.getElementById('dfilter-waste-search');
-    if (searchEl) searchEl.addEventListener('input', renderWasteDrawer);
-    document.getElementById('waste-show-system').addEventListener('change', renderWasteDrawer);
-    document.getElementById('waste-info-btn').addEventListener('click', function() {
+    if (searchEl) searchEl.addEventListener('input', debounce(renderWasteDrawer, 300));
+    var wsys = document.getElementById('waste-show-system');
+    if (wsys) wsys.addEventListener('change', renderWasteDrawer);
+    var wibtn = document.getElementById('waste-info-btn');
+    if (wibtn) wibtn.addEventListener('click', function() {
       var c = document.getElementById('waste-info-card');
       if (c) c.style.display = c.style.display === 'none' ? '' : 'none';
     });

@@ -417,7 +417,7 @@ async function renderEventsDrawer() {
           '<td style="font-size:.78em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
           '<td style="font-size:.72em"><span class="ns-tag">' + esc(e.namespace||'--') + '</span></td>' +
           '<td style="font-size:.72em;color:var(--text-dim)">' + esc(e.age||'--') + '</td>' +
-          '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'') + '">' + esc(e.message||'--') + '</td>' +
+          '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'').replace(/"/g, '&quot;') + '">' + esc(e.message||'--') + '</td>' +
           '</tr>';
       });
       tableHTML += '</tbody></table>';
