@@ -485,15 +485,7 @@ async function renderEventsDrawer() {
 // ─── Pod Detail Drawer ────────────────────────────────────────────────────────
 function openPodDetailDrawer(p) {
   var title = 'Pod Detail — Waste Analysis';
-  openDrawer(title, function() {
-    var isWarning = p.potentialSavingMCpu > 50 || p.wastePct > 60;
-    
-    var backBtnHtml = '';
-    if (_evtDrawerState && _evtDrawerState.focusNode) {
-      backBtnHtml = '<button id="pod-detail-back" style="background:transparent;border:1px solid var(--border);color:var(--cyan);border-radius:4px;padding:4px 10px;cursor:pointer;margin-bottom:14px;font-size:.8em">&larr; Back to node list</button>';
-    }
-
-    var hasSaving   = Number(p.potentialSavingMCpu || 0) > 0;
+  var hasSaving   = Number(p.potentialSavingMCpu || 0) > 0;
   var utilPct     = (p.cpuRequestPresent && p.cpuRequest > 0) ? (p.cpuUsage / p.cpuRequest * 100) : 0;
   var memUtilPct  = (p.memRequest && p.memRequest > 0) ? ((p.memUsage||0) / p.memRequest * 100) : 0;
   var cpuBarColor = utilPct > 70 ? 'var(--green)' : utilPct > 40 ? 'var(--orange)' : 'var(--red)';
@@ -547,7 +539,18 @@ function openPodDetailDrawer(p) {
 
     savingsLine;
 
-  openDrawer('Pod Detail — Waste Analysis', function(el) { drawerHTML(html); });
+  openDrawer(title, function() {
+    var backBtnHtml = '';
+    if (typeof _evtDrawerState !== 'undefined' && _evtDrawerState.focusNode) {
+      backBtnHtml = '<button id="pod-detail-back" style="background:transparent;border:1px solid var(--border);color:var(--cyan);border-radius:4px;padding:4px 10px;cursor:pointer;margin-bottom:14px;font-size:.8em">&larr; Back to node list</button>';
+    }
+    drawerHTML(backBtnHtml + html);
+    if (document.getElementById('pod-detail-back')) {
+      document.getElementById('pod-detail-back').addEventListener('click', function() {
+        if (typeof openNodeDrawer === 'function') openNodeDrawer(_evtDrawerState.focusNode);
+      });
+    }
+  });
 }
 
 
