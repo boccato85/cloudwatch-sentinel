@@ -8,6 +8,7 @@ type PodSpec struct {
 	CPUReq, CPULim, MemReq, MemLim int64
 	AppLabel                       string
 	NodeName                       string
+	Phase                          string
 	ReqFound                       bool
 }
 
@@ -43,4 +44,6 @@ func BuildPodSpecMap(pods []corev1.Pod) map[string]map[string]PodSpec {
 		        ReqFound: cpuReqPresent,
 		}	}
 	return result
+}
+lt
 }

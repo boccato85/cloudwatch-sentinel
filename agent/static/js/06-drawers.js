@@ -553,7 +553,7 @@ function alertCard(name, ns, label, cls, color, icon, hint) {
         '<span class="badge ' + (cls==='failed'?'b-crit':'b-warn') + '">' + label + '</span>' +
       '</div>' +
       '<div class="alert-ns" style="margin-top:3px">' + esc(ns) + '</div>' +
-      '<div style="font-size:.76em;color:var(--text-dim);margin-top:6px;font-style:italic">' + hint + '</div>' +
+      '<div style="font-size:.92em;color:var(--text-dim);margin-top:6px;font-style:italic">' + hint + '</div>' +
     '</div></div>';
 }
 
@@ -660,7 +660,7 @@ async function renderCpuDrawer() {
       '<tbody>' + (rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No data</td></tr>') + '</tbody></table></div>');
 
     document.getElementById('dcpu-count').textContent = filtered.length + ' pods';
-    document.getElementById('dfilter-cpu-search').addEventListener('input', renderCpuDrawer);
+    document.getElementById('dfilter-cpu-search').addEventListener('input', debounce(renderCpuDrawer, 300));
     document.getElementById('cpu-show-system').addEventListener('change', renderCpuDrawer);
     document.getElementById('cpu-info-btn').addEventListener('click', function() {
       var c = document.getElementById('cpu-info-card');
