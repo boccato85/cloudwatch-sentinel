@@ -1176,16 +1176,3 @@ function dstat(label, value, color) {
   return '<div class="dstat"><div class="dstat-lbl">'+esc(label)+'</div><div class="dstat-val" style="color:'+color+'">'+esc(String(value))+'</div></div>';
 }
 
-}
-
-tion dstat(label, value, color) {
-  return '<div class="dstat"><div class="dstat-lbl">'+esc(label)+'</div><div class="dstat-val" style="color:'+color+'">'+esc(String(value))+'</div></div>';
-}
-
-}
-
-le="color:'+color+'">'+esc(String(value))+'</div></div>';
-}
-
-}
-
