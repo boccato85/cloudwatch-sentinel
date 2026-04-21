@@ -542,7 +542,7 @@ function openPodDetailDrawer(p) {
   openDrawer(title, function() {
     var backBtnHtml = '';
     if (typeof _evtDrawerState !== 'undefined' && _evtDrawerState.focusNode) {
-      backBtnHtml = '<button id="pod-detail-back" style="background:transparent;border:1px solid var(--border);color:var(--cyan);border-radius:4px;padding:4px 10px;cursor:pointer;margin-bottom:14px;font-size:.8em">&larr; Back to node list</button>';
+      backBtnHtml = '<button id="pod-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em">&larr; Back to node</button>';
     }
     drawerHTML(backBtnHtml + html);
     if (document.getElementById('pod-detail-back')) {
