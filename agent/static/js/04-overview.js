@@ -737,13 +737,3 @@ async function updateMemTile() {
   } catch(e) { console.error('updateMemTile error:', e); }
 }
 
-yle.width      = Math.min(usePct, 100) + '%';
-    memBar.style.background = usePct > 90 ? 'var(--red)' : usePct > 75 ? 'var(--orange)' : 'var(--purple)';
-    var memBadge = document.getElementById('membadge');
-    memBadge.textContent = usePct > 90 ? 'Critical' : usePct > 75 ? 'High' : 'Optimal';
-    memBadge.className   = 'badge ' + (usePct > 90 ? 'b-crit' : usePct > 75 ? 'b-warn' : 'b-ok');
-    uDonut('memDonut', ['Usage','Free'],
-      [nsMemUse, Math.max(0, alc - nsMemUse)], ['#a855f7','#2d3347']);
-  } catch(e) { console.error('updateMemTile error:', e); }
-}
-
