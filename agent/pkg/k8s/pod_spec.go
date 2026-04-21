@@ -41,9 +41,9 @@ func BuildPodSpecMap(pods []corev1.Pod) map[string]map[string]PodSpec {
 		        MemLim:   totalMemLim,
 		        AppLabel: p.Labels["app"],
 		        NodeName: p.Spec.NodeName,
+		        Phase:    string(p.Status.Phase),
 		        ReqFound: cpuReqPresent,
-		}	}
+		}
+	}
 	return result
-}
-lt
 }
