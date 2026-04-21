@@ -126,6 +126,7 @@ async function loadVersion() {
 loadNamespaces();
 loadVersion();
 setInterval(update, 5000);
+
 update();
 fetchChart();
 updateEfficiency();

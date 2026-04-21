@@ -144,6 +144,7 @@ function attachSortHandlers(tbodyId, renderFn) {
 // ─── Drawer: Node Health Map ───────────────────────────────────────────────────
 function openNodeDrawer(focusNode) {
   _evtDrawerState.focusNode = typeof focusNode === 'string' ? focusNode : null;
+  _evtDrawerState.clearNsFilter = false;
   var title = _evtDrawerState.focusNode ? 'Node Health Map — ' + _evtDrawerState.focusNode : 'Node Health Map — Detail';
   openDrawer(title, renderNodeDrawer);
 }
@@ -154,11 +155,6 @@ async function renderNodeDrawer() {
     var s = await (await fetchAuth('/api/summary')).json();
     var mData = await (await fetchAuth('/api/metrics')).json();
     var nodes = s.nodes || [];
-    
-    // Fallback for mock data
-    if (nodes.length === 1 && window._mockNodes) {
-       nodes = window._mockNodes;
-    }
     
     var pods  = s.podsByPhase || {};
     var totalPods = Object.values(pods).reduce(function(a,b){return a+b;},0);
@@ -224,23 +220,7 @@ async function renderNodeDrawer() {
         '</div>' +
       '</div>';
       
-      if (focusNode.startsWith('mock-node-')) {
-         var numMockPods = targetNode.podCount || 0;
-         var cpuBudget = targetNode.cpuRequested;
-         for (var i=0; i<numMockPods; i++) {
-           var rCpu = Math.floor(cpuBudget / numMockPods) + Math.floor(Math.random() * 50);
-           var uCpu = Math.floor(rCpu * (0.6 + Math.random() * 0.4));
-           displayPods.push({
-             name: 'mock-workload-' + (i+1),
-             namespace: i%2===0 ? 'sentinel-gemini' : 'default',
-             cpuUsage: uCpu,
-             cpuRequest: rCpu,
-             cpuRequestPresent: true
-           });
-         }
-      } else {
-         displayPods = mData.filter(function(p) { return p.nodeName === focusNode; });
-      }
+      displayPods = mData.filter(function(p) { return p.nodeName === focusNode; });
     } else {
       var clusterMemSat = s.memAllocatable > 0 ? (s.memRequested / s.memAllocatable * 100) : 0;
       var clusterCpuSat = s.cpuAllocatable > 0 ? (s.cpuRequested / s.cpuAllocatable * 100) : 0;
@@ -305,6 +285,13 @@ async function renderNodeDrawer() {
     }
 
     // 3. Build Pod Table Rows
+    var totalPodsOnNode = displayPods.length;
+    var isFiltered = false;
+    if (activeNs && !_evtDrawerState.clearNsFilter) {
+      displayPods = displayPods.filter(function(p) { return p.namespace === activeNs; });
+      isFiltered = true;
+    }
+    
     displayPods.sort(function(a,b){ return b.cpuUsage - a.cpuUsage; });
     var podRows = '';
     if (displayPods.length === 0) {
@@ -313,10 +300,11 @@ async function renderNodeDrawer() {
       podRows = displayPods.map(function(p, i) {
         var pctVal = p.cpuRequestPresent && p.cpuRequest > 0 ? (p.cpuUsage / p.cpuRequest * 100) : 0;
         var pctStr = p.cpuRequestPresent && p.cpuRequest > 0 ? pctVal.toFixed(1) + '%' : 'N/A';
-        return '<tr class="waste-row-clickable">' +
+        return '<tr class="waste-row-clickable" data-pod-idx="' + i + '">' +
           '<td class="mono" style="color:var(--text-dim)">' + (i+1) + '</td>' +
           '<td class="mono" style="color:var(--text-bright)">' + esc(p.name||'--') + '</td>' +
           '<td><span class="ns-tag">' + esc(p.namespace||'--') + '</span></td>' +
+          '<td class="mono" style="' + (p.phase==='Running'?'color:var(--green)':p.phase==='Pending'?'color:var(--orange)':'color:var(--red)') + '">' + esc(p.phase||'--') + '</td>' +
           '<td class="mono" style="color:var(--orange)">' + (p.cpuUsage||0) + 'm</td>' +
           '<td class="mono" style="color:var(--text-dim)">' + (p.cpuRequestPresent ? p.cpuRequest+'m' : 'N/A') + '</td>' +
           '<td class="mono" style="color:var(--purple)">' + (p.memUsage||0) + 'Mi</td>' +
@@ -328,16 +316,50 @@ async function renderNodeDrawer() {
     var finalHTML = nodeInfoCard + statsHtml + nodeCards;
     
     if (focusNode) {
-      finalHTML += '<div style="font-size:.72em;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:16px">Pods on this Node (' + displayPods.length + ')</div>' +
+      var filterMsg = '';
+      if (activeNs) {
+        if (isFiltered) {
+           filterMsg = ' <span style="text-transform:none;font-weight:normal;color:var(--cyan)">- Showing ' + displayPods.length + ' pods in ' + esc(activeNs) + '</span> <a href="#" id="nd-clear-filter" style="text-transform:none;font-weight:normal;margin-left:8px;color:var(--text-bright);text-decoration:underline;cursor:pointer">Clear filter</a>';
+        } else {
+           filterMsg = ' <span style="text-transform:none;font-weight:normal;color:var(--text-dim)">- Showing all namespaces</span>';
+        }
+      }
+      finalHTML += '<div style="font-size:.72em;color:var(--text-dim);text-transform:uppercase;font-weight:700;letter-spacing:1px;margin-bottom:8px;margin-top:16px">Pods on this Node (' + totalPodsOnNode + ')' + filterMsg + '</div>' +
         '<div class="drawer-table-wrap" style="padding-bottom:10px">' +
           '<table class="wtable" style="font-size:0.85em;margin-bottom:20px">' +
-            '<thead><tr><th>#</th><th>Pod</th><th>Namespace</th><th>CPU Usage</th><th>CPU Request</th><th>Mem Usage</th><th>CPU Util</th></tr></thead>' +
+            '<thead><tr><th>#</th>' +
+            makeSortHeader('Pod','name',drawerSort) +
+            makeSortHeader('Namespace','namespace',drawerSort) +
+            makeSortHeader('Phase','phase',drawerSort) +
+            makeSortHeader('CPU Usage','cpuUsage',drawerSort) +
+            makeSortHeader('CPU Request','cpuRequest',drawerSort) +
+            makeSortHeader('Mem Usage','memUsage',drawerSort) +
+            '<th>CPU Util</th></tr></thead>' +
             '<tbody>' + podRows + '</tbody>' +
           '</table>' +
         '</div>';
     }
 
     drawerHTML(finalHTML);
+
+    if (focusNode) {
+      attachSortHandlers('', renderNodeDrawer);
+      document.querySelectorAll('#detail-drawer .waste-row-clickable[data-pod-idx]').forEach(function(row) {
+        row.addEventListener('click', function() {
+          var p = displayPods[this.dataset.podIdx];
+          if (p && typeof openPodDetailDrawer === 'function') openPodDetailDrawer(p);
+        });
+      });
+    }
+
+    var clrBtn = document.getElementById('nd-clear-filter');
+    if (clrBtn) {
+      clrBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        _evtDrawerState.clearNsFilter = true;
+        renderNodeDrawer();
+      });
+    }
 
     document.getElementById('node-info-btn').addEventListener('click', function() {
       var c = document.getElementById('node-info-card');
@@ -456,9 +478,9 @@ async function renderPodDrawer() {
 
     document.getElementById('dpod-count').textContent = filtered.length + ' pods';
     document.getElementById('dfilter-pod-ns').addEventListener('change', renderPodDrawer);
-    document.getElementById('dfilter-pod-phase').addEventListener('change', renderPodDrawer);
-    document.getElementById('dfilter-pod-search').addEventListener('input', renderPodDrawer);
-    document.getElementById('pod-show-system').addEventListener('change', renderPodDrawer);
+    document.getElementById('dfilter-cpu-ns').addEventListener('change', renderCpuDrawer);
+    document.getElementById('dfilter-cpu-search').addEventListener('input', debounce(renderCpuDrawer, 300));
+    document.getElementById('cpu-show-system').addEventListener('change', renderCpuDrawer);
     attachSortHandlers('', renderPodDrawer);
   } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
 }
@@ -792,7 +814,7 @@ async function renderWasteDrawer() {
         '<tbody>' + (rows || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:16px">No waste detected</td></tr>') + '</tbody></table></div>';
     }
 
-    drawerHTML(wasteInfoCard + statsHtml + viewTabs + toolbar + tableHtml);
+    drawerHTML(wasteInfoCard + statsHtml + toolbar + tableHtml);
 
     // View toggle listeners
     document.getElementById('waste-tab-pod').addEventListener('click', function() {
@@ -988,7 +1010,7 @@ async function renderWorkloadsDrawer() {
     document.getElementById('dwl-count').textContent = filtered.length + ' pods';
     document.getElementById('dfilter-wl-ns').addEventListener('change', renderWorkloadsDrawer);
     document.getElementById('dfilter-wl-sev').addEventListener('change', renderWorkloadsDrawer);
-    document.getElementById('dfilter-wl-search').addEventListener('input', renderWorkloadsDrawer);
+    document.getElementById('dfilter-wl-search').addEventListener('input', debounce(renderWorkloadsDrawer, 300));
     attachSortHandlers('', renderWorkloadsDrawer);
 
     document.getElementById('workloads-info-btn').addEventListener('click', function() {
@@ -1120,10 +1142,31 @@ function attachRunbookCopyHandlers() {
     btn.addEventListener('click', function() {
       var text = btn.dataset.runbook;
       if (!text) return;
-      navigator.clipboard.writeText(text).then(function() {
+      
+      var finishCopy = function() {
         btn.textContent = 'Copied!';
         setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
-      });
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(finishCopy);
+      } else {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          finishCopy();
+        } catch (err) {
+          console.error('Fallback: Oops, unable to copy', err);
+        }
+        document.body.removeChild(textArea);
+      }
     });
   });
 }
@@ -1131,5 +1174,18 @@ function attachRunbookCopyHandlers() {
 // ─── Helper: dstat card ───────────────────────────────────────────────────────
 function dstat(label, value, color) {
   return '<div class="dstat"><div class="dstat-lbl">'+esc(label)+'</div><div class="dstat-val" style="color:'+color+'">'+esc(String(value))+'</div></div>';
+}
+
+}
+
+tion dstat(label, value, color) {
+  return '<div class="dstat"><div class="dstat-lbl">'+esc(label)+'</div><div class="dstat-val" style="color:'+color+'">'+esc(String(value))+'</div></div>';
+}
+
+}
+
+le="color:'+color+'">'+esc(String(value))+'</div></div>';
+}
+
 }
 

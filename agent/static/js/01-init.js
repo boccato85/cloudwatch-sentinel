@@ -36,6 +36,17 @@ var lastForecast   = null;         // cache last forecast data for finops drawer
 var lastDbStatus   = null;         // persisted DB status from /health (used by 5s tick)
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
+function debounce(func, wait) {
+  var timeout;
+  return function() {
+    var context = this, args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(function() {
+      func.apply(context, args);
+    }, wait);
+  };
+}
+
 function fmtMoney(val) {
   if (val === 0) return '0.0000';
   if (Math.abs(val) < 0.0001) return val.toFixed(6);
