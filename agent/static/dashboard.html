@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/dashboard.css?v=0.35.13">
+<link rel="stylesheet" href="/static/dashboard.css?v=0.35.14">
 </head>
 <body>
 
@@ -133,7 +133,7 @@
           <div class="dnut-canvas chart-clickable" id="cpuDonutWrap" title="Click to expand"><canvas id="cpuDonut"></canvas></div>
           <div class="cpu-side">
             <div class="eff-big" id="effBig">--%</div>
-            <div class="eff-lbl">efficiency ratio</div>
+            <div class="eff-lbl">request pressure</div>
             <div class="bar-row">
               <div class="bar-head"><span>Requested</span><em id="cpuReqV">--m</em></div>
               <div class="bar-bg"><div class="bar-fill" id="cpuReqB" style="width:0%;background:var(--cyan)"></div></div>
@@ -406,13 +406,13 @@
   <div class="gl-row" style="border-bottom:none"><span style="color:var(--text-dim);font-weight:600;min-width:80px">±1.5σ</span><span class="gl-desc">95% confidence band &mdash; statistical margin. Real value likely falls within this range.</span></div>
 </div>
 
-<script src="/static/js/01-init.js?v=0.35.13"></script>
-<script src="/static/js/02-charts.js?v=0.35.13"></script>
-<script src="/static/js/03-namespace.js?v=0.35.13"></script>
-<script src="/static/js/04-overview.js?v=0.35.13"></script>
-<script src="/static/js/05-workloads.js?v=0.35.13"></script>
-<script src="/static/js/06-drawers.js?v=0.35.13"></script>
-<script src="/static/js/07-polling.js?v=0.35.13"></script>
+<script src="/static/js/01-init.js?v=0.35.14"></script>
+<script src="/static/js/02-charts.js?v=0.35.14"></script>
+<script src="/static/js/03-namespace.js?v=0.35.14"></script>
+<script src="/static/js/04-overview.js?v=0.35.14"></script>
+<script src="/static/js/05-workloads.js?v=0.35.14"></script>
+<script src="/static/js/06-drawers.js?v=0.35.14"></script>
+<script src="/static/js/07-polling.js?v=0.35.14"></script>
 </body>
 </html>
 
