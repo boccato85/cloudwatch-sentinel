@@ -26,6 +26,8 @@ data:
     cpu:
       warning: {{ .Values.thresholds.cpu.warning }}
       critical: {{ .Values.thresholds.cpu.critical }}
+      node_allocatable_warning_pct: {{ .Values.thresholds.cpu.nodeAllocatableWarningPct | default 10 }}
+      node_allocatable_critical_pct: {{ .Values.thresholds.cpu.nodeAllocatableCriticalPct | default 25 }}
     memory:
       warning: {{ .Values.thresholds.memory.warning }}
       critical: {{ .Values.thresholds.memory.critical }}

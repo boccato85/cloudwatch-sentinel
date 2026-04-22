@@ -89,3 +89,13 @@ function updateSpillTip(dbStatus) {
   document.getElementById('sttDb').innerHTML         = dbTxt;
 }
 
+
+document.addEventListener('DOMContentLoaded', function() {
+  var globalShowSystem = document.getElementById('global-show-system');
+  if (globalShowSystem) {
+    globalShowSystem.addEventListener('change', function() {
+      if (typeof renderDropdowns === 'function') renderDropdowns();
+      if (typeof updateOverview === 'function') updateOverview();
+    });
+  }
+});

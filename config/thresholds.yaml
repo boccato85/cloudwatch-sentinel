@@ -2,8 +2,8 @@ cpu:
   warning: 70
   critical: 85
   # Fallback para pods sem resources.requests.cpu definido — threshold baseado no allocatable do nó
-  node_allocatable_warning_pct: 10   # > 10% do allocatable do nó → WARNING
-  node_allocatable_critical_pct: 25  # > 25% do allocatable do nó → CRITICAL
+  node_allocatable_warning_pct: 10
+  node_allocatable_critical_pct: 25
 
 memory:
   warning: 75
