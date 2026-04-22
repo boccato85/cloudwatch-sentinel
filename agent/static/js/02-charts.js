@@ -34,15 +34,24 @@ function uLine(id, hData, fData) {
       ? fData.reduce(function(sum, p) { return sum + p.reqCost; }, 0) : 0;
     var forecastUse = fData && fData.length > 0
       ? fData.reduce(function(sum, p) { return sum + p.useCost; }, 0) : 0;
+    
+    var effScore = (100 - savingsPct).toFixed(1);
+    var effBadgeClass = effScore < 50 ? 'b-crit' : (effScore < 75 ? 'b-warn' : 'b-ok');
+
     var forecastStr = fData && fData.length > 0
-      ? ' | <span style="color:var(--purple)">Forecast Budget: $' + fmtMoney(forecastTotal) +
-        '</span> | <span style="color:#00b4ff">Forecast Usage: $' + fmtMoney(forecastUse) + '</span>'
+      ? ' <span style="color:var(--border);margin:0 6px">|</span> <span class="badge" style="background:rgba(168,85,247,0.15);color:#a855f7;border-color:rgba(168,85,247,0.3)">Forecast Budget: $' + fmtMoney(forecastTotal) + '</span>' +
+        ' <span class="badge" style="background:rgba(0,180,255,0.15);color:#00b4ff;border-color:rgba(0,180,255,0.3);margin-left:6px">Forecast Actual: $' + fmtMoney(forecastUse) + '</span>'
       : '';
+      
     summaryEl.innerHTML =
-      '<span style="color:var(--red)">Budget: $' + fmtMoney(totalBudget) + '</span> | ' +
-      '<span style="color:var(--green)">Actual: $' + fmtMoney(totalActual) + '</span> | ' +
-      '<span style="color:var(--orange)">Waste: $' + fmtMoney(totalSaved) + ' (' + savingsPct.toFixed(0) + '%)</span>' +
-      forecastStr;
+      '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">' +
+        '<span class="badge b-crit" style="font-size:.9em">Budget: $' + fmtMoney(totalBudget) + '</span> ' +
+        '<span class="badge b-ok" style="font-size:.9em">Actual: $' + fmtMoney(totalActual) + '</span> ' +
+        '<span class="badge b-warn" style="font-size:.9em">Waste: $' + fmtMoney(totalSaved) + '</span> ' +
+        '<span style="color:var(--border);margin:0 2px">|</span> ' +
+        '<span class="badge ' + effBadgeClass + '" style="font-size:1.05em;padding:4px 8px;border-width:2px;font-weight:700">Efficiency: ' + effScore + '%</span>' +
+        forecastStr +
+      '</div>';
   }
 
   // Build combined labels and datasets
