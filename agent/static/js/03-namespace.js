@@ -11,7 +11,7 @@ async function loadNamespaces() {
 }
 
 function renderDropdowns() {
-  var selIds = ['nsFilter', 'tile-ns-pods', 'tile-ns-cpu', 'tile-ns-mem', 'tile-ns-finops', 'tile-ns-eff', 'tile-ns-workloads', 'tile-ns-events'];
+  var selIds = ['nsFilter', 'tile-ns-finops', 'tile-ns-eff', 'tile-ns-workloads', 'tile-ns-events'];
   
   var showSysGlobal = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
   var showSysEff = typeof _effSysToggle !== 'undefined' && _effSysToggle ? _effSysToggle.checked : false;

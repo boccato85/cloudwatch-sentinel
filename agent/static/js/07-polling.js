@@ -45,20 +45,16 @@ if (_effSysToggle) _effSysToggle.addEventListener('change', function() {
 });
 
 // ─── Per-tile namespace selects ───────────────────────────────────────────────
-['tile-ns-pods','tile-ns-cpu','tile-ns-mem','tile-ns-finops','tile-ns-eff','tile-ns-workloads','tile-ns-events'].forEach(function(id) {
+['tile-ns-finops','tile-ns-eff','tile-ns-workloads','tile-ns-events'].forEach(function(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('click', function(e) { e.stopPropagation(); });
   el.addEventListener('change', function(e) {
     e.stopPropagation();
-    var key = id === 'tile-ns-pods' ? 'pods' : id === 'tile-ns-cpu' ? 'cpu' : id === 'tile-ns-mem' ? 'mem' : id === 'tile-ns-finops' ? 'finops' : id === 'tile-ns-eff' ? 'eff' : 'workloads';
-    tileNs[key] = this.value;
-    if (key === 'pods') updatePodsTile();
-    else if (key === 'cpu') updateCpuTile();
-    else if (key === 'mem') updateMemTile();
-    else if (key === 'finops') { fetchChart(); updateEfficiency(); }
-    else if (key === 'eff') updateEfficiency();
-    else updateWorkloads();
+    if (id === 'tile-ns-finops') { tileNs.finops = this.value; fetchChart(); updateEfficiency(); }
+    else if (id === 'tile-ns-eff') { tileNs.eff = this.value; updateEfficiency(); }
+    else if (id === 'tile-ns-workloads') { tileNs.workloads = this.value; updateWorkloads(); }
+    else if (id === 'tile-ns-events') { renderOverviewEvents(); }
   });
 });
 
