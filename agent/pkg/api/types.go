@@ -49,6 +49,7 @@ type PodStats struct {
 	CPURequest          int64   `json:"cpuRequest"`
 	CPULimit            int64   `json:"cpuLimit"`
 	CPURequestPresent   bool    `json:"cpuRequestPresent"`
+	NodeAllocatableCPU  int64   `json:"nodeAllocatableCpu,omitempty"`
 	MemUsage            int64   `json:"memUsage"`
 	MemRequest          int64   `json:"memRequest"`
 	MemLimit            int64   `json:"memLimit"`

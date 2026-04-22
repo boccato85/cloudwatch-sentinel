@@ -921,9 +921,12 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		st, hasStats := statsMap[p.Namespace+"/"+p.Name]
 		var cpuPct, memPct float64
 		var cpuLimPct, memLimPct float64
+		var cpuNodePct float64 // % do allocatable do nó — usado como fallback quando CPURequest == 0
 		if hasStats {
 			if st.CPURequest > 0 {
 				cpuPct = float64(st.CPUUsage) / float64(st.CPURequest) * 100
+			} else if st.NodeAllocatableCPU > 0 {
+				cpuNodePct = float64(st.CPUUsage) / float64(st.NodeAllocatableCPU) * 100
 			}
 			if st.MemRequest > 0 {
 				memPct = float64(st.MemUsage) / float64(st.MemRequest) * 100
@@ -1070,6 +1073,26 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					sev = "CRITICAL" // Extreme case, probably misconfigured
 					msg = fmt.Sprintf("CPU usage at %.1f%% of request (Extreme over-usage)", cpuPct)
 					narrative = "O uso de CPU está drasticamente acima da reserva. Risco alto de instabilidade. Revise o dimensionamento do pod."
+				}
+				incs = append(incs, Incident{
+					PodName:   p.Name,
+					Namespace: p.Namespace,
+					Type:      "HighCPU",
+					Severity:  sev,
+					Message:   msg,
+					Narrative: narrative,
+					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
+					Age:       ageStr,
+				})
+			} else if st.CPURequest == 0 && cpuNodePct >= a.Thresholds.CPU.NodeAllocatableWarningPct {
+				// Fallback para pods sem resources.requests.cpu — alerta baseado no allocatable do nó
+				sev := "WARNING"
+				msg := fmt.Sprintf("CPU usage at %.1f%% of node allocatable (no request defined)", cpuNodePct)
+				narrative := "Pod sem resources.requests.cpu consome CPU significativa do nó. Sem request, o Kubernetes não pode garantir recursos nem detectar starvation. Defina resources.requests.cpu."
+				if cpuNodePct >= a.Thresholds.CPU.NodeAllocatableCriticalPct {
+					sev = "CRITICAL"
+					msg = fmt.Sprintf("CPU usage at %.1f%% of node allocatable (no request defined)", cpuNodePct)
+					narrative = "Pod sem resources.requests.cpu está consumindo fração crítica do nó. Isso priva outros pods de recursos e pode causar instabilidade. Defina resources.requests.cpu imediatamente."
 				}
 				incs = append(incs, Incident{
 					PodName:   p.Name,

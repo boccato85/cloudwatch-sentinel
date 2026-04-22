@@ -22,8 +22,10 @@ var SystemNamespaces = map[string]bool{
 
 type Thresholds struct {
 	CPU struct {
-		Warning  float64 `yaml:"warning"`
-		Critical float64 `yaml:"critical"`
+		Warning                   float64 `yaml:"warning"`
+		Critical                  float64 `yaml:"critical"`
+		NodeAllocatableWarningPct  float64 `yaml:"node_allocatable_warning_pct"`
+		NodeAllocatableCriticalPct float64 `yaml:"node_allocatable_critical_pct"`
 	} `yaml:"cpu"`
 	Memory struct {
 		Warning  float64 `yaml:"warning"`
@@ -47,6 +49,8 @@ func defaultThresholds() Thresholds {
 	var t Thresholds
 	t.CPU.Warning = 70
 	t.CPU.Critical = 85
+	t.CPU.NodeAllocatableWarningPct = 10
+	t.CPU.NodeAllocatableCriticalPct = 25
 	t.Memory.Warning = 75
 	t.Memory.Critical = 90
 	t.Disk.Warning = 70
