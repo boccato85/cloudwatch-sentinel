@@ -51,16 +51,11 @@
 </div>
 
 <!-- STATUS RIBBON -->
-<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:16px;font-size:.75em;color:var(--text-dim)">
+<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:6px 20px;display:flex;align-items:center;gap:16px;font-size:.75em;color:var(--text-dim)">
   <span style="color:var(--text-bright);font-weight:600;font-size:1.1em;letter-spacing:0.5px">Overview</span>
-  <span class="badge b-ok" id="ctx-ns" style="font-size:1em;padding:4px 10px;text-transform:none">All Namespaces</span>
+  <span class="badge b-ok" id="ctx-ns" style="font-size:1em;padding:3px 10px;text-transform:none">All Namespaces</span>
   <span style="color:var(--border)">|</span>
   <span id="ctx-pods" style="font-family:'JetBrains Mono',monospace;font-size:1.05em">-- pods</span>
-  <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
-    <span id="ctx-health" class="badge b-ok" style="font-size:.9em;padding:4px 8px">Health: OK</span>
-    <span id="ctx-waste" class="badge b-ok" style="font-size:.9em;padding:4px 8px">Waste: 0</span>
-    <span id="ctx-eff" class="badge b-ok" style="font-family:'JetBrains Mono',monospace;font-size:.9em;padding:4px 8px">Eff: 100%</span>
-  </div>
 </div>
 
 <!-- ===== OVERVIEW ===== -->
@@ -226,16 +221,19 @@
 
       <!-- FINOPS CONTENT -->
       <div id="fino-content" style="display:flex;flex-direction:column">
-        <div class="range-bar">
-          <button class="range-btn active" data-range="30m">30m</button>
-          <button class="range-btn" data-range="1h">1h</button>
-          <button class="range-btn" data-range="6h">6h</button>
-          <button class="range-btn" data-range="24h">24h</button>
-          <button class="range-btn" data-range="7d">7d</button>
-          <button class="range-btn" data-range="30d">30d</button>
-          <button class="range-btn" data-range="90d">90d</button>
-          <button class="range-btn" data-range="365d">1y</button>
-          <button class="range-btn" data-range="custom">Custom</button>
+        <div class="range-bar" style="justify-content:space-between">
+          <div style="display:flex;gap:4px">
+            <button class="range-btn active" data-range="30m">30m</button>
+            <button class="range-btn" data-range="1h">1h</button>
+            <button class="range-btn" data-range="6h">6h</button>
+            <button class="range-btn" data-range="24h">24h</button>
+            <button class="range-btn" data-range="7d">7d</button>
+            <button class="range-btn" data-range="30d">30d</button>
+            <button class="range-btn" data-range="90d">90d</button>
+            <button class="range-btn" data-range="365d">1y</button>
+            <button class="range-btn" data-range="custom">Custom</button>
+          </div>
+          <a href="#" class="help-link" id="finopsHelp" style="margin-right:10px">ⓘ What these metrics mean</a>
           <div id="custom-range-wrap" class="custom-range-wrap" style="display:none">
             <input type="datetime-local" id="customFrom" />
             <span style="color:var(--text-dim);font-size:.75em">→</span>

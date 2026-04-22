@@ -286,6 +286,25 @@ function toggleGradeLegend() {
     }
   }
 }
+function toggleFinOpsLegend() {
+  var tip = document.getElementById('finops-legend-tip');
+  var btn = document.getElementById('finopsHelp');
+  if (!tip || !btn) return;
+  if (tip.classList.contains('visible')) { tip.classList.remove('visible'); return; }
+  var rect = btn.getBoundingClientRect();
+  tip.style.top = (rect.bottom + 6) + 'px';
+  tip.style.left = (rect.left - 200) + 'px'; // offset to the left to align better
+  tip.style.bottom = 'auto';
+  tip.classList.add('visible');
+  var tipRect = tip.getBoundingClientRect();
+  if (tipRect.bottom > window.innerHeight - 10) {
+    tip.style.top = (rect.top - tipRect.height - 6) + 'px';
+  }
+  if (tipRect.right > window.innerWidth - 10) {
+    tip.style.left = (window.innerWidth - tipRect.width - 10) + 'px';
+  }
+}
+
 // Close legend on outside click or any scroll
 document.addEventListener('click', function(e) {
   var tip = document.getElementById('grade-legend-tip');
@@ -297,7 +316,8 @@ document.addEventListener('click', function(e) {
   var ftip = document.getElementById('finops-legend-tip');
   if (ftip && ftip.classList.contains('visible')) {
     var btn = document.getElementById('finops-info-btn');
-    if (!btn || !btn.contains(e.target)) {
+    var hbtn = document.getElementById('finopsHelp');
+    if ((!btn || !btn.contains(e.target)) && (!hbtn || !hbtn.contains(e.target))) {
       ftip.classList.remove('visible');
     }
   }
