@@ -271,7 +271,7 @@ async function updateOverview() {
       paretoLabel = 'top ' + n + ' pod' + (n !== 1 ? 's' : '') + ' → ' + pct + '% of waste';
     }
     var kWpareto = document.getElementById('kWpareto');
-    if (kWpareto) kWpareto.textContent = paretoLabel;
+    if (kWpareto) kWpareto.textContent = paretoLabel || ' ';
 
     var wc = document.getElementById('wcnt');
     if (wc) {
