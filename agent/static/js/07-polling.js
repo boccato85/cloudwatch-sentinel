@@ -120,12 +120,21 @@ async function loadVersion() {
     // populate Connected tooltip with DB status from /health
     var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
     updateSpillTip(dbSt);
+    var fv = document.getElementById('footer-version');
+    if (fv) fv.textContent = 'sentinel-agent';
   } catch(e) { updateSpillTip('unknown'); }
 }
 
 loadNamespaces();
 loadVersion();
 setInterval(update, 5000);
+
+(function() {
+  var fn = document.getElementById('footer-ns');
+  if (!fn) return;
+  var ctx = (document.querySelector('.ctag') || {}).textContent || '';
+  fn.textContent = ctx ? 'cluster: ' + ctx.trim() : '';
+})();
 
 update();
 fetchChart();
