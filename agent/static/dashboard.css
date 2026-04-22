@@ -206,7 +206,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .finops-panel > #fino-content,
 .finops-panel > #eff-content{flex:1;overflow-y:auto;min-height:0}
 .events-panel{border-top:3px solid var(--orange)!important}
-.events-panel .pb.workloads-scroll-pb{padding:0 14px;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.events-panel .pb.workloads-scroll-pb{padding:0 14px;min-height:220px;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar{width:5px}
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .eff-panel{border-top:2px solid var(--cyan)!important}
