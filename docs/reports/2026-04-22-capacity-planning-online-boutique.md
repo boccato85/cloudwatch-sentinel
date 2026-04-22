@@ -13,7 +13,7 @@ Several Online Boutique microservices were identified as operating with **Memory
 | **emailservice** | 72 Mi | 64 Mi | **112%** | WARNING |
 | **sentinel-postgresql** | 158 Mi | 128 Mi | **123%** | CRITICAL |
 
-## 🧠 Technical Analysis (Sentinel v0.36)
+## 🧠 Technical Analysis (Sentinel v0.50)
 Online Boutique uses an aggressive resource configuration (low requests). When usage exceeds the request, the pod begins utilizing unreserved node memory. During high load or node resource exhaustion scenarios, the Kubelet prioritizes terminating pods consuming resources above their reservation (Eviction).
 
 ## 🛠️ Remediation Plan (Runbook)
