@@ -320,7 +320,7 @@ async function renderNodeDrawer() {
       podRows = displayPods.map(function(p, i) {
         var pctVal = p.cpuRequestPresent && p.cpuRequest > 0 ? (p.cpuUsage / p.cpuRequest * 100) : 0;
         var pctStr = p.cpuRequestPresent && p.cpuRequest > 0 ? pctVal.toFixed(1) + '%' : 'N/A';
-        return '<tr class="waste-row-clickable" data-pod-idx="' + i + '">' +
+        return '<tr class="waste-row-clickable" data-pod-name="' + esc(p.name||'') + '" data-pod-ns="' + esc(p.namespace||'') + '">' +
           '<td class="mono" style="color:var(--text-dim)">' + (i+1) + '</td>' +
           '<td class="mono" style="color:var(--text-bright)">' + esc(p.name||'--') + '</td>' +
           '<td><span class="ns-tag">' + esc(p.namespace||'--') + '</span></td>' +
@@ -364,9 +364,11 @@ async function renderNodeDrawer() {
 
     if (focusNode) {
       attachSortHandlers('', renderNodeDrawer);
-      document.querySelectorAll('#detail-drawer .waste-row-clickable[data-pod-idx]').forEach(function(row) {
+      document.querySelectorAll('#detail-drawer .waste-row-clickable[data-pod-name]').forEach(function(row) {
         row.addEventListener('click', function() {
-          var p = displayPods[this.dataset.podIdx];
+          var name = this.dataset.podName;
+          var ns   = this.dataset.podNs;
+          var p = displayPods.find(function(x) { return x.name === name && x.namespace === ns; });
           if (p && typeof openPodDetailDrawer === 'function') openPodDetailDrawer(p);
         });
       });
