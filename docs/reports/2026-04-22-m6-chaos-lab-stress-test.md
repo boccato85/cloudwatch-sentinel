@@ -16,7 +16,7 @@ As part of Milestone 6 (M6 - Real Lab / QA / Prod-Like), the `google-demo` stack
 | **currencyservice** | Memory usage at 93.0% of LIMIT (danger of OOMKill) | CRITICAL / HIGHMEMORY | Reported lethal proximity to limit, ignoring "Resource Waste" to prioritize real failure. |
 | **google-demo (NS)** | 46 Waste Opportunities detected | WARNING | FinOps Budget line exceeded, indicating 96% of costs wasted on overhead. |
 
-## 🧠 Technical Analysis (Sentinel v0.36)
+## 🧠 Technical Analysis (Sentinel v0.50)
 Sentinel achieved absolute success in dynamic diagnosis during Chaos Engineering. The visual heuristics confirmed that incidents based on Resource Limits (HighCPU and OOMKill risk) successfully pierced through the "Waste" noise, granting SREs immediate visibility during chronic incidents.
 
 ## 🛠️ Remediation Plan (Runbook)
