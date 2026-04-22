@@ -31,7 +31,7 @@
 | M3 — Deterministic incident intelligence | ✅ Done | `v0.11` |
 | M4 — Critical Resilience & Security | ✅ Done | `v0.12` |
 | M5 — Optional intelligence | ✅ Done | `v0.35` |
-| M6 — Real lab / QA / Prod-like | Not started | `v0.50` |
+| M6 — Real lab / QA / Prod-like | ✅ Done | `v0.50` |
 | M7 — v1.0 preparation | Not started | `v0.99` |
 
 ---
@@ -178,11 +178,11 @@
 
 | Item | Status |
 |---|---|
-| Documented Online Boutique baseline (namespace `google-demo`) | Pending |
-| Controlled load (e.g. hey, k6) on microservices | Pending |
-| Burst and fault injection documented | Pending |
-| Before/after comparison in dashboard | Pending |
-| Lab incident report with generated runbook | Pending |
+| Documented Online Boutique baseline (namespace `google-demo`) | ✅ Done |
+| Controlled load (e.g. hey, k6) on microservices | ✅ Done |
+| Burst and fault injection documented | ✅ Done |
+| Before/after comparison in dashboard | ✅ Done |
+| Lab incident report with generated runbook | ✅ Done |
 
 **Done criterion:** Report comparing normal vs degraded cluster state produced by Sentinel, serving as community proof-of-concept. API and UI gaps identified for M7 stabilization.
 
@@ -227,7 +227,8 @@
 | `v0.23` | M5 | ✅ Honeycomb auto-scaling and dynamic packing |
 | `v0.34` | M5 | ✅ Deterministic runbooks + LLM provider skeleton |
 | `v0.35` | M5 | ✅ Code review fixes: copy button XSS, runbooks, nil-pointer, pkg/llm tests |
-| `v0.36` | M5 bug fixes | ✅ Issue #13: node-allocatable HighCPU fallback; Issue #18: incidents tile + time-range filter |
+| `v0.36` | M5 bug fixes | ✅ Issue #13: node-allocatable HighCPU fallback; Issue #18: incident tiles; UI Sort & UX fixes |
+| `v0.37` | M6 partial | ✅ Online Boutique lab injection; load generation testing; UI validation |
 | `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
 | `v0.99` | M7 | Polish, docs, stable contracts |
 

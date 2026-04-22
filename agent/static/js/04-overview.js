@@ -306,12 +306,44 @@ var eventsSort = { col: 'severity', dir: 'desc' };
 
 async function renderOverviewEvents() {
   try {
-    var ns = document.getElementById('tile-ns-events') ? document.getElementById('tile-ns-events').value : '';
+    var ns = activeNs; // Usa o filtro global do topo
     var url = '/api/incidents';
     if (ns) url += '?namespace=' + encodeURIComponent(ns);
     var incidents = await (await fetchAuth(url)).json();
     incidents = incidents || [];
-    lastIncidents = activeNs ? incidents.filter(function(i){ return i.namespace === activeNs; }) : incidents;
+    
+    // Filtro adicional local baseado na flag de sistema global e no activeNs
+    var showSysGlobal = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
+    
+    lastIncidents = incidents.filter(function(i) {
+      // 1. Respeito ao Filtro Global: Se houver um namespace selecionado no topo, só mostrar ele.
+      if (activeNs && i.namespace !== activeNs) return false;
+
+      // 2. Filtro de Sistema: Se 'Show system NS' estiver desligado, esconder namespaces do sistema.
+      if (!showSysGlobal && _SYSTEM_NS[i.namespace]) return false;
+
+      return true;
+    });
+
+    // Ordenação dinâmica baseada em eventsSort
+    lastIncidents.sort(function(a, b) {
+      if (eventsSort.col === 'severity') {
+        var scoreA = (a.type === 'HighCPU') ? 4 : (a.severity === 'CRITICAL' || a.severity === 'critical') ? 3 : (a.severity === 'WARNING' || a.severity === 'warning') ? 1 : 0;
+        var scoreB = (b.type === 'HighCPU') ? 4 : (b.severity === 'CRITICAL' || b.severity === 'critical') ? 3 : (b.severity === 'WARNING' || b.severity === 'warning') ? 1 : 0;
+        if (scoreA !== scoreB) {
+          return eventsSort.dir === 'desc' ? (scoreB - scoreA) : (scoreA - scoreB);
+        }
+      } else {
+        var av = a[eventsSort.col] || '';
+        var bv = b[eventsSort.col] || '';
+        if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+        if (av < bv) return eventsSort.dir === 'asc' ? -1 : 1;
+        if (av > bv) return eventsSort.dir === 'asc' ? 1 : -1;
+      }
+      
+      // Desempate pela idade (mais novos primeiro)
+      return _parseIncidentAgeSeconds(a.age) - _parseIncidentAgeSeconds(b.age);
+    });
 
     var cnt = lastIncidents.length;
     var evtcnt = document.getElementById('evtcnt');
@@ -321,19 +353,39 @@ async function renderOverviewEvents() {
     }
 
     var rows = '';
-    lastIncidents.slice(0, 10).forEach(function(inc, i) {
-      var sevClass = inc.severity === 'CRITICAL' ? 'b-crit' : 'b-warn';
+    lastIncidents.forEach(function(inc, i) {
+      var sevClass = (inc.severity === 'CRITICAL' || inc.severity === 'critical') ? 'b-crit' : 'b-warn';
       var msg = esc(inc.message || '--');
-      if (msg.length > 80) msg = msg.substring(0, 77) + '...';
+      if (msg.length > 100) msg = msg.substring(0, 97) + '...';
       rows += '<tr class="waste-row-clickable" data-inc-idx="' + i + '">' +
         '<td><span class="badge ' + sevClass + '" style="font-size:.7em">' + esc(inc.severity||'--') + '</span></td>' +
         '<td style="font-size:.78em;color:var(--text-dim)">' + esc(inc.type||'--') + '</td>' +
         '<td style="font-size:.78em;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.podName||'') + '">' + esc(inc.podName||'--') + '</td>' +
         '<td style="font-size:.72em"><span class="ns-tag">' + esc(inc.namespace||'--') + '</span></td>' +
         '<td style="font-size:.72em;color:var(--text-dim)">' + esc(inc.age||'--') + '</td>' +
-        '<td style="font-size:.72em;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.message||'').replace(/"/g, '&quot;') + '">' + msg + '</td>' +
+        '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.message||'').replace(/"/g, '&quot;') + '">' + msg + '</td>' +
         '</tr>';
     });
+    
+    var h = document.getElementById('evthead');
+    if (h) {
+      var sFn = function(l,c) { return '<th class="th-sort '+(eventsSort.col===c?eventsSort.dir:'')+'" data-col="'+c+'">'+l+'</th>'; };
+      h.innerHTML = sFn('Severity','severity') + sFn('Type','type') + sFn('Pod','podName') + sFn('NS','namespace') + sFn('Age','age') + '<th>Message</th>';
+      
+      h.querySelectorAll('.th-sort').forEach(function(th) {
+        th.addEventListener('click', function() {
+          var col = th.dataset.col;
+          if (eventsSort.col === col) {
+            eventsSort.dir = eventsSort.dir === 'desc' ? 'asc' : 'desc';
+          } else {
+            eventsSort.col = col;
+            eventsSort.dir = 'desc';
+          }
+          renderOverviewEvents();
+        });
+      });
+    }
+    
     document.getElementById('evtbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No incidents detected</td></tr>';
 
     document.querySelectorAll('#evtbody .waste-row-clickable').forEach(function(row) {
@@ -397,22 +449,31 @@ async function renderEventsDrawer() {
     var filtered = incidents.filter(function(inc) {
       if (nsFilter && inc.namespace !== nsFilter) return false;
       if (searchVal && !(inc.podName||'').toLowerCase().includes(searchVal) && !(inc.message||'').toLowerCase().includes(searchVal) && !(inc.type||'').toLowerCase().includes(searchVal)) return false;
-      if (maxSec !== Infinity && _parseIncidentAgeSeconds(inc.age) > maxSec) return false;
+      // HighCPU fura o filtro de tempo para garantir visibilidade máxima
+      if (inc.type !== 'HighCPU' && maxSec !== Infinity && _parseIncidentAgeSeconds(inc.age) > maxSec) return false;
       return true;
     });
 
     filtered = filtered.slice().sort(function(a, b) {
       var av, bv;
       if (eventsSort.col === 'severity') {
-        av = a.severity === 'CRITICAL' ? 1 : 0;
-        bv = b.severity === 'CRITICAL' ? 1 : 0;
+        var getScore = function(inc) {
+          if (inc.type === 'HighCPU') return 4; // Fura a fila de todos
+          if (inc.severity === 'CRITICAL' || inc.severity === 'critical') return 3;
+          if (inc.severity === 'WARNING' || inc.severity === 'warning') return 1;
+          return 0;
+        };
+        av = getScore(a);
+        bv = getScore(b);
       } else {
         av = a[eventsSort.col] || ''; bv = b[eventsSort.col] || '';
         if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
       }
       if (av < bv) return eventsSort.dir === 'asc' ? -1 : 1;
       if (av > bv) return eventsSort.dir === 'asc' ? 1 : -1;
-      return 0;
+      
+      // Empate: mais novos primeiro
+      return _parseIncidentAgeSeconds(a.age) - _parseIncidentAgeSeconds(b.age);
     });
 
     var allNs = await (await fetchAuth('/api/namespaces')).json();

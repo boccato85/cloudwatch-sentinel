@@ -14,9 +14,6 @@ function renderDropdowns() {
   var selIds = ['nsFilter', 'tile-ns-finops', 'tile-ns-eff', 'tile-ns-workloads', 'tile-ns-events'];
   
   var showSysGlobal = document.getElementById('global-show-system') ? document.getElementById('global-show-system').checked : false;
-  var showSysEff = typeof _effSysToggle !== 'undefined' && _effSysToggle ? _effSysToggle.checked : false;
-  var showSysWl = document.getElementById('workloads-show-system') ? document.getElementById('workloads-show-system').checked : false;
-  var showSysEvt = document.getElementById('events-show-system') ? document.getElementById('events-show-system').checked : false;
   
   selIds.forEach(function(id) {
     var sel = document.getElementById(id);
@@ -24,12 +21,7 @@ function renderDropdowns() {
     var curVal = sel.value;
     sel.innerHTML = '<option value="">All NS</option>';
     allNamespaces.forEach(function(n) {
-      if (sysNsList.indexOf(n) !== -1) {
-        if (id === 'nsFilter' && !showSysGlobal) return;
-        if (id === 'tile-ns-eff' && !showSysEff) return;
-        if (id === 'tile-ns-workloads' && !showSysWl) return;
-        if (id === 'tile-ns-events' && !showSysEvt) return;
-      }
+      if (sysNsList.indexOf(n) !== -1 && !showSysGlobal) return;
       var opt = document.createElement('option');
       opt.value = n;
       opt.textContent = n;
@@ -37,11 +29,6 @@ function renderDropdowns() {
     });
     if (curVal && sel.querySelector('option[value="' + curVal + '"]')) {
       sel.value = curVal;
-    } else {
-      sel.value = '';
-      if (id === 'tile-ns-finops') tileNs.finops = '';
-      if (id === 'tile-ns-eff') tileNs.eff = '';
-      if (id === 'tile-ns-workloads') tileNs.workloads = '';
     }
   });
 }

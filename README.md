@@ -11,7 +11,7 @@
   <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.35" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.35-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.50-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
@@ -385,6 +385,17 @@ Every final report passes through `harness/validador_saida.py` before being writ
 ---
 
 ## Changelog
+
+### v0.50 — M6: Real Lab / Chaos Lab
+- **Milestone 6 (M6) officially closed** — Sentinel validated under 1000 users load using Online Boutique.
+- **Chaos Lab Report** — Comprehensive baseline/chaos analysis report generated documenting Throttling, OOMKill risk and Resource Waste escalation.
+- **UI Scaling** — Verified visual prioritization logic (CRITICAL/HighCPU) under extreme cluster stress.
+
+### v0.36 — Issue #13 & #18: UX & Incident Polish
+- **Issue #13 (HighCPU fallback):** Logic to detect pods without `resources.requests.cpu` using node allocatable percentages.
+- **Issue #18 (Prioritization):** `CRITICAL` and `HighCPU` incidents now bypass "System NS" and time filters in drawers.
+- **UI Enhancements:** Sortable column headers in Recent Incidents; fixed negative waste messages and "Age" display for ResourceWaste items.
+- **Cleanup:** Removal of redundant local namespace selectors; fixed cache-busting system for JS modules.
 
 ### v0.35 — M5 code review fixes
 - **Security (JS):** Copy button in Alerts drawer now uses `data-runbook` + `addEventListener` — previously the `onclick` attribute was silently stripped by DOMPurify, rendering the button non-functional.

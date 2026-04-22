@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"database/sql"
@@ -913,10 +914,12 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var incs []Incident
+	podAgeMap := make(map[string]string)
 
 	for _, p := range pods.Items {
 		ageDur := time.Since(p.CreationTimestamp.Time)
 		ageStr := humanAge(p.CreationTimestamp.Time)
+		podAgeMap[p.Namespace+"/"+p.Name] = ageStr
 
 		st, hasStats := statsMap[p.Namespace+"/"+p.Name]
 		var cpuPct, memPct float64
@@ -1084,7 +1087,8 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
-			} else if st.CPURequest == 0 && cpuNodePct >= a.Thresholds.CPU.NodeAllocatableWarningPct {
+			} else if !st.CPURequestPresent && cpuNodePct >= a.Thresholds.CPU.NodeAllocatableWarningPct {
+				slog.Debug("HighCPU Fallback Triggered", "pod", p.Name, "usage", st.CPUUsage, "allocatable", st.NodeAllocatableCPU, "pct", cpuNodePct, "threshold", a.Thresholds.CPU.NodeAllocatableWarningPct)
 				// Fallback para pods sem resources.requests.cpu — alerta baseado no allocatable do nó
 				sev := "WARNING"
 				msg := fmt.Sprintf("CPU usage at %.1f%% of node allocatable (no request defined)", cpuNodePct)
@@ -1149,15 +1153,23 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 			if s.Severity == "critical" || s.Severity == "CRITICAL" {
 				sev = "CRITICAL"
 			}
+			
+			ageStr := podAgeMap[s.Namespace+"/"+s.Name]
+			if ageStr == "" {
+				ageStr = "-"
+			}
+			
+			wasteMsg := "CPU waste: " + strings.TrimPrefix(s.Opportunity, "-")
+			
 			incs = append(incs, Incident{
 				PodName:   s.Name,
 				Namespace: s.Namespace,
 				Type:      "ResourceWaste",
 				Severity:  sev,
-				Message:   s.Opportunity,
+				Message:   wasteMsg,
 				Narrative: "Esta carga está superprovisionada. Reduzir as reservas de recursos para patamares mais próximos do uso real pode gerar economia significativa.",
 				Runbook:   fmt.Sprintf("kubectl get pod %s -n %s -o yaml", s.Name, s.Namespace),
-				Age:       "-",
+				Age:       ageStr,
 				IsWaste:   true,
 			})
 		}
