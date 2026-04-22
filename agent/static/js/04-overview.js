@@ -41,7 +41,7 @@ async function updateOverview() {
     var _kEs = document.getElementById('kEs'); if (_kEs) { _kEs.textContent = s.cpuRequested + 'm / ' + s.cpuAllocatable + 'm'; }
     lastSummary = s;
 
-    if (!tileNs.cpu) {
+    if (!activeNs) {
       document.getElementById('effBig').textContent  = eff.toFixed(1) + '%';
       document.getElementById('cpuReqV').textContent = s.cpuRequested + 'm';
       document.getElementById('cpuAlcV').textContent = s.cpuAllocatable + 'm';
@@ -59,7 +59,7 @@ async function updateOverview() {
     }
 
     // ── Memory tile ────────────────────────────────────────────────────────────
-    if (!tileNs.mem) {
+    if (!activeNs) {
       var memReqPct = s.memAllocatable > 0 ? (s.memRequested / s.memAllocatable * 100) : 0;
       document.getElementById('memReqV').textContent  = s.memRequested + 'Mi';
       document.getElementById('memAlcV').textContent  = s.memAllocatable + 'Mi';
@@ -158,7 +158,7 @@ async function updateOverview() {
     nb.textContent = issues > 0 ? issues + ' Issues' : 'All OK';
     nb.className = 'badge ' + (issues > 0 ? 'b-crit' : 'b-ok');
 
-    if (!tileNs.pods) {
+    if (!activeNs) {
       // All-NS: fetch all pods and show namespace distribution
       updatePodsAllNsTile(total, running);
     } else {
@@ -672,7 +672,7 @@ function updateForecastCard(fData) {
 // ─── Per-tile namespace update functions ──────────────────────────────────────
 async function updatePodsTile() {
   try {
-    var ns = tileNs.pods;
+    var ns = activeNs;
     var url = ns ? '/api/pods?namespace=' + encodeURIComponent(ns) : '/api/pods';
     var pods = await (await fetchAuth(url)).json();
     pods = pods || [];
@@ -733,7 +733,7 @@ async function updatePodsAllNsTile(totalFallback, runningFallback) {
 
 async function updateCpuTile() {
   try {
-    var ns = tileNs.cpu;
+    var ns = activeNs;
     var s = lastSummary || await (await fetchAuth('/api/summary')).json();
     var url = '/api/metrics?namespace=' + encodeURIComponent(ns);
     var m = await (await fetchAuth(url)).json();
@@ -757,7 +757,7 @@ async function updateCpuTile() {
 
 async function updateMemTile() {
   try {
-    var ns = tileNs.mem;
+    var ns = activeNs;
     var s = lastSummary || await (await fetchAuth('/api/summary')).json();
     var url = '/api/metrics?namespace=' + encodeURIComponent(ns);
     var m = await (await fetchAuth(url)).json();

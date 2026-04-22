@@ -29,7 +29,7 @@ var customFrom     = '';           // ISO string when range=custom
 var customTo       = '';           // ISO string when range=custom
 var overviewSort   = { col: 'cpuUsage', dir: 'desc' }; // sort state for Top Workloads overview
 var lastMetrics    = [];           // cache last metrics for re-sort without fetch
-var tileNs         = { pods: '', cpu: '', mem: '', finops: '', eff: '', workloads: '' }; // per-tile namespace filter
+var tileNs         = { finops: '', eff: '', workloads: '' }; // per-tile namespace filter (pods/cpu/mem follow global activeNs)
 var lastSummary    = null;         // cache last summary for tile-only updates
 var lastHistData   = null;         // cache last history data for finops drawer
 var lastForecast   = null;         // cache last forecast data for finops drawer
