@@ -444,7 +444,7 @@ async function renderEventsDrawer() {
           '<td style="font-size:.78em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.podName||'') + '">' + esc(inc.podName||'--') + '</td>' +
           '<td style="font-size:.72em"><span class="ns-tag">' + esc(inc.namespace||'--') + '</span></td>' +
           '<td style="font-size:.72em;color:var(--text-dim)">' + esc(inc.age||'--') + '</td>' +
-          '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.message||'').replace(/"/g, \'&quot;\') + '">' + esc(inc.message||'--') + '</td>' +
+          '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.message||'').replace(/"/g, '&quot;') + '">' + esc(inc.message||'--') + '</td>' +
           '</tr>';
       });
       tableHTML += '</tbody></table>';
