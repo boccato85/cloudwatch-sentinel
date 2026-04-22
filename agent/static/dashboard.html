@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/dashboard.css?v=0.35.10">
+<link rel="stylesheet" href="/static/dashboard.css?v=0.35.13">
 </head>
 <body>
 
@@ -47,7 +47,6 @@
       <span id="hdrAlertTxt">All OK</span>
     </div>
     <span id="lastUp">Updating...</span>
-    <div class="ver-badge" id="verBadge" title="Sentinel&#10;Kubernetes Observability&#10;© 2026 Sentinel Project">v--</div>
   </div>
 </div>
 
@@ -265,13 +264,13 @@
               <canvas id="effDonut2" width="130" height="130" style="width:130px;height:130px"></canvas>
               <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.1">
                 <div id="eff-avg-score2" style="font-size:1.4em;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace">--%</div>
-                <div style="font-size:.62em;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">avg</div>
+                <div style="font-size:.72em;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">avg</div>
               </div>
             </div>
           </div>
           <!-- full NS breakdown right -->
           <div style="flex:1;overflow-y:auto;max-height:280px;scrollbar-width:thin;scrollbar-color:var(--border) transparent">
-            <table class="wtable" style="font-size:.82em">
+            <table class="wtable" style="font-size:1.05em">
               <thead id="eff-thead"><tr>
                 <th class="th-sort" data-col="namespace">Namespace</th>
                 <th class="th-sort" data-col="score">Score</th>
@@ -283,7 +282,7 @@
             </table>
           </div>
         </div>
-        <div id="eff-worst2" style="padding:0 16px 10px;font-size:.72em;color:var(--text-dim)"></div>
+        <div id="eff-worst2" style="padding:14px 16px 10px;font-size:.9em;color:var(--text-dim)"></div>
       </div>
     </div>
 
@@ -293,6 +292,15 @@
   <div id="wasteList" style="display:none"></div>
 
 </div><!-- /main overview -->
+
+<footer class="dash-footer">
+  <span id="footer-ns"></span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="footer-version"></span>
+    <div class="ver-badge" id="verBadge" title="Sentinel&#10;Kubernetes Observability&#10;© 2026 Sentinel Project">v--</div>
+  </div>
+</footer>
+
 </div><!-- /tab-overview -->
 
 <!-- ===== TAB: WORKLOADS ===== -->
@@ -398,17 +406,13 @@
   <div class="gl-row" style="border-bottom:none"><span style="color:var(--text-dim);font-weight:600;min-width:80px">±1.5σ</span><span class="gl-desc">95% confidence band &mdash; statistical margin. Real value likely falls within this range.</span></div>
 </div>
 
-<script src="/static/js/01-init.js?v=0.35.10"></script>
-<script src="/static/js/02-charts.js?v=0.35.10"></script>
-<script src="/static/js/03-namespace.js?v=0.35.10"></script>
-<script src="/static/js/04-overview.js?v=0.35.10"></script>
-<script src="/static/js/05-workloads.js?v=0.35.10"></script>
-<script src="/static/js/06-drawers.js?v=0.35.10"></script>
-<script src="/static/js/07-polling.js?v=0.35.10"></script>
-<!-- FOOTER -->
-<div style="background:#090c12;border-top:1px solid var(--border);padding:5px 20px;display:flex;align-items:center;justify-content:space-between;font-size:.68em;color:var(--text-dim)">
-  <span>Built with <span style="color:#fff">OpenCode</span> + <span style="color:#00ADD8">Go</span> + <span style="color:#F7DF1E">JS</span> &bull; Kubernetes Dashboard</span>
-</div>
+<script src="/static/js/01-init.js?v=0.35.13"></script>
+<script src="/static/js/02-charts.js?v=0.35.13"></script>
+<script src="/static/js/03-namespace.js?v=0.35.13"></script>
+<script src="/static/js/04-overview.js?v=0.35.13"></script>
+<script src="/static/js/05-workloads.js?v=0.35.13"></script>
+<script src="/static/js/06-drawers.js?v=0.35.13"></script>
+<script src="/static/js/07-polling.js?v=0.35.13"></script>
 </body>
 </html>
 

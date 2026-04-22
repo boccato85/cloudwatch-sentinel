@@ -201,7 +201,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .legend-dash{display:inline-block;width:14px;height:2px;border-radius:0;
   background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px)}
 /* FINOPS HERO PANEL */
-.finops-panel{border-top:2px solid var(--yellow)!important;display:flex;flex-direction:column;height:270px;overflow:hidden}
+.finops-panel{border-top:2px solid var(--yellow)!important;display:flex;flex-direction:column;height:280px;overflow:hidden}
 .finops-panel > .ph{flex-shrink:0}
 .finops-panel > #fino-content,
 .finops-panel > #eff-content{flex:1;overflow-y:auto;min-height:0}
@@ -210,6 +210,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar{width:5px}
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .eff-panel{border-top:2px solid var(--cyan)!important}
+.dash-footer{display:flex;justify-content:space-between;align-items:center;padding:3px 18px;border-top:1px solid var(--border);font-size:.75em;color:var(--text-dim);font-family:'JetBrains Mono',monospace;letter-spacing:.3px;margin:0 10px 0;opacity:.7}
+.dash-footer .ver-badge{font-size:.85em;padding:3px 10px;opacity:.8}
+.dash-footer .ver-badge:hover{opacity:1;color:var(--cyan);border-color:var(--cyan)}
 #eff-donut-legend .edl{display:flex;align-items:center;gap:5px;margin-bottom:3px}
 #eff-donut-legend .edl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 #eff-donut-legend .edl-name{color:var(--text-dim);flex:1}
@@ -328,7 +331,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .eff-grade.F{background:rgba(229,73,73,.12);color:var(--red)}
 .eff-unmanaged{font-size:.68em;font-weight:700;letter-spacing:.4px;padding:3px 8px;border-radius:3px;background:rgba(240,112,0,.14);color:var(--orange);border:1px solid rgba(240,112,0,.3);display:inline-block;white-space:nowrap}
 /* grade info button — lives in panel header */
-.grade-info-btn{background:rgba(0,180,255,.08);border:1px solid rgba(0,180,255,.25);color:var(--cyan);font-size:.75em;cursor:pointer;padding:3px 10px;border-radius:4px;line-height:1.4;transition:background .15s,border-color .15s;white-space:nowrap}
+.grade-info-btn{background:rgba(0,180,255,.08);border:1px solid rgba(0,180,255,.25);color:var(--cyan);font-size:.85em;cursor:pointer;padding:4px 12px;border-radius:4px;line-height:1.4;transition:background .15s,border-color .15s;white-space:nowrap}
 .grade-info-btn:hover{background:rgba(0,180,255,.16);border-color:rgba(0,180,255,.5)}
 .grade-legend-wrap{position:relative;display:inline-block}
 .grade-legend-tip{display:none;position:fixed;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;width:320px;z-index:600;box-shadow:0 12px 40px rgba(0,0,0,.6);font-size:.82em;line-height:1.6}
