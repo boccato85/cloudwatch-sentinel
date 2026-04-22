@@ -285,16 +285,41 @@ async function updateOverview() {
     if (topClock) topClock.textContent = 'Updated: ' + new Date().toLocaleTimeString();
 
     var ctxNs = document.getElementById('ctx-ns');
-    if (ctxNs) ctxNs.textContent = (activeNs || 'All Namespaces');
+    if (ctxNs) {
+      ctxNs.textContent = (activeNs || 'All Namespaces');
+      ctxNs.className = activeNs ? 'badge b-finops' : 'badge b-ok';
+    }
 
     var ctxPods = document.getElementById('ctx-pods');
     if (ctxPods) ctxPods.textContent = (allPods.length) + ' pods';
 
-    var ctxWarn = document.getElementById('ctx-warnings');
-    if (ctxWarn) {
-      var warnCount = incidents && incidents.length ? incidents.length : (s.failedPods || 0);
-      ctxWarn.textContent = warnCount + ' warning' + (warnCount !== 1 ? 's' : '');
-      ctxWarn.style.color = warnCount > 0 ? 'var(--orange)' : 'var(--green)';
+    var ctxHealth = document.getElementById('ctx-health');
+    if (ctxHealth) {
+      var hCrit = critIncs.length;
+      var hWarn = warnIncs.length;
+      if (hCrit > 0) {
+        ctxHealth.innerHTML = '<span style="font-weight:700">' + hCrit + ' Critical</span>' + (hWarn > 0 ? ' &nbsp; <span style="opacity:0.8">•</span> &nbsp; ' + hWarn + ' Warn' : '');
+        ctxHealth.className = 'badge b-crit';
+      } else if (hWarn > 0) {
+        ctxHealth.innerHTML = '<span style="font-weight:700">' + hWarn + ' Warning' + (hWarn > 1 ? 's' : '') + '</span>';
+        ctxHealth.className = 'badge b-warn';
+      } else {
+        ctxHealth.textContent = 'Health: OK';
+        ctxHealth.className = 'badge b-ok';
+      }
+    }
+
+    var ctxWaste = document.getElementById('ctx-waste');
+    if (ctxWaste) {
+      ctxWaste.innerHTML = waste.length > 0 ? '<span style="font-weight:700">' + waste.length + ' Waste item' + (waste.length > 1 ? 's' : '') + '</span>' : 'Waste: 0';
+      ctxWaste.className = waste.length > 0 ? 'badge b-warn' : 'badge b-ok';
+    }
+
+    var ctxEff = document.getElementById('ctx-eff');
+    if (ctxEff) {
+      var effVal = isNaN(eff) ? 100 : eff;
+      ctxEff.innerHTML = 'Eff: <span style="font-weight:700">' + effVal.toFixed(1) + '%</span>';
+      ctxEff.className = effVal < 50 ? 'badge b-crit' : (effVal < 75 ? 'badge b-warn' : 'badge b-ok');
     }
 
   } catch(e) { console.error('Sentinel overview error:', e); }

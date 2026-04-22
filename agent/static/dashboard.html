@@ -50,15 +50,17 @@
   </div>
 </div>
 
-<!-- CONTEXT BAR -->
-<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:5px 20px;display:flex;align-items:center;gap:12px;font-size:.72em;color:var(--text-dim)">
-  <span style="color:var(--text-bright);font-weight:600">Overview</span>
+<!-- STATUS RIBBON -->
+<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:16px;font-size:.75em;color:var(--text-dim)">
+  <span style="color:var(--text-bright);font-weight:600;font-size:1.1em;letter-spacing:0.5px">Overview</span>
+  <span class="badge b-ok" id="ctx-ns" style="font-size:1em;padding:4px 10px;text-transform:none">All Namespaces</span>
   <span style="color:var(--border)">|</span>
-  <span id="ctx-ns">All Namespaces</span>
-  <span style="color:var(--border)">|</span>
-  <span id="ctx-pods">-- pods</span>
-  <span style="color:var(--border)">|</span>
-  <span id="ctx-warnings" style="color:var(--orange)">-- warnings</span>
+  <span id="ctx-pods" style="font-family:'JetBrains Mono',monospace;font-size:1.05em">-- pods</span>
+  <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+    <span id="ctx-health" class="badge b-ok" style="font-size:.9em;padding:4px 8px">Health: OK</span>
+    <span id="ctx-waste" class="badge b-ok" style="font-size:.9em;padding:4px 8px">Waste: 0</span>
+    <span id="ctx-eff" class="badge b-ok" style="font-family:'JetBrains Mono',monospace;font-size:.9em;padding:4px 8px">Eff: 100%</span>
+  </div>
 </div>
 
 <!-- ===== OVERVIEW ===== -->
