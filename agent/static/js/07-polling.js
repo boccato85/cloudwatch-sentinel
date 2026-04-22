@@ -44,6 +44,9 @@ if (_effSysToggle) _effSysToggle.addEventListener('change', function() {
   updateEfficiency();
 });
 
+var _finopsHelpBtn = document.getElementById('finopsHelp');
+if (_finopsHelpBtn) _finopsHelpBtn.addEventListener('click', function(e) { e.stopPropagation(); toggleFinOpsLegend(); });
+
 // ─── Per-tile namespace selects ───────────────────────────────────────────────
 ['tile-ns-finops','tile-ns-eff','tile-ns-workloads','tile-ns-events'].forEach(function(id) {
   var el = document.getElementById(id);
