@@ -36,7 +36,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .kpi.c-yellow::before{background:var(--yellow)}
 .kpi-lbl{font-size:.68em;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
 .kpi-val{font-size:1.6em;font-weight:700;color:var(--text-bright);font-family:'JetBrains Mono',monospace;line-height:1}
-.kpi-sub{font-size:.7em;color:var(--text-dim);margin-top:4px}
+.kpi-sub{font-size:.7em;color:var(--text-dim);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #kWpareto{min-height:1.2em}
 .kpi-clickable{cursor:default;transition:background .15s}
 .kpi-clickable:hover{background:rgba(0,180,255,.05)}
