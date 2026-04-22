@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-20 | Current version: `v0.35`
+> Last updated: 2026-04-22 | Current version: `v0.36`
 
 ## Product vision
 
@@ -227,6 +227,7 @@
 | `v0.23` | M5 | ✅ Honeycomb auto-scaling and dynamic packing |
 | `v0.34` | M5 | ✅ Deterministic runbooks + LLM provider skeleton |
 | `v0.35` | M5 | ✅ Code review fixes: copy button XSS, runbooks, nil-pointer, pkg/llm tests |
+| `v0.36` | M5 bug fixes | ✅ Issue #13: node-allocatable HighCPU fallback; Issue #18: incidents tile + time-range filter |
 | `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
 | `v0.99` | M7 | Polish, docs, stable contracts |
 
