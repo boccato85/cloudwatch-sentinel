@@ -260,7 +260,7 @@ async function updateOverview() {
     // pareto: how many top pods account for ≥60% of CPU waste
     var sorted = waste.slice().sort(function(a,b){ return Number(b.potentialSavingMCpu||0) - Number(a.potentialSavingMCpu||0); });
     var paretoLabel = '';
-    if (sorted.length > 1 && totalCpuM > 0) {
+    if (sorted.length > 0 && totalCpuM > 0) {
       var cum = 0, n = 0;
       for (var i = 0; i < sorted.length; i++) {
         cum += Number(sorted[i].potentialSavingMCpu||0);
@@ -269,9 +269,11 @@ async function updateOverview() {
       }
       var pct = Math.round(cum / totalCpuM * 100);
       paretoLabel = 'top ' + n + ' pod' + (n !== 1 ? 's' : '') + ' → ' + pct + '% of waste';
+    } else {
+      paretoLabel = 'all pods rightsized';
     }
     var kWpareto = document.getElementById('kWpareto');
-    if (kWpareto) kWpareto.textContent = paretoLabel || ' ';
+    if (kWpareto) kWpareto.textContent = paretoLabel;
 
     var wc = document.getElementById('wcnt');
     if (wc) {
