@@ -31,7 +31,7 @@ var (
 	usdPerGbHour   float64
 )
 
-const agentVersion = "0.35"
+const agentVersion = "0.36"
 const collectorStaleThreshold = 30 * time.Second
 
 var (
@@ -305,19 +305,24 @@ func main() {
 							spec = nsMap[m.Name]
 						}
 
+						var nodeAllocCPU int64
+						if n, ok := nodeMap[spec.NodeName]; ok {
+							nodeAllocCPU = n.CpuAllocatable
+						}
 						pStat := api.PodStats{
-							Name:              m.Name,
-							Namespace:         m.Namespace,
-							NodeName:          spec.NodeName,
-							Phase:             spec.Phase,
-							AppLabel:          spec.AppLabel,
-							CPUUsage:          podCPU,
-							CPURequest:        spec.CPUReq,
-							CPULimit:          spec.CPULim,
-							CPURequestPresent: spec.ReqFound,
-							MemUsage:          podMem,
-							MemRequest:        spec.MemReq,
-							MemLimit:          spec.MemLim,
+							Name:               m.Name,
+							Namespace:          m.Namespace,
+							NodeName:           spec.NodeName,
+							Phase:              spec.Phase,
+							AppLabel:           spec.AppLabel,
+							CPUUsage:           podCPU,
+							CPURequest:         spec.CPUReq,
+							CPULimit:           spec.CPULim,
+							CPURequestPresent:  spec.ReqFound,
+							NodeAllocatableCPU: nodeAllocCPU,
+							MemUsage:           podMem,
+							MemRequest:         spec.MemReq,
+							MemLimit:           spec.MemLim,
 						}
 						saving, opportunity, wastePct, severity := incidents.AnalyzeWaste(pStat.CPURequestPresent, pStat.CPURequest, pStat.CPUUsage, thresholds)
 						if saving != nil {
