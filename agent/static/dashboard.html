@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/dashboard.css?v=0.35.19">
+<link rel="stylesheet" href="/static/dashboard.css?v=0.36.1">
 </head>
 <body>
 
@@ -174,17 +174,14 @@
   <span id="abadge" style="display:none"></span>
   <div id="alertsBox" style="display:none"></div>
 
-  <!-- RECENT EVENTS — Latest cluster events (compact full-width) -->
+  <!-- RECENT INCIDENTS — Sentinel detected incidents (compact full-width) -->
   <div class="panel events-panel">
     <div class="ph ph-clickable" id="ph-events">
       <div style="display:flex;align-items:center;gap:10px">
-        <span class="ph-title">Recent Events</span>
+        <span class="ph-title">Recent Incidents</span>
         <select id="tile-ns-events" class="tile-ns-select" title="Filter by namespace">
           <option value="">All NS</option>
         </select>
-        <label class="eff-sys-toggle" id="events-sys-label" style="border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px;">
-          <input type="checkbox" id="events-show-system" style="accent-color:var(--cyan)"> Show system NS
-        </label>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <span class="badge b-warn" id="evtcnt">Loading...</span>
@@ -194,14 +191,14 @@
     <div class="pb workloads-scroll-pb" style="padding:0 14px">
       <table class="wtable">
         <thead><tr id="evthead">
+          <th class="th-sort" data-col="severity">Severity</th>
           <th class="th-sort" data-col="type">Type</th>
-          <th class="th-sort" data-col="reason">Reason</th>
-          <th class="th-sort" data-col="name">Object</th>
+          <th class="th-sort" data-col="podName">Pod</th>
           <th class="th-sort" data-col="namespace">NS</th>
           <th class="th-sort" data-col="age">Age</th>
           <th>Message</th>
         </tr></thead>
-        <tbody id="evtbody"><tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:8px">Loading events...</td></tr></tbody>
+        <tbody id="evtbody"><tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:8px">Loading incidents...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -406,13 +403,13 @@
   <div class="gl-row" style="border-bottom:none"><span style="color:var(--text-dim);font-weight:600;min-width:80px">±1.5σ</span><span class="gl-desc">95% confidence band &mdash; statistical margin. Real value likely falls within this range.</span></div>
 </div>
 
-<script src="/static/js/01-init.js?v=0.35.19"></script>
-<script src="/static/js/02-charts.js?v=0.35.19"></script>
-<script src="/static/js/03-namespace.js?v=0.35.19"></script>
-<script src="/static/js/04-overview.js?v=0.35.19"></script>
-<script src="/static/js/05-workloads.js?v=0.35.19"></script>
-<script src="/static/js/06-drawers.js?v=0.35.19"></script>
-<script src="/static/js/07-polling.js?v=0.35.19"></script>
+<script src="/static/js/01-init.js?v=0.36.1"></script>
+<script src="/static/js/02-charts.js?v=0.36.1"></script>
+<script src="/static/js/03-namespace.js?v=0.36.1"></script>
+<script src="/static/js/04-overview.js?v=0.36.1"></script>
+<script src="/static/js/05-workloads.js?v=0.36.1"></script>
+<script src="/static/js/06-drawers.js?v=0.36.1"></script>
+<script src="/static/js/07-polling.js?v=0.36.1"></script>
 </body>
 </html>
 

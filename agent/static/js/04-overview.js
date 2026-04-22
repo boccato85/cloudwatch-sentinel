@@ -301,64 +301,88 @@ async function updateOverview() {
 }
 
 // ─── Overview Recent Events ─────────────────────────────────────────────────────
-var lastEvents = [];
-var eventsSort = { col: 'age', dir: 'desc' };
+var lastIncidents = [];
+var eventsSort = { col: 'severity', dir: 'desc' };
 
 async function renderOverviewEvents() {
   try {
-    var showSysEvt = document.getElementById('events-show-system') ? document.getElementById('events-show-system').checked : false;
     var ns = document.getElementById('tile-ns-events') ? document.getElementById('tile-ns-events').value : '';
-    var url = '/api/events';
+    var url = '/api/incidents';
     if (ns) url += '?namespace=' + encodeURIComponent(ns);
-    var events = await (await fetchAuth(url)).json();
-    events = events || [];
-    lastEvents = showSysEvt ? events : events.filter(function(e){ return !_SYSTEM_NS[e.namespace]; });
+    var incidents = await (await fetchAuth(url)).json();
+    incidents = incidents || [];
+    lastIncidents = activeNs ? incidents.filter(function(i){ return i.namespace === activeNs; }) : incidents;
 
-    document.getElementById('evtcnt').textContent = lastEvents.length + ' events';
+    var cnt = lastIncidents.length;
+    var evtcnt = document.getElementById('evtcnt');
+    if (evtcnt) {
+      evtcnt.textContent = cnt + ' incident' + (cnt !== 1 ? 's' : '');
+      evtcnt.className = 'badge ' + (lastIncidents.some(function(i){ return i.severity === 'CRITICAL'; }) ? 'b-crit' : cnt > 0 ? 'b-warn' : 'b-ok');
+    }
 
     var rows = '';
-    lastEvents.slice(0, 10).forEach(function(e, i) {
-      var typeClass = e.type === 'Warning' ? 'b-warn' : e.type === 'Normal' ? 'b-ok' : 'b-warn';
-      var msg = esc(e.message || '--');
+    lastIncidents.slice(0, 10).forEach(function(inc, i) {
+      var sevClass = inc.severity === 'CRITICAL' ? 'b-crit' : 'b-warn';
+      var msg = esc(inc.message || '--');
       if (msg.length > 80) msg = msg.substring(0, 77) + '...';
-      rows += '<tr class="waste-row-clickable" data-evt-idx="' + i + '">' +
-        '<td><span class="badge ' + typeClass + '" style="font-size:.7em">' + esc(e.type||'--') + '</span></td>' +
-        '<td style="font-size:.78em;color:var(--text-dim)">' + esc(e.reason||'--') + '</td>' +
-        '<td style="font-size:.78em;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
-        '<td style="font-size:.72em"><span class="ns-tag">' + esc(e.namespace||'--') + '</span></td>' +
-        '<td style="font-size:.72em;color:var(--text-dim)">' + esc(e.age||'--') + '</td>' +
-        '<td style="font-size:.72em;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'').replace(/"/g, '&quot;') + '">' + msg + '</td>' +
+      rows += '<tr class="waste-row-clickable" data-inc-idx="' + i + '">' +
+        '<td><span class="badge ' + sevClass + '" style="font-size:.7em">' + esc(inc.severity||'--') + '</span></td>' +
+        '<td style="font-size:.78em;color:var(--text-dim)">' + esc(inc.type||'--') + '</td>' +
+        '<td style="font-size:.78em;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.podName||'') + '">' + esc(inc.podName||'--') + '</td>' +
+        '<td style="font-size:.72em"><span class="ns-tag">' + esc(inc.namespace||'--') + '</span></td>' +
+        '<td style="font-size:.72em;color:var(--text-dim)">' + esc(inc.age||'--') + '</td>' +
+        '<td style="font-size:.72em;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.message||'').replace(/"/g, '&quot;') + '">' + msg + '</td>' +
         '</tr>';
     });
-    document.getElementById('evtbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No events</td></tr>';
+    document.getElementById('evtbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:16px">No incidents detected</td></tr>';
 
     document.querySelectorAll('#evtbody .waste-row-clickable').forEach(function(row) {
       row.addEventListener('click', function() {
-        var ev = lastEvents[this.dataset.evtIdx];
-        if (ev && typeof openEventDetailDrawer === 'function') openEventDetailDrawer(ev);
+        var inc = lastIncidents[this.dataset.incIdx];
+        if (inc && typeof openIncidentDetailDrawer === 'function') openIncidentDetailDrawer(inc);
       });
     });
-  } catch(e) { console.error('events error:', e); }
+  } catch(e) { console.error('incidents tile error:', e); }
 }
 
-// ─── Drawer: Events ─────────────────────────────────────────────────────────────
-var _evtDrawerState = { ns: '', showSys: false, search: '' };
+// ─── Drawer: Incidents ────────────────────────────────────────────────────────
+var _evtDrawerState = { ns: '', range: '24h', search: '' };
 var _evtDrawerAbortable = null;
 var _evtDrawerSearchTimer = null;
 var _evtDrawerReqId = 0;
 
+var _INCIDENT_RANGES = [
+  { label: '30m', seconds: 1800 },
+  { label: '1h',  seconds: 3600 },
+  { label: '6h',  seconds: 21600 },
+  { label: '24h', seconds: 86400 },
+  { label: '7d',  seconds: 604800 },
+  { label: 'All', seconds: Infinity }
+];
+
+function _parseIncidentAgeSeconds(age) {
+  if (!age) return Infinity;
+  var m;
+  if ((m = age.match(/^(\d+)s$/))) return parseInt(m[1]);
+  if ((m = age.match(/^(\d+)m(?:\s*(\d+)s)?$/))) return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+  if ((m = age.match(/^(\d+)h(?:\s*(\d+)m)?$/))) return parseInt(m[1]) * 3600 + (m[2] ? parseInt(m[2]) * 60 : 0);
+  if ((m = age.match(/^(\d+)d$/))) return parseInt(m[1]) * 86400;
+  return Infinity;
+}
+
 function openEventsDrawer() {
   var curNs = document.getElementById('tile-ns-events') ? document.getElementById('tile-ns-events').value : '';
-  var curShowSys = document.getElementById('events-show-system') ? document.getElementById('events-show-system').checked : false;
-  _evtDrawerState = { ns: curNs, showSys: curShowSys, search: '' };
-  openDrawer('Recent Events — Full Log', renderEventsDrawer);
+  _evtDrawerState = { ns: curNs, range: '24h', search: '' };
+  openDrawer('Sentinel Incidents', renderEventsDrawer);
 }
 
 async function renderEventsDrawer() {
   try {
     var nsFilter = _evtDrawerState.ns;
-    var showSysEvt = _evtDrawerState.showSys;
+    var rangeLabel = _evtDrawerState.range;
     var searchVal = _evtDrawerState.search;
+    var rangeObj = _INCIDENT_RANGES.find(function(r){ return r.label === rangeLabel; }) || _INCIDENT_RANGES[3];
+    var maxSec = rangeObj.seconds;
 
     var myReqId = ++_evtDrawerReqId;
 
@@ -366,25 +390,22 @@ async function renderEventsDrawer() {
     var ctrl = new AbortController();
     _evtDrawerAbortable = ctrl;
 
-    var url = '/api/events';
-    var events = await (await fetchAuth(url, { signal: ctrl.signal })).json();
+    var incidents = await (await fetchAuth('/api/incidents', { signal: ctrl.signal })).json();
     if (myReqId !== _evtDrawerReqId) return;
-    events = events || [];
+    incidents = incidents || [];
 
-    var filtered = events.filter(function(e) {
-      if (!showSysEvt && _SYSTEM_NS[e.namespace]) return false;
-      if (searchVal && !(e.name||'').toLowerCase().includes(searchVal) && !(e.message||'').toLowerCase().includes(searchVal) && !(e.reason||'').toLowerCase().includes(searchVal)) return false;
+    var filtered = incidents.filter(function(inc) {
+      if (nsFilter && inc.namespace !== nsFilter) return false;
+      if (searchVal && !(inc.podName||'').toLowerCase().includes(searchVal) && !(inc.message||'').toLowerCase().includes(searchVal) && !(inc.type||'').toLowerCase().includes(searchVal)) return false;
+      if (maxSec !== Infinity && _parseIncidentAgeSeconds(inc.age) > maxSec) return false;
       return true;
     });
 
-    if (nsFilter) {
-      filtered = filtered.filter(function(e){ return e.namespace === nsFilter; });
-    }
-
     filtered = filtered.slice().sort(function(a, b) {
       var av, bv;
-      if (eventsSort.col === 'age') {
-        av = a._ts || 0; bv = b._ts || 0;
+      if (eventsSort.col === 'severity') {
+        av = a.severity === 'CRITICAL' ? 1 : 0;
+        bv = b.severity === 'CRITICAL' ? 1 : 0;
       } else {
         av = a[eventsSort.col] || ''; bv = b[eventsSort.col] || '';
         if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
@@ -394,39 +415,36 @@ async function renderEventsDrawer() {
       return 0;
     });
 
-    var nsSet = {};
-    events.forEach(function(e){ if (showSysEvt || !_SYSTEM_NS[e.namespace]) nsSet[e.namespace] = 1; });
-
     var allNs = await (await fetchAuth('/api/namespaces')).json();
     allNs = allNs || [];
-    var nsForSelect = {};
-    allNs.forEach(function(n) {
-      if (showSysEvt || !_SYSTEM_NS[n]) nsForSelect[n] = 1;
-    });
-    var nsOpts = '<option value="">All Namespaces</option>' + Object.keys(nsForSelect).sort().map(function(n){ return '<option value="'+esc(n)+'"'+(nsFilter===n?' selected':'')+'>' + esc(n) + '</option>'; }).join('');
+    var nsOpts = '<option value="">All Namespaces</option>' + allNs.sort().map(function(n){ return '<option value="'+esc(n)+'"'+(nsFilter===n?' selected':'')+'>' + esc(n) + '</option>'; }).join('');
+
+    var rangeOpts = _INCIDENT_RANGES.map(function(r){
+      return '<option value="'+r.label+'"'+(rangeLabel===r.label?' selected':'')+'>'+r.label+'</option>';
+    }).join('');
 
     var tableHTML = '';
     if (!filtered.length) {
-      tableHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px">No events matching filters</div>';
+      tableHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px">No incidents matching filters</div>';
     } else {
       tableHTML = '<table class="wtable" style="table-layout:fixed"><thead><tr id="devthead">' +
+        makeSortHeader('Severity', 'severity', eventsSort) +
         makeSortHeader('Type', 'type', eventsSort) +
-        makeSortHeader('Reason', 'reason', eventsSort) +
-        makeSortHeader('Object', 'name', eventsSort) +
+        makeSortHeader('Pod', 'podName', eventsSort) +
         makeSortHeader('NS', 'namespace', eventsSort) +
         makeSortHeader('Age', 'age', eventsSort) +
         '<th>Message</th>' +
         '</tr></thead><tbody>';
 
-      filtered.forEach(function(e, i) {
-        var typeClass = e.type === 'Warning' ? 'b-warn' : e.type === 'Normal' ? 'b-ok' : 'b-warn';
-        tableHTML += '<tr class="waste-row-clickable" data-evt-idx="' + i + '">' +
-          '<td><span class="badge ' + typeClass + '" style="font-size:.7em">' + esc(e.type||'--') + '</span></td>' +
-          '<td style="font-size:.78em;color:var(--text-dim)">' + esc(e.reason||'--') + '</td>' +
-          '<td style="font-size:.78em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.name||'') + '">' + esc(e.name||'--') + '</td>' +
-          '<td style="font-size:.72em"><span class="ns-tag">' + esc(e.namespace||'--') + '</span></td>' +
-          '<td style="font-size:.72em;color:var(--text-dim)">' + esc(e.age||'--') + '</td>' +
-          '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.message||'').replace(/"/g, '&quot;') + '">' + esc(e.message||'--') + '</td>' +
+      filtered.forEach(function(inc, i) {
+        var sevClass = inc.severity === 'CRITICAL' ? 'b-crit' : 'b-warn';
+        tableHTML += '<tr class="waste-row-clickable" data-inc-idx="' + i + '">' +
+          '<td><span class="badge ' + sevClass + '" style="font-size:.7em">' + esc(inc.severity||'--') + '</span></td>' +
+          '<td style="font-size:.78em;color:var(--text-dim)">' + esc(inc.type||'--') + '</td>' +
+          '<td style="font-size:.78em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.podName||'') + '">' + esc(inc.podName||'--') + '</td>' +
+          '<td style="font-size:.72em"><span class="ns-tag">' + esc(inc.namespace||'--') + '</span></td>' +
+          '<td style="font-size:.72em;color:var(--text-dim)">' + esc(inc.age||'--') + '</td>' +
+          '<td style="font-size:.72em;color:var(--text-dim);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(inc.message||'').replace(/"/g, \'&quot;\') + '">' + esc(inc.message||'--') + '</td>' +
           '</tr>';
       });
       tableHTML += '</tbody></table>';
@@ -435,13 +453,15 @@ async function renderEventsDrawer() {
     var existingTable = document.getElementById('devt-table');
     if (!existingTable) {
       var controlsHTML = '<div style="padding:0 0 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
-        '<input class="dtool-input" id="devt-search" placeholder="search reason, object, message..." value="' + esc(searchVal) + '" style="flex:1;min-width:200px">' +
+        '<input class="dtool-input" id="devt-search" placeholder="search type, pod, message..." value="' + esc(searchVal) + '" style="flex:1;min-width:200px">' +
         '<select id="devt-ns" class="dtool-select">' + nsOpts + '</select>' +
+        '<select id="devt-range" class="dtool-select" title="Age filter">' + rangeOpts + '</select>' +
         '</div>';
       drawerHTML(controlsHTML + '<div id="devt-table">' + tableHTML + '</div>');
 
       var searchInput = document.getElementById('devt-search');
       var nsSelect = document.getElementById('devt-ns');
+      var rangeSelect = document.getElementById('devt-range');
       if (searchInput) {
         searchInput.addEventListener('input', function() {
           clearTimeout(_evtDrawerSearchTimer);
@@ -454,6 +474,12 @@ async function renderEventsDrawer() {
       if (nsSelect) {
         nsSelect.addEventListener('change', function() {
           _evtDrawerState.ns = nsSelect.value;
+          renderEventsDrawer();
+        });
+      }
+      if (rangeSelect) {
+        rangeSelect.addEventListener('change', function() {
+          _evtDrawerState.range = rangeSelect.value;
           renderEventsDrawer();
         });
       }
@@ -471,10 +497,10 @@ async function renderEventsDrawer() {
       });
     } else {
       existingTable.innerHTML = tableHTML;
-      var searchInput = document.getElementById('devt-search');
       var nsSelect = document.getElementById('devt-ns');
-      if (searchInput) searchInput.focus();
+      var rangeSelect = document.getElementById('devt-range');
       if (nsSelect) nsSelect.value = nsFilter;
+      if (rangeSelect) rangeSelect.value = rangeLabel;
       document.querySelectorAll('#devthead .th-sort').forEach(function(th) {
         th.style.cursor = 'pointer';
         th.addEventListener('click', function() {
@@ -491,34 +517,36 @@ async function renderEventsDrawer() {
 
     document.querySelectorAll('#devt-table .waste-row-clickable').forEach(function(row) {
       row.addEventListener('click', function() {
-        var ev = filtered[this.dataset.evtIdx];
-        if (ev && typeof openEventDetailDrawer === 'function') openEventDetailDrawer(ev);
+        var inc = filtered[this.dataset.incIdx];
+        if (inc && typeof openIncidentDetailDrawer === 'function') openIncidentDetailDrawer(inc);
       });
     });
   } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
 }
 
-// ─── Event Detail Drawer ──────────────────────────────────────────────────────
-function openEventDetailDrawer(ev) {
-  var title = 'Event Detail — ' + esc(ev.name||'--');
+// ─── Incident Detail Drawer ───────────────────────────────────────────────────
+function openIncidentDetailDrawer(inc) {
+  var title = 'Incident Detail — ' + esc(inc.podName||'--');
   openDrawer(title, function() {
-    var typeClass = ev.type === 'Warning' ? 'b-warn' : ev.type === 'Normal' ? 'b-ok' : 'b-warn';
-    var backBtnHtml = '<button id="event-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em;align-self:flex-start">&larr; Back to events</button>';
+    var sevClass = inc.severity === 'CRITICAL' ? 'b-crit' : 'b-warn';
+    var backBtnHtml = '<button id="incident-detail-back" style="background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);color:var(--green);border-radius:4px;padding:3px 10px;cursor:pointer;margin-bottom:14px;font-size:.72em;align-self:flex-start">&larr; Back to incidents</button>';
 
     var html = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:16px;line-height:1.6;font-size:0.9em;color:var(--text-bright)">' +
       '<div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">' +
-        '<span class="badge ' + typeClass + '">' + esc(ev.type||'--') + '</span>' +
-        '<span class="ns-tag">' + esc(ev.namespace||'--') + '</span>' +
+        '<span class="badge ' + sevClass + '">' + esc(inc.severity||'--') + '</span>' +
+        '<span style="font-size:.88em;color:var(--text-dim)">' + esc(inc.type||'--') + '</span>' +
+        '<span class="ns-tag">' + esc(inc.namespace||'--') + '</span>' +
       '</div>' +
-      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Reason:</b> ' + esc(ev.reason||'--') + '</div>' +
-      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Object:</b> ' + esc(ev.name||'--') + '</div>' +
-      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Age:</b> ' + esc(ev.age||'--') + '</div>' +
-      '<div style="margin-bottom:12px;padding:12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05);border-radius:4px;font-family:\'JetBrains Mono\',monospace;color:var(--cyan);white-space:pre-wrap;word-wrap:break-word">' + esc(ev.message||'--') + '</div>' +
+      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Pod:</b> ' + esc(inc.podName||'--') + '</div>' +
+      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Age:</b> ' + esc(inc.age||'--') + '</div>' +
+      '<div style="margin-bottom:12px"><b style="color:var(--text-dim)">Message:</b> ' + esc(inc.message||'--') + '</div>' +
+      (inc.narrative ? '<div style="margin-bottom:12px;padding:10px 12px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);border-radius:4px;font-size:.84em;color:var(--text-dim)">' + esc(inc.narrative) + '</div>' : '') +
+      (inc.runbook ? '<div style="margin-bottom:0"><b style="color:var(--text-dim)">Runbook:</b><br><code style="font-size:.82em;color:var(--cyan);background:rgba(0,0,0,.3);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px">' + esc(inc.runbook) + '</code></div>' : '') +
       '</div>';
 
     drawerHTML(backBtnHtml + html);
-    
-    var backBtn = document.getElementById('event-detail-back');
+
+    var backBtn = document.getElementById('incident-detail-back');
     if (backBtn) {
       backBtn.addEventListener('click', function() {
         if (typeof openEventsDrawer === 'function') openEventsDrawer();
@@ -526,6 +554,7 @@ function openEventDetailDrawer(ev) {
     }
   });
 }
+
 
 // ─── Pod Detail Drawer ────────────────────────────────────────────────────────
 function openPodDetailDrawer(p) {

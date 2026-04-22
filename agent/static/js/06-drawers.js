@@ -10,12 +10,6 @@ if (_workloadsSysToggle) _workloadsSysToggle.addEventListener('change', function
   updateWorkloads();
 });
 
-var _eventsSysToggle = document.getElementById('events-show-system');
-if (_eventsSysToggle) _eventsSysToggle.addEventListener('change', function() {
-  renderDropdowns();
-  renderOverviewEvents();
-});
-
 var _eventsNsSelect = document.getElementById('tile-ns-events');
 if (_eventsNsSelect) _eventsNsSelect.addEventListener('change', function() {
   renderOverviewEvents();
