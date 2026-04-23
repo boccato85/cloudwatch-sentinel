@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-22 | Current version: `v0.50.6`
+> Last updated: 2026-04-22 | Current version: `v1.0-rc1`
 
 ## Product vision
 
@@ -32,7 +32,7 @@
 | M4 — Critical Resilience & Security | ✅ Done | `v0.12` |
 | M5 — Optional intelligence | ✅ Done | `v0.35` |
 | M6 — Real lab / QA / Prod-like | ✅ Done | `v0.50` |
-| M7 — v1.0 preparation | Not started | `v0.99` |
+| M7 — v1.0 preparation | ✅ Done | `v1.0-rc1` |
 
 ---
 
@@ -192,7 +192,7 @@
 
 ---
 
-### M7 — v1.0 preparation (`v0.99`)
+### M7 — v1.0 preparation ✅ Done (`v1.0-rc1`)
 
 **Goal:** You'd call it 1.0 without technical embarrassment. Stabilize and document based on what M6 revealed under real load.
 
@@ -200,15 +200,18 @@
 
 | Item | Status |
 |---|---|
-| Documentation for all endpoints (OpenAPI or Markdown) | Pending |
-| Stable API contracts (no breaking changes) | Pending |
-| Revised dashboard UX (visual consistency, responsiveness) | Pending |
-| Clean configuration (no undocumented env vars) | Pending |
-| README reflecting real project state | Pending |
-| Predictable failure behavior (graceful degradation) | Pending |
-| Integration tests for API contracts | Pending |
+| Documentation for all endpoints (OpenAPI or Markdown) | ✅ Done — full OpenAPI spec (15 endpoints, all schemas, securitySchemes) |
+| Stable API contracts (no breaking changes) | ✅ Done — contracts frozen, documented in `openapi.yaml` |
+| Clean configuration (no undocumented env vars) | ✅ Done — README env vars table complete incl. LLM vars |
+| README reflecting real project state | ✅ Done — badge, setup, ranges, endpoint table all corrected |
+| CONTRIBUTING.md for new contributors | ✅ Done — dev setup, constraints, commit conventions, PR guidelines |
+| GHCR release pipeline | ✅ Done — `release.yml` triggers on semver tags, pushes to `ghcr.io/boccato85/sentinel` |
+| CI fixed for Go 1.25 | ✅ Done — `ci.yml` updated; `go.mod` consistent with local toolchain |
+| Predictable failure behavior (graceful degradation) | ✅ Done (M5) — deterministic mode when LLM unavailable |
+| Revised dashboard UX (visual consistency) | ✅ Done (M6) — Status Ribbon, FinOps correlation, validated under chaos load |
+| Integration tests for API contracts | Deferred → post-1.0 |
 
-**Done criterion:** Another developer can clone, configure and run Sentinel without help.
+**Done criterion:** ✅ Another developer can clone, configure and run Sentinel without help.
 
 **Dependencies:** M6
 
@@ -232,16 +235,17 @@
 | `v0.36` | M5 bug fixes | ✅ Issue #13: node-allocatable HighCPU fallback; Issue #18: incident tiles; UI Sort & UX fixes |
 | `v0.37` | M6 partial | ✅ Online Boutique lab injection; load generation testing; UI validation |
 | `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
-| `v0.99` | M7 | Polish, docs, stable contracts |
+| `v1.0-rc1` | M7 | ✅ Docs, stable contracts, CONTRIBUTING, GHCR pipeline, CI fix |
 
 ---
 
 ## Backlog by priority
 
-### High priority (v0.50)
-- M6: Online Boutique lab: baseline + load + comparison
+### High priority (post-1.0)
+- Integration tests for API contracts (deferred from M7)
+- Public image on GHCR via first `v1.0-rc1` tag push
 
-### Medium priority (v0.50+)
+### Medium priority (post-1.0)
 - CrashLoop pod + CPU correlation (refinamento)
 - M7: API stability & full OpenAPI coverage (after M6 reveals gaps)
 
