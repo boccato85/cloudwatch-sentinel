@@ -488,13 +488,13 @@ async function updateEfficiency() {
     var legendEl = document.getElementById('eff-donut-legend');
     if (legendEl) {
       legendEl.innerHTML = donutLabels.map(function(g) {
-        return '<div class="edl"><b class="edl-dot" style="background:' + gradeColorsHex[grades.indexOf(g)] + '"></b><span class="edl-name">' + g + '</span><span class="edl-val">' + gCount[g] + '</span></div>';
+        return '<div class="edl"><b class="edl-dot" style="background:' + gradeColorsHex[grades.indexOf(g)] + '"></b><span class="edl-name">' + esc(g) + '</span><span class="edl-val">' + gCount[g] + '</span></div>';
       }).join('');
     }
     var legendEl2 = document.getElementById('eff-donut-legend2');
     if (legendEl2) {
       legendEl2.innerHTML = donutLabels.map(function(g) {
-        return '<div class="edl"><b class="edl-dot" style="background:' + gradeColorsHex[grades.indexOf(g)] + '"></b><span class="edl-name">' + g + '</span><span class="edl-val">' + gCount[g] + '</span></div>';
+        return '<div class="edl"><b class="edl-dot" style="background:' + gradeColorsHex[grades.indexOf(g)] + '"></b><span class="edl-name">' + esc(g) + '</span><span class="edl-val">' + gCount[g] + '</span></div>';
       }).join('');
     }
 

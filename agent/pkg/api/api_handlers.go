@@ -1,11 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -151,7 +153,7 @@ func (a *API) handleIcon(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "public, max-age=3600, must-revalidate")
 	w.Header().Set("ETag", a.IconETag)
-	w.Write(iconData)
+	_, _ = w.Write(iconData)
 }
 
 func (a *API) handleSummary(w http.ResponseWriter, r *http.Request) {
@@ -1198,7 +1200,7 @@ func (a *API) handleStatusHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:")
-	w.Write(data)
+	_, _ = io.Copy(w, bytes.NewReader(data))
 }
 
 func (a *API) handleDashboardHTML(w http.ResponseWriter, r *http.Request) {
@@ -1211,7 +1213,7 @@ func (a *API) handleDashboardHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; connect-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:")
-	w.Write(data)
+	_, _ = io.Copy(w, bytes.NewReader(data))
 }
 
 func (a *API) handleEvents(w http.ResponseWriter, r *http.Request) {

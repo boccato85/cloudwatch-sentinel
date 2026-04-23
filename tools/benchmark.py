@@ -41,6 +41,7 @@ def run_monitor() -> dict:
         capture_output=True,
         text=True,
         timeout=30,
+        shell=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f"monitor.py falhou: {result.stderr.strip()}")

@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bytes"
 	_ "embed"
+	"io"
 	"net/http"
 )
 
@@ -17,7 +19,7 @@ func (a *API) handleSwaggerUI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src https://unpkg.com; img-src 'self' data:;")
-	w.Write(SwaggerUIHTML)
+	_, _ = io.Copy(w, bytes.NewReader(SwaggerUIHTML))
 }
 
 func (a *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
@@ -29,5 +31,5 @@ func (a *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	// The openapi.yaml will be read from the binary if embedded, or from disk.
 	// For simplicity in Sentinel (standalone), we will embed it as well.
-	w.Write(OpenAPIYAML)
+	_, _ = io.Copy(w, bytes.NewReader(OpenAPIYAML))
 }

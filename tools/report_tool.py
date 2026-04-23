@@ -56,6 +56,7 @@ def validate_and_write(content: str, filepath: str) -> dict:
             capture_output=True,
             text=True,
             timeout=timeout_sec,
+            shell=False,
         )
     except FileNotFoundError:
         return {"status": "error", "message": f"Harness não encontrado: {HARNESS}", "file": None}
