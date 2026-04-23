@@ -1,10 +1,18 @@
 name: Project Sync
 
 on:
+  workflow_dispatch: {}
   issues:
     types: [opened, reopened, labeled, unlabeled, assigned, unassigned, closed]
   pull_request:
     types: [opened, reopened, ready_for_review, converted_to_draft, closed]
+
+# This workflow updates a GitHub Project (Projects v2).
+# IMPORTANT:
+# - GitHub Actions' default `GITHUB_TOKEN` cannot write to **user-owned** Projects v2.
+# - Create a PAT and add it as `PROJECT_TOKEN` repository secret with Projects access.
+#   Fine-grained PAT: grant access to this repo + "Projects" read/write.
+#   Classic PAT: needs `project` (and `repo` may be needed depending on settings).
 
 permissions:
   contents: read
@@ -23,11 +31,12 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    if: ${{ secrets.PROJECT_TOKEN != '' }}
     steps:
       - name: Sync Project Fields
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
             const owner = process.env.PROJECT_OWNER;
             const projectNumber = Number(process.env.PROJECT_NUMBER);
@@ -231,4 +240,3 @@ jobs:
               }
               return;
             }
-
