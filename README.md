@@ -8,7 +8,7 @@
 > Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.35" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_1.0-rc(1).png" alt="Sentinel Dashboard v1.0-rc1" width="900"/>
 </p>
 
 ![Status](https://img.shields.io/badge/status-v1.0--rc1-brightgreen)
@@ -46,13 +46,17 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 ## Screenshots
 
-| Dashboard Overview (v0.34) | Recent Events Drawer |
+| Dashboard Overview | Status Page |
 |---|---|
-| ![Overview](docs/screenshots/sentinel_ss_0.10.33.png) | ![Events](docs/screenshots/sentinel_ss_0.10.20(2).png) |
+| ![Overview](docs/screenshots/sentinel_ss_1.0-rc(1).png) | ![Status](docs/screenshots/sentinel_ss_1.0-rc(2).png) |
 
-| Efficiency Tab | Waste Intelligence |
+| Incident Detail (HighMemory) | Waste Intelligence |
 |---|---|
-| ![Efficiency](docs/screenshots/sentinel_ss_0.10.20(3).png) | ![Waste](docs/screenshots/sentinel_ss_0.10.20(4).png) |
+| ![Incident](docs/screenshots/sentinel_ss_1.0-rc(3).png) | ![Waste](docs/screenshots/sentinel_ss_1.0-rc(4).png) |
+
+| Namespace Efficiency Grades | |
+|---|---|
+| ![Efficiency](docs/screenshots/sentinel_ss_1.0-rc(5).png) | |
 
 ---
 
