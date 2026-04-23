@@ -132,7 +132,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .util-pct{font-size:.74em;color:var(--text-dim);width:34px;text-align:right}
 .mono{font-family:'JetBrains Mono',monospace}
 /* LINE CHART */
-.line-area{height:175px;width:100%}
+.line-area{height:150px;width:100%}
 .workloads-scroll-pb{max-height:300px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .workloads-scroll-pb::-webkit-scrollbar{width:5px}
 .workloads-scroll-pb::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -202,7 +202,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .legend-dash{display:inline-block;width:14px;height:2px;border-radius:0;
   background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px)}
 /* FINOPS HERO PANEL */
-.finops-panel{border-top:2px solid var(--yellow)!important;display:flex;flex-direction:column;height:280px;overflow:hidden}
+.finops-panel{border-top:2px solid var(--yellow)!important;display:flex;flex-direction:column;height:300px;overflow:hidden}
 .finops-panel > .ph{flex-shrink:0}
 .finops-panel > #fino-content,
 .finops-panel > #eff-content{flex:1;overflow-y:auto;min-height:0}
@@ -211,9 +211,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar{width:5px}
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .eff-panel{border-top:2px solid var(--cyan)!important}
-.dash-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 18px 4px;border-top:1px solid var(--border);font-size:.75em;color:var(--text-dim);font-family:'JetBrains Mono',monospace;letter-spacing:.3px;margin:0 10px;opacity:.7;min-height:32px;line-height:1}
-.dash-footer .ver-badge{font-size:.85em;padding:3px 10px;opacity:.8}
-.dash-footer .ver-badge:hover{opacity:1;color:var(--cyan);border-color:var(--cyan)}
+.ver-badge:hover{opacity:1!important;color:var(--cyan)!important;border-color:var(--cyan)!important}
 #eff-donut-legend .edl{display:flex;align-items:center;gap:5px;margin-bottom:3px}
 #eff-donut-legend .edl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 #eff-donut-legend .edl-name{color:var(--text-dim);flex:1}

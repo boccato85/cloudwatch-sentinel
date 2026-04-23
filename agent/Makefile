@@ -1,9 +1,8 @@
 BINARY   := sentinel-agent
-SERVICE  := sentinel
 ENV_FILE := ../.env
 ENV_EXAMPLE := ../.env.example
 
-.PHONY: build setup start stop restart status logs open clean
+.PHONY: build setup clean help
 
 build:
 	go build -o $(BINARY) .
@@ -11,33 +10,22 @@ build:
 setup:
 	@if [ ! -f $(ENV_FILE) ]; then \
 		cp $(ENV_EXAMPLE) $(ENV_FILE); \
-		echo "✅ .env created from .env.example — edit it before running 'make start'"; \
+		echo "✅ .env created from .env.example"; \
 	else \
 		echo "ℹ️  .env already exists — skipping"; \
 	fi
 
-start: build
-	@if [ ! -f $(ENV_FILE) ]; then \
-		echo "❌ .env not found. Run 'make setup' first."; exit 1; \
-	fi
-	systemctl --user daemon-reload
-	systemctl --user start $(SERVICE)
-	@echo "Sentinel running → http://localhost:8080"
-
-stop:
-	systemctl --user stop $(SERVICE)
-
-restart:
-	systemctl --user restart $(SERVICE)
-
-status:
-	systemctl --user status $(SERVICE)
-
-logs:
-	journalctl --user -u $(SERVICE) -f
-
-open:
-	xdg-open http://localhost:8080
-
 clean:
 	rm -f $(BINARY)
+
+help:
+	@echo "Sentinel Agent Makefile"
+	@echo "-----------------------"
+	@echo "build : Compiles the Go binary locally"
+	@echo "clean : Removes the compiled binary"
+	@echo ""
+	@echo "NOTE: Host services (systemd) were removed for safety."
+	@echo "To run Sentinel, use Helm or Podman/Minikube as per GEMINI.md"
+
+# Os comandos start/stop/status foram removidos para proteger a integridade do host.
+# O Sentinel agora deve ser operado via Kubernetes (Minikube).
