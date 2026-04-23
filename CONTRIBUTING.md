@@ -19,7 +19,7 @@ Thank you for your interest in contributing. Sentinel is a focused SRE/FinOps to
 ```bash
 git clone https://github.com/boccato85/Sentinel
 cd Sentinel
-cp .env.example .env   # fill DB_PASSWORD and AUTH_TOKEN
+cp .env.example .env   # fill DB_PASSWORD and AUTH_TOKEN (no defaults)
 docker compose up --build
 # Dashboard: http://localhost:8080/?token=<AUTH_TOKEN>
 ```

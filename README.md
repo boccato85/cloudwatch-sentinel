@@ -224,8 +224,8 @@ Requires a kubeconfig at `~/.kube/config` pointing to your cluster. Without a cl
 
 ```bash
 # Requires local PostgreSQL with database sentinel_db
-export DB_USER=postgres
-export DB_PASSWORD=postgres
+export DB_USER=<your-postgres-user>
+export DB_PASSWORD=<your-postgres-password>
 export DB_NAME=sentinel_db
 export DB_HOST=localhost
 export DB_SSLMODE=disable
