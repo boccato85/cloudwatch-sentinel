@@ -2,7 +2,7 @@
 
 import unittest
 
-from validador_saida import validate, normalize_unicode, MAX_INPUT_SIZE
+from output_validator import validate, normalize_unicode, MAX_INPUT_SIZE
 
 
 def valid_report_with(body: str) -> str:

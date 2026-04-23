@@ -46,7 +46,7 @@ go test ./pkg/store/...    # single package
 Harness tests (Python):
 
 ```bash
-python3 harness/test_validador_saida.py
+python3 harness/test_output_validator.py
 ```
 
 CI runs both `go test -v ./...` and `helm lint helm/sentinel` on every push to `main`. Ensure both pass locally before opening a PR.
