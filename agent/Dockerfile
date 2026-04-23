@@ -1,5 +1,5 @@
-# Build stage - using Go 1.23 (latest stable on Docker Hub)
-FROM golang:alpine AS builder
+# Build stage - pinned to match go.mod (go 1.25.0)
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o sentinel-agent .
 
 # Runtime stage
-FROM alpine:3.19
+FROM alpine:3.21
 
 WORKDIR /app
 

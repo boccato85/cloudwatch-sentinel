@@ -219,13 +219,27 @@
 
 ### M8 — Sentinel Intelligence 🔵 Planned (`v1.1`)
 
-**Goal:** Add a dedicated Intelligence interface to Sentinel — a separate window from the operational dashboard — that enriches incident data with cloud LLM narrative, generates runbooks and reports, and lays the foundation for agentic workflows.
+**Goal:** Add a dedicated Intelligence interface to Sentinel — a separate window from the operational dashboard — that runs **agentic investigation workflows**: the LLM acts as an orchestrator that calls read-only kubectl tools, correlates evidence, and proposes remediation steps. The user confirms before any action executes. Narrative text and reports are workflow outputs, not the product.
+
+**Agentic workflow model:**
+
+```
+User opens incident in Intelligence window
+  → LLM receives incident context from /api/incidents
+  → LLM calls tools (describe, logs, top, events) to collect evidence
+  → LLM synthesises root cause from tool outputs
+  → LLM proposes next action (e.g. "scale deployment X", "apply patch Y")
+  → User confirms / modifies / rejects
+  → Agent executes (dry-run first, then live on explicit confirm)
+  → Workflow trace written to report via harness
+```
 
 **Design constraints:**
-- Intelligence window is additive — operational dashboard keeps working if M8 features are disabled or the LLM is unreachable
-- All LLM output passes through `harness/output_validator.py` before being written or rendered
-- Agentic actions require explicit human confirmation and RBAC-scoped dry-run before execution
-- Cloud LLM is a paid/opt-in feature; `AUTH_ENABLED` already gates the API; no entitlement layer needed for MVP
+- Intelligence window is additive — operational dashboard keeps working if M8 is disabled or the LLM is unreachable
+- All LLM-generated content passes through `harness/output_validator.py` before being written or rendered
+- Every agentic action requires explicit human confirmation; write-path ops require a dry-run step first
+- MVP tool scope is read-only (`describe`, `logs`, `top`, `get events`) — no destructive ops
+- Cloud LLM is opt-in; `SENTINEL_LLM_API_KEY` absence disables the Intelligence window gracefully
 
 **Deliverables:**
 
@@ -233,16 +247,16 @@
 |---|---|
 | Cloud LLM provider implementation (`pkg/llm`): Gemini and/or OpenAI concrete clients | 🔵 Planned |
 | `SENTINEL_LLM_PROVIDER`, `SENTINEL_LLM_API_KEY`, `SENTINEL_LLM_MODEL` env vars + Helm values | 🔵 Planned |
-| **Intelligence window** — new UI panel/page separate from dashboard | 🔵 Planned |
-| Incident narrative enrichment: LLM summary injected into incident drawer ("Why?" block) | 🔵 Planned |
-| On-demand report generation (Markdown, downloadable) via Intelligence window | 🔵 Planned |
-| On-demand runbook generation with template variables + LLM refinement | 🔵 Planned |
-| Agentic scaffolding: tool definitions (kubectl read-only), dry-run guard, human-in-the-loop confirmation | 🔵 Planned |
-| Agentic action execution (scoped: describe, top, logs — no destructive ops in MVP) | 🔵 Planned |
-| Harness integration: all LLM-generated content validated before render/write | 🔵 Planned |
+| **Intelligence window** — new UI panel separate from operational dashboard | 🔵 Planned |
+| Agentic tool definitions: `kubectl_describe`, `kubectl_logs`, `kubectl_top`, `kubectl_events` (read-only, RBAC-scoped) | 🔵 Planned |
+| Workflow engine: tool-call loop, context accumulation, step trace displayed in UI | 🔵 Planned |
+| Human-in-the-loop: action proposal rendered with Confirm / Modify / Reject controls before execution | 🔵 Planned |
+| Dry-run guard: write-path actions execute as `--dry-run=client` first; live run requires second explicit confirm | 🔵 Planned |
+| Report generation: workflow trace + LLM synthesis exported as Markdown via `tools/report_tool.py` | 🔵 Planned |
+| Harness integration: all LLM output validated by `harness/output_validator.py` before render or write | 🔵 Planned |
 | Graceful degradation: Intelligence window shows deterministic fallback if LLM unavailable | 🔵 Planned |
 
-**Done criterion:** A user can open the Intelligence window, trigger LLM-enriched incident analysis, generate a runbook, and initiate a scoped agentic investigation — all without breaking the core operational dashboard.
+**Done criterion:** A user can open an incident in the Intelligence window, watch the agent collect evidence via kubectl tools, review the root-cause synthesis, confirm a remediation step, and export the full workflow trace as a report — without touching a terminal.
 
 **Dependencies:** M7 ✅
 
@@ -295,7 +309,7 @@
 |---|---|
 | **Core** | Kubernetes collection, waste calculation, pod/namespace analysis, history, dashboard, stable API, `/health`, behavior without LLM |
 | **Support** | Structured logs, health checks, retries, schema validation, internal metrics, degraded mode, Markdown/JSON export |
-| **Intelligence** | Cloud LLM narrative analysis, automatic runbooks, intelligent executive summary, agentic workflows, AI-driven trends, multi-cluster |
+| **Intelligence** | Agentic investigation workflows (LLM orchestrates kubectl tools → proposes remediation → user confirms), cloud LLM enrichment, report/runbook generation from workflow trace, multi-cluster |
 
 ---
 

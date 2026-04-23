@@ -1,0 +1,56 @@
+# Local development — no Minikube required.
+# Requires a working kubeconfig for cluster collection (metrics will be empty without it).
+#
+# Quick start:
+#   cp agent/.env.example agent/.env   # fill DB_PASSWORD and AUTH_TOKEN
+#   docker compose up --build
+#   open http://localhost:8080/?token=<AUTH_TOKEN>
+#
+# Generate AUTH_TOKEN:
+#   python3 -c "import secrets; print(secrets.token_hex(32))"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sentinel_db
+      POSTGRES_USER: ${DB_USER:-sentinel}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sentinel} -d sentinel_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  agent:
+    build: agent/
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: sentinel_db
+      DB_USER: ${DB_USER:-sentinel}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSLMODE: disable
+      AUTH_ENABLED: "true"
+      AUTH_TOKEN: ${AUTH_TOKEN}
+      LISTEN_ADDR: "0.0.0.0:8080"
+      THRESHOLDS_PATH: /app/config/thresholds.yaml
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      USD_PER_VCPU_HOUR: ${USD_PER_VCPU_HOUR:-0.04}
+      USD_PER_GB_HOUR: ${USD_PER_GB_HOUR:-0.005}
+      KUBECONFIG: /kubeconfig
+    volumes:
+      - ${KUBECONFIG:-~/.kube/config}:/kubeconfig:ro
+      - ./config:/app/config:ro
+
+volumes:
+  db_data:
