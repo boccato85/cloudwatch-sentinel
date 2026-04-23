@@ -378,8 +378,8 @@ sentinel/
 │   ├── monitor.py                   # Monitor via Go agent API
 │   └── report_tool.py               # Safe write via harness
 ├── harness/
-│   ├── validador_saida.py           # Gatekeeper: blocks destructive commands
-│   └── test_validador_saida.py      # Unit tests (23 tests)
+│   ├── output_validator.py          # Gatekeeper: blocks destructive commands
+│   └── test_output_validator.py     # Unit tests (23 tests)
 ├── docs/
 │   ├── screenshots/                 # Dashboard screenshots (v1.0-rc1)
 │   └── reports/                     # Lab reports and chaos engineering evidence
@@ -395,7 +395,7 @@ sentinel/
 
 ## Harness Engineering
 
-Every final report passes through `harness/validador_saida.py` before being written:
+Every final report passes through `harness/output_validator.py` before being written:
 
 | Rule | Behavior |
 |---|---|
@@ -406,7 +406,7 @@ Every final report passes through `harness/validador_saida.py` before being writ
 | Maximum size | Content over 10 MB is rejected |
 | Unicode normalization | NFKC + invisible character removal before pattern matching — prevents evasion via lookalike chars |
 
-23 automated tests cover all patterns: `python3 harness/test_validador_saida.py`
+23 automated tests cover all patterns: `python3 harness/test_output_validator.py`
 
 ---
 

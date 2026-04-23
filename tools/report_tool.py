@@ -3,7 +3,7 @@
 report_tool.py — Geração e gravação segura de relatórios
 sentinel
 
-Todo relatório passa obrigatoriamente pelo harness/validador_saida.py
+Todo relatório passa obrigatoriamente pelo harness/output_validator.py
 antes de ser gravado em disco.
 
 Uso:
@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 
 
 # C6: Use abspath to prevent path traversal and verify existence before subprocess.run.
-HARNESS = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "harness", "validador_saida.py"))
+HARNESS = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "harness", "output_validator.py"))
 REPORT_DIR = os.path.join(os.path.dirname(__file__), "..", "reports")
 RUNBOOK_DIR = os.path.join(os.path.dirname(__file__), "..", "runbooks")
 
