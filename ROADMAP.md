@@ -287,7 +287,9 @@
 
 ---
 
-## Core vs Support vs Luxury
+## Core vs Support vs Intelligence
+
+> Feature classification for scope decisions — not sales tiers. Core and Support are open/free by design. Intelligence features (cloud LLM, agentic) require an external API key and will be opt-in; formal product tiers will be defined when M8 ships.
 
 | Category | Items |
 |---|---|
