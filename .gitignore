@@ -1,4 +1,5 @@
 *.json
+!helm/sentinel/values.schema.json
 __pycache__/
 *.pyc
 *.pyo
@@ -24,6 +25,9 @@ GEMINI.md
 SESSION_NOTES.md
 .claude/
 .gemini/
+.codex
+.codex/
+AGENTS.md
 
 # Temporary refactoring scripts
 recover_cleanup.py

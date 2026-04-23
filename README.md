@@ -8,10 +8,10 @@
 > Incident detection, waste analysis, cost forecasting and agentic investigation — no Prometheus required.
 
 <p align="center">
-  <img src="docs/screenshots/sentinel_ss_1.0-rc(1).png" alt="Sentinel Dashboard v1.0-rc1" width="900"/>
+  <img src="docs/screenshots/sentinel_ss_1.0-rc(1).png" alt="Sentinel Dashboard v1.0" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v1.0--rc1-brightgreen)
+![Status](https://img.shields.io/badge/status-v1.0--rc2-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
@@ -24,7 +24,7 @@
 
 Sentinel is a standalone SRE and FinOps intelligence platform for Kubernetes. It continuously collects metrics via the Kubernetes Metrics API, persists data in PostgreSQL, calculates waste per pod and deployment, scores namespace efficiency and serves an interactive real-time dashboard — with no dependency on Prometheus, Grafana or AlertManager.
 
-**Philosophy:** Observability-first, intelligence-second. If the LLM goes down, Sentinel keeps working through deterministic rules. If the dashboard fails, the API remains usable.
+**Philosophy:** Observability-first, intelligence-second. The v1.0 agent is fully useful through deterministic rules. If the dashboard fails, the API remains usable.
 
 **Two layers:**
 
@@ -40,7 +40,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 - **Zero external monitoring stack** — no Prometheus, no Grafana, no AlertManager
 - **FinOps native** — waste per pod and deployment, linear forecast, namespace efficiency grades
 - **Deterministic first** — rules detect problems without LLM; optional Intelligence Layer investigates and proposes remediation
-- **Simple deploy** — Helm chart, single namespace, up in minutes
+- **Production-first deploy** — Helm chart, explicit secrets, ClusterIP service and Ingress/TLS guidance
 
 ---
 
@@ -69,6 +69,26 @@ As part of our commitment to transparency and battle-tested engineering, we main
 
 ---
 
+## Quality Evidence
+
+Release candidates are gated by:
+
+```bash
+cd agent && go test ./...
+python3 harness/test_output_validator.py
+helm lint helm/sentinel --set agent.auth.token=test-token --set database.password=test-password
+```
+
+Smoke test for a running agent:
+
+```bash
+BASE_URL=https://sentinel.example.com AUTH_TOKEN=<token> ./harness/smoke_api.sh
+```
+
+Operational release notes are maintained in [RELEASE.md](RELEASE.md).
+
+---
+
 ## Architecture
 
 ```
@@ -94,7 +114,7 @@ As part of our commitment to transparency and battle-tested engineering, we main
 │    action proposal → user confirms / modifies / rejects  │
 │    dry-run → execution → workflow trace → report         │
 │                                                          │
-│  Disabled gracefully if SENTINEL_LLM_API_KEY is absent  │
+│  Planned for v1.1; no LLM runtime contract in v1.0      │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -123,6 +143,20 @@ As part of our commitment to transparency and battle-tested engineering, we main
 
 ---
 
+## Support Matrix
+
+The current support matrix is published in [docs/support-matrix.md](docs/support-matrix.md).
+
+| Category | v1.0-rc2 status |
+|---|---|
+| Supported | Kubernetes `v1.19+`, Helm 3, PostgreSQL 15, Metrics Server, deterministic rules |
+| Tested | Go unit tests, harness safety tests, Helm lint, chaos lab and capacity planning reports |
+| Not supported | Production NodePort exposure, local LLM runtimes, multi-cluster aggregation, write-path remediation automation |
+
+Metrics Server is required for production-quality metrics, incidents and FinOps calculations. Without it, Sentinel can serve the API/dashboard shell, but metrics-backed views are degraded or empty.
+
+---
+
 ## Setup
 
 ### 1. Clone the repository
@@ -134,31 +168,51 @@ cd Sentinel
 
 ### 2. Go Agent
 
-**Option A: deploy on Kubernetes via Helm (recommended)**
+**Option A: production-style Kubernetes deploy via Helm + Ingress (recommended)**
 
 ```bash
-# Generate a secure auth token
+# Generate secure secrets
 AUTH_TOKEN=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+DB_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
 
-# Deploy — pulls image from GHCR, PostgreSQL spins up automatically as a pod
+# Deploy - pulls image from GHCR, PostgreSQL spins up automatically as a pod.
+# Assumes the TLS secret already exists and your ingress controller is installed.
 helm install sentinel helm/sentinel -n sentinel --create-namespace \
   --set image.repository=ghcr.io/boccato85/sentinel \
-  --set image.tag=1.0-rc1 \
-  --set agent.auth.token=$AUTH_TOKEN
+  --set image.tag=1.0-rc2 \
+  --set agent.auth.token=$AUTH_TOKEN \
+  --set database.password=$DB_PASSWORD \
+  --set ingress.enabled=true \
+  --set ingress.className=nginx \
+  --set ingress.hosts[0].host=sentinel.example.com \
+  --set ingress.tls[0].secretName=sentinel-tls \
+  --set ingress.tls[0].hosts[0]=sentinel.example.com
 
 # Check pods
 kubectl get pods -n sentinel
 
-# Get the access endpoint
-kubectl get svc -n sentinel
-# NodePort default: 30080 — access via http://<node-ip>:30080/?token=<AUTH_TOKEN>
-# For production: configure an Ingress with TLS (see SECURITY.md)
+# Access via https://sentinel.example.com/?token=<AUTH_TOKEN>
 ```
 
-**Option B: docker-compose (local development — no cluster required)**
+**Option B: Kubernetes dev/lab deploy via NodePort**
 
 ```bash
-cp agent/.env.example agent/.env   # fill DB_PASSWORD and AUTH_TOKEN
+AUTH_TOKEN=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+DB_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+
+helm install sentinel helm/sentinel -n sentinel --create-namespace \
+  --set agent.auth.token=$AUTH_TOKEN \
+  --set database.password=$DB_PASSWORD \
+  --set service.type=NodePort \
+  --set service.nodePort=30080
+
+# Dashboard: http://<node-ip>:30080/?token=<AUTH_TOKEN>
+```
+
+**Option C: docker-compose (local development - no cluster required)**
+
+```bash
+cp .env.example .env   # fill DB_PASSWORD and AUTH_TOKEN
 # Generate AUTH_TOKEN: python3 -c "import secrets; print(secrets.token_hex(32))"
 docker compose up --build
 # Dashboard: http://localhost:8080/?token=<AUTH_TOKEN>
@@ -166,7 +220,7 @@ docker compose up --build
 
 Requires a kubeconfig at `~/.kube/config` pointing to your cluster. Without a cluster, the agent starts and serves the API with empty data — suitable for UI/API development.
 
-**Option C: standalone binary (requires local PostgreSQL)**
+**Option D: standalone binary (requires local PostgreSQL)**
 
 ```bash
 # Requires local PostgreSQL with database sentinel_db
@@ -178,7 +232,7 @@ export DB_SSLMODE=disable
 
 cd agent
 make build   # compile binary
-make start   # start service in background
+./sentinel-agent
 ```
 
 Configurable retention:
@@ -195,21 +249,20 @@ export RETENTION_DAILY_DAYS=365     # daily aggregates
 
 **Access the dashboard:**
 ```bash
-# Get the node IP and NodePort
-kubectl get svc -n sentinel
+# Production path: use the configured Ingress host.
+# Dev/lab path: use NodePort only when explicitly enabled.
 
-# Open in browser
-# http://<node-ip>:30080/?token=<AUTH_TOKEN>
+# https://sentinel.example.com/?token=<AUTH_TOKEN>
 ```
 
 **API (authenticated):**
 ```bash
-curl -H "Authorization: Bearer <AUTH_TOKEN>" http://<node-ip>:30080/api/incidents
-curl -H "Authorization: Bearer <AUTH_TOKEN>" http://<node-ip>:30080/api/summary
+curl -H "Authorization: Bearer <AUTH_TOKEN>" https://sentinel.example.com/api/incidents
+curl -H "Authorization: Bearer <AUTH_TOKEN>" https://sentinel.example.com/api/summary
 ```
 
-**Incident investigation (Intelligence Layer — v1.1):**
-When `SENTINEL_LLM_API_KEY` is configured, the Intelligence window activates automatically in the dashboard. The LLM reads `/api/incidents`, calls read-only kubectl tools to collect evidence, synthesises root cause and proposes remediation steps. The user confirms before any action executes. Without the key, Sentinel operates in deterministic-only mode.
+**Incident investigation (Intelligence Layer — v1.1 planned):**
+The v1.0 agent is deterministic-only. M8 will add a provider-agnostic cloud LLM investigation layer over read-only Kubernetes tools, with human approval before any write-path action.
 
 ---
 
@@ -276,12 +329,10 @@ Hover tooltip showing: Cluster, Endpoint, Version, Session uptime, Last sync, Da
 
 ```bash
 cd agent/
-make start    # compile + start in background
-make stop     # stop the service
-make restart  # recompile and restart
-make status   # current state
-make logs     # tail logs in real time
-make build    # compile only
+make setup    # create ../.env from ../.env.example if missing
+make build    # compile sentinel-agent
+make clean    # remove the compiled binary
+make help     # print available targets
 ```
 
 ---
@@ -315,13 +366,13 @@ Aggregation and cleanup run automatically every hour.
 
 ## Environment Variables
 
-The Sentinel Go Agent can be configured via environment variables. If using Helm, these can be set via the `agent.env` values.
+The Sentinel Go Agent can be configured via environment variables. If using Helm, use the chart values shown in `helm/sentinel/values.yaml`.
 
 | Variable | Default | Description |
 |---|---|---|
 | **API & Security** | | |
 | `LISTEN_ADDR` | `0.0.0.0:8080` | Bind address and port for the dashboard and API. |
-| `RATE_LIMIT_RPS` | `100` | Global rate limit in requests per second. |
+| `RATE_LIMIT_RPS` | `100` | Per-remote-address rate limit in requests per second. |
 | `AUTH_ENABLED` | `true` | Enable Bearer token authentication for API endpoints (except `/health`). |
 | `AUTH_TOKEN` | **(Required when auth enabled)** | The token required when `AUTH_ENABLED` is true. Agent refuses to start if empty. No default is provided — operator must supply a secret value. |
 | **FinOps Pricing** | | |
@@ -340,10 +391,8 @@ The Sentinel Go Agent can be configured via environment variables. If using Helm
 | `RETENTION_RAW_HOURS`| `24` | Hours to keep minute-level raw data. |
 | `RETENTION_HOURLY_DAYS`| `30` | Days to keep hourly aggregated data. |
 | `RETENTION_DAILY_DAYS`| `365` | Days to keep daily aggregated data. |
-| **Intelligence Layer (v1.1 — planned)** | | |
-| `SENTINEL_LLM_PROVIDER` | *(unset — deterministic mode)* | Cloud LLM provider for the Intelligence Layer (e.g. `gemini`, `openai`, or any compatible provider). If unset, Sentinel operates in deterministic-only mode and the Intelligence window is disabled. |
-| `SENTINEL_LLM_API_KEY` | *(required when provider set)* | API key for the configured cloud provider. |
-| `SENTINEL_LLM_MODEL` | *(provider default)* | Model name to request from the provider. |
+
+The Intelligence Layer is planned for v1.1. v1.0 has no public LLM environment-variable contract.
 
 ---
 
@@ -406,7 +455,7 @@ sentinel/
 │   ├── output_validator.py          # Gatekeeper: blocks destructive commands
 │   └── test_output_validator.py     # Unit tests (23 tests)
 ├── docs/
-│   ├── screenshots/                 # Dashboard screenshots (v1.0-rc1)
+│   ├── screenshots/                 # Dashboard screenshots
 │   └── reports/                     # Lab reports and chaos engineering evidence
 ├── .github/
 │   └── workflows/
@@ -438,9 +487,17 @@ Every final report passes through `harness/output_validator.py` before being wri
 
 ## Changelog
 
+### v1.0-rc2 — Release-readiness hardening
+- **Docs/runtime alignment** — setup paths now use root `.env.example`; agent management docs match the real Makefile targets.
+- **Helm hardening** — GHCR image defaults, explicit database password requirement and cleaned `values.yaml` structure.
+- **Production-first deploy** — chart defaults to `ClusterIP`, adds Ingress rendering and documents NodePort as dev/lab only.
+- **Release operations** — support matrix, smoke test and operational release notes added for v1.0 adoption.
+- **Rate limiting** — client identity now uses the remote address observed by the agent; forwarded IP headers are ignored in v1.0.
+- **Intelligence contract** — v1.0 remains deterministic-only; provider-agnostic cloud intelligence is M8 scope.
+
 ### v1.0-rc1 — M7: v1.0 preparation complete
 - **OpenAPI spec completed** — all 15 endpoints documented with full schemas, securitySchemes and reusable responses.
-- **README fully corrected** — setup instructions, env vars table (incl. LLM vars), API endpoint table, Go version, ranges.
+- **README fully corrected** — setup instructions, API endpoint table, Go version, ranges.
 - **CONTRIBUTING.md** — dev setup, architecture constraints, commit conventions and PR scope boundaries.
 - **GHCR release pipeline** — `release.yml` builds and pushes `ghcr.io/boccato85/sentinel` on semver tags via `GITHUB_TOKEN`.
 - **docker-compose** — `docker-compose.yml` added to project root; enables local development without Minikube (agent + PostgreSQL).
@@ -470,8 +527,8 @@ Every final report passes through `harness/output_validator.py` before being wri
 ### v0.35 — M5 code review fixes
 - **Security (JS):** Copy button in Alerts drawer now uses `data-runbook` + `addEventListener` — previously the `onclick` attribute was silently stripped by DOMPurify, rendering the button non-functional.
 - **Runbooks:** `ErrImagePull` and `CreateContainerConfigError` now produce `kubectl describe pod` instead of `kubectl logs` (container never started; logs return nothing).
-- **LLM skeleton:** Fixed latent nil-pointer panic when `LLM_PROVIDER=gemini` — now correctly returns `Enabled: false` like other unimplemented providers.
-- **Tests:** Added 4 unit tests for `pkg/llm` covering all `NewClient()` branches (Go: 14 tests; harness: 23 tests; total: 37).
+- **Intelligence skeleton:** Fixed latent nil-pointer risk in the disabled provider facade.
+- **Tests:** Added unit tests for `pkg/llm` disabled-mode branches (Go: 14 tests; harness: 23 tests; total: 37).
 - **Roadmap:** Swapped M6/M7 — Real lab/QA before docs/polish; rationale in ROADMAP.md.
 
 ### v0.34

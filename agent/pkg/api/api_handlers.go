@@ -1155,14 +1155,14 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 			if s.Severity == "critical" || s.Severity == "CRITICAL" {
 				sev = "CRITICAL"
 			}
-			
+
 			ageStr := podAgeMap[s.Namespace+"/"+s.Name]
 			if ageStr == "" {
 				ageStr = "-"
 			}
-			
+
 			wasteMsg := "CPU waste: " + strings.TrimPrefix(s.Opportunity, "-")
-			
+
 			incs = append(incs, Incident{
 				PodName:   s.Name,
 				Namespace: s.Namespace,
@@ -1183,7 +1183,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 
 	// TODO(arch): LLM enrichment must NOT be called synchronously here.
 	// Calling GenerateEnrichment() inline would block this handler goroutine for
-	// the full LLM round-trip (potentially 5-30s on Ollama), degrading all
+	// the full LLM round-trip (potentially slow), degrading all
 	// concurrent dashboard requests. The correct pattern: enrich incidents in a
 	// background goroutine during the collector cycle and cache the result here.
 	slog.Debug("incidents computed", "component", "http", "count", len(incs))

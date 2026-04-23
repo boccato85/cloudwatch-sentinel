@@ -15,9 +15,10 @@ O dashboard está disponível em:
 {{- range .Values.ingress.hosts }}
   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
 {{- end }}
+Use o token configurado em agent.auth.token como Bearer token ou query string apenas em acesso controlado.
 {{- else }}
 
-Para acessar o dashboard localmente, use port-forward:
+Nenhum Ingress foi configurado. Para acesso local/temporário, use port-forward:
 
     kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "sentinel.fullname" . }} 8080:{{ .Values.service.port }}
 

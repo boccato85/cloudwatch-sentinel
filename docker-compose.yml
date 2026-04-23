@@ -2,7 +2,7 @@
 # Requires a working kubeconfig for cluster collection (metrics will be empty without it).
 #
 # Quick start:
-#   cp agent/.env.example agent/.env   # fill DB_PASSWORD and AUTH_TOKEN
+#   cp .env.example .env   # fill DB_PASSWORD and AUTH_TOKEN
 #   docker compose up --build
 #   open http://localhost:8080/?token=<AUTH_TOKEN>
 #

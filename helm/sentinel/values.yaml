@@ -5,14 +5,15 @@ replicaCount: 1
 timezone: "America/Sao_Paulo"
 
 image:
-  repository: localhost/sentinel
-  tag: "v0.11"
-  pullPolicy: Never
+  repository: ghcr.io/boccato85/sentinel
+  tag: "1.0-rc2"
+  pullPolicy: IfNotPresent
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 8080
-  nodePort: 30080
+  # Dev/lab only: set service.type=NodePort and service.nodePort=30080.
+  nodePort: ""
 
 # PostgreSQL configuration
 postgresql:
@@ -41,7 +42,7 @@ postgresql:
 database:
   name: sentinel_db
   user: sentinel
-  password: sentinel123
+  password: ""
   sslmode: disable
 
 # Agent configuration
@@ -54,6 +55,8 @@ agent:
     # REQUIRED: set to a secret value — no default is provided intentionally.
     # Override via: --set agent.auth.token=<your-secret>
     token: ""
+
+resources: {}
 
 # Operational thresholds (mirrors config/thresholds.yaml)
 thresholds:
@@ -95,7 +98,7 @@ retention:
   # Recommended: 365-730 days (1-2 years)
   dailyDays: 365
 
-# Ingress configuration (optional)
+# Ingress configuration (recommended production exposure path)
 ingress:
   enabled: false
   className: ""
@@ -125,10 +128,6 @@ nodeSelector: {}
 
 # Tolerations
 tolerations: []
-
-# Affinity
-affinity: {}
-ons: []
 
 # Affinity
 affinity: {}

@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,9 +11,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
-	"sentinel-agent/pkg/store"
 	"sentinel-agent/pkg/k8s"
-	"context"
+	"sentinel-agent/pkg/store"
 )
 
 func TestHandleHealth(t *testing.T) {
@@ -82,4 +83,25 @@ func TestHandleSummary(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, resp.Nodes, 1)
 	assert.Equal(t, "minikube", resp.Nodes[0].Name)
+}
+
+func TestRateLimitMiddlewareIgnoresXRealIP(t *testing.T) {
+	handler := RateLimitMiddleware(1)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest(http.MethodGet, "/api/summary", nil)
+		req.RemoteAddr = "203.0.113.10:12345"
+		req.Header.Set("X-Real-IP", fmt.Sprintf("198.51.100.%d", i+1))
+
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+
+		if i < 2 {
+			assert.Equal(t, http.StatusNoContent, rr.Code)
+			continue
+		}
+		assert.Equal(t, http.StatusTooManyRequests, rr.Code)
+	}
 }

@@ -25,4 +25,14 @@ jobs:
     - name: Install Helm
       uses: azure/setup-helm@v4
     - name: Lint Helm Chart
-      run: helm lint helm/sentinel
+      run: helm lint helm/sentinel --set agent.auth.token=test-token --set database.password=test-password
+    - name: Render Helm Chart with Ingress
+      run: |
+        helm template sentinel helm/sentinel \
+          --set agent.auth.token=test-token \
+          --set database.password=test-password \
+          --set ingress.enabled=true \
+          --set ingress.className=nginx \
+          --set ingress.hosts[0].host=sentinel.example.com \
+          --set ingress.tls[0].secretName=sentinel-tls \
+          --set ingress.tls[0].hosts[0]=sentinel.example.com

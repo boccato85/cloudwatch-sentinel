@@ -3,47 +3,34 @@ package llm
 import "testing"
 
 func TestNewClient_NoProvider(t *testing.T) {
-	t.Setenv("LLM_PROVIDER", "")
 	c := NewClient()
 	if c.Enabled {
-		t.Error("expected Enabled=false when LLM_PROVIDER is not set")
+		t.Error("expected Enabled=false in v1.0-rc2")
 	}
 	if c.ActiveProvider != nil {
-		t.Error("expected ActiveProvider=nil when LLM_PROVIDER is not set")
+		t.Error("expected ActiveProvider=nil in v1.0-rc2")
 	}
 }
 
-func TestNewClient_UnknownProvider(t *testing.T) {
-	t.Setenv("LLM_PROVIDER", "openai")
+func TestNewClient_IgnoresProviderEnv(t *testing.T) {
+	t.Setenv("FUTURE_LLM_PROVIDER", "cloud")
 	c := NewClient()
 	if c.Enabled {
-		t.Error("expected Enabled=false for unknown provider")
+		t.Error("expected Enabled=false when provider env vars are set")
 	}
 	if c.ActiveProvider != nil {
-		t.Error("expected ActiveProvider=nil for unknown provider")
+		t.Error("expected ActiveProvider=nil when provider env vars are set")
 	}
 }
 
-func TestNewClient_GeminiNotImplemented(t *testing.T) {
-	t.Setenv("LLM_PROVIDER", "gemini")
+func TestNewClient_IgnoresLocalLLMEnv(t *testing.T) {
+	t.Setenv("LOCAL_LLM_ENDPOINT", "http://localhost:11434")
+	t.Setenv("LOCAL_LLM_MODEL", "local")
 	c := NewClient()
 	if c.Enabled {
-		t.Error("expected Enabled=false for gemini (not yet implemented)")
+		t.Error("expected Enabled=false when local LLM env vars are set")
 	}
 	if c.ActiveProvider != nil {
-		t.Error("expected ActiveProvider=nil for gemini (not yet implemented)")
-	}
-}
-
-func TestNewClient_OllamaProvider(t *testing.T) {
-	t.Setenv("LLM_PROVIDER", "ollama")
-	t.Setenv("OLLAMA_ENDPOINT", "http://localhost:11434")
-	t.Setenv("OLLAMA_MODEL", "llama3")
-	c := NewClient()
-	if !c.Enabled {
-		t.Error("expected Enabled=true for ollama provider")
-	}
-	if c.ActiveProvider == nil {
-		t.Error("expected ActiveProvider!=nil for ollama provider")
+		t.Error("expected ActiveProvider=nil when local LLM env vars are set")
 	}
 }

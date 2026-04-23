@@ -14,9 +14,11 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 
 | Version | Supported |
 |---|---|
-| `v1.0-rc1` (current) | ✅ Yes |
+| `v1.0-rc2` (current) | ✅ Yes |
 | `v0.50.x` | ❌ No — upgrade to v1.0 |
 | `< v0.50` | ❌ No |
+
+See [docs/support-matrix.md](docs/support-matrix.md) for supported Kubernetes, deployment and feature boundaries.
 
 ---
 
@@ -33,9 +35,10 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 - [ ] Do not run the Sentinel pod as root; the Dockerfile sets a non-root user
 
 ### Network
-- [ ] Expose port 8080 only within the cluster (NodePort 30080 is for dev/local use)
-- [ ] In production, place Sentinel behind an ingress with TLS and restrict access by IP or network policy
-- [ ] Rate limiting is enabled by default (100 RPS per IP) — adjust `RATE_LIMIT_RPS` if needed
+- [ ] Keep the Sentinel Service as `ClusterIP` in production
+- [ ] Use Ingress with TLS for production exposure and restrict access by IP or network policy
+- [ ] Use NodePort only for dev/lab or short-lived troubleshooting
+- [ ] Rate limiting is enabled by default (100 RPS per remote address observed by the agent) — adjust `RATE_LIMIT_RPS` if needed
 
 ### Authentication
 - [ ] `AUTH_ENABLED=true` by default — do not disable in production
@@ -48,11 +51,11 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 - [ ] Use Kubernetes Secrets (provisioned by the Helm chart) for all credentials
 - [ ] The `.env` file is in `.gitignore` — never commit it
 
-### Intelligence features (M8 — cloud LLM)
-- [ ] `SENTINEL_LLM_API_KEY` must be stored as a Kubernetes Secret — never in env vars committed to version control
-- [ ] Restrict the LLM API key to the minimum required scopes in your cloud provider
-- [ ] All LLM-generated output passes through `harness/output_validator.py` before being written or rendered
-- [ ] Agentic actions are scoped to read-only kubectl operations in MVP — review RBAC before enabling write-path actions
+### Intelligence features (M8 — planned)
+- [ ] Treat the v1.0 agent as deterministic-only; no public intelligence-layer runtime contract is supported yet
+- [ ] Future cloud-provider credentials must be stored as Kubernetes Secrets and scoped to the minimum required permissions
+- [ ] Future generated output must pass through `harness/output_validator.py` before being written or rendered
+- [ ] Future agentic actions must start with read-only kubectl operations and explicit human approval before any write-path action
 
 ### Pricing / cost configuration
 - [ ] `USD_PER_VCPU_HOUR` and `USD_PER_GB_HOUR` default to `0.04` and `0.005` — adjust via env vars to match your actual cloud pricing
@@ -66,7 +69,7 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 | TLS between agent and DB | Disabled by default (`DB_SSLMODE=disable`) — enable in production |
 | CSRF protection | N/A — no state-changing browser-initiated endpoints |
 | Audit logging | Not implemented |
-| LLM API key rotation | Manual — no automatic rotation support in MVP |
+| Intelligence layer runtime | Planned for M8; no public v1.0 runtime contract |
 
 ---
 
@@ -78,8 +81,5 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 | `AUTH_TOKEN` | (none) | Required when `AUTH_ENABLED=true`; agent exits on startup if missing |
 | `DB_SSLMODE` | `disable` | Set to `require` in production |
 | `DB_PASSWORD` | (required) | Use a strong, unique password |
-| `RATE_LIMIT_RPS` | `100` | Per-IP rate limit |
+| `RATE_LIMIT_RPS` | `100` | Per-remote-address rate limit; forwarded IP headers are ignored in v1.0 |
 | `LOG_LEVEL` | `info` | Never use `debug` in production — may log sensitive data |
-| `SENTINEL_LLM_API_KEY` | (none) | M8 — cloud LLM API key; store as Kubernetes Secret |
-| `SENTINEL_LLM_PROVIDER` | (none) | M8 — `gemini` or `openai` |
-| `SENTINEL_LLM_MODEL` | (none) | M8 — model identifier (e.g. `gemini-2.0-flash`) |
