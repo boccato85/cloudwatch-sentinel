@@ -170,7 +170,7 @@
 
 ---
 
-### M6 — Real lab / QA / Prod-Like (`v0.50`)
+### M6 — Real lab / QA / Prod-Like ✅ Done (`v0.50`)
 
 **Goal:** Validate Sentinel against a realistic workload before any documentation or contract is frozen. Surface gaps in the API, UX and observability that only emerge under real traffic.
 
@@ -183,8 +183,10 @@
 | Burst and fault injection documented | ✅ Done |
 | Before/after comparison in dashboard | ✅ Done |
 | Lab incident report with generated runbook | ✅ Done |
+| [Chaos Lab Stress Test report](docs/reports/2026-04-22-m6-chaos-lab-stress-test.md) | ✅ Done |
+| [Capacity Planning: Online Boutique report](docs/reports/2026-04-22-capacity-planning-online-boutique.md) | ✅ Done |
 
-**Done criterion:** Report comparing normal vs degraded cluster state produced by Sentinel, serving as community proof-of-concept. API and UI gaps identified for M7 stabilization.
+**Done criterion:** ✅ Report comparing normal vs degraded cluster state produced by Sentinel, serving as community proof-of-concept. API and UI gaps identified for M7 stabilization.
 
 **Dependencies:** M5
 

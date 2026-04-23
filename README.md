@@ -60,8 +60,8 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 As part of our commitment to transparency and battle-tested engineering, we maintain a collection of technical reports from our chaos experiments and capacity planning sessions.
 
-- [🧪 **M6 Chaos Lab Stress Test**](docs/reports/2026-04-22-m6-chaos-lab-stress-test.md) — High load (1000 users) and resource starvation validation.
-- [📊 **Capacity Planning: Online Boutique**](docs/reports/2026-04-22-capacity-planning-online-boutique.md) — Rightsizing analysis and memory undersizing detection.
+- [**M6 Chaos Lab Stress Test**](docs/reports/2026-04-22-m6-chaos-lab-stress-test.md) — High load (1000 users) and resource starvation validation.
+- [**Capacity Planning: Online Boutique**](docs/reports/2026-04-22-capacity-planning-online-boutique.md) — Rightsizing analysis and memory undersizing detection.
 
 ---
 
