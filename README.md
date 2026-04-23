@@ -5,7 +5,7 @@
 </p>
 
 > **Kubernetes SRE intelligence for teams that can't afford a dedicated specialist.**
-> Incident detection, waste analysis, cost forecasting and AI-powered explanations — no Prometheus required.
+> Incident detection, waste analysis, cost forecasting and agentic investigation — no Prometheus required.
 
 <p align="center">
   <img src="docs/screenshots/sentinel_ss_1.0-rc(1).png" alt="Sentinel Dashboard v1.0-rc1" width="900"/>
@@ -28,8 +28,8 @@ Sentinel is a standalone SRE and FinOps intelligence platform for Kubernetes. It
 
 **Two layers:**
 
-- **Go Agent** — standalone binary that collects, persists and exposes a web dashboard (port 8080)
-- **LLM Agent (optional)** — analysis layer that consumes the agent API, applies reasoning and generates runbooks
+- **Go Agent** — standalone binary that collects, persists and exposes a web dashboard and REST API (port 8080)
+- **Intelligence Layer (optional — v1.1)** — agentic investigation engine: the LLM orchestrates read-only kubectl tools (describe, logs, top, events), accumulates evidence, synthesises root cause and proposes remediation steps; the user confirms before any action executes
 
 ---
 
@@ -39,7 +39,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 - **Zero external monitoring stack** — no Prometheus, no Grafana, no AlertManager
 - **FinOps native** — waste per pod and deployment, linear forecast, namespace efficiency grades
-- **Deterministic first** — rules detect problems without LLM; optional LLM explains in plain language
+- **Deterministic first** — rules detect problems without LLM; optional Intelligence Layer investigates and proposes remediation
 - **Simple deploy** — Helm chart, single namespace, up in minutes
 
 ---
@@ -72,24 +72,30 @@ As part of our commitment to transparency and battle-tested engineering, we main
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   Go Agent (port 8080)              │
-│                                                     │
-│  continuous collection (~10s) → PostgreSQL          │
-│  /api/summary    /api/metrics   /api/history        │
-│  /api/forecast   /api/pods      /api/waste          │
-│  /api/efficiency /api/incidents /health             │
-│  /status         /docs          /openapi.yaml       │
-│                                                     │
-│  Dashboard: KPIs → tiles → drawers → rightsizing    │
-└───────────────────────┬─────────────────────────────┘
-                        │ REST API
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│                  LLM Agent (optional)                 │
-│  /startup   → checks Minikube + Go agent            │
-│  /incident  → LLM analysis + runbook via harness    │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                    Go Agent (port 8080)                  │
+│                                                          │
+│  continuous collection (~10s) → PostgreSQL               │
+│  /api/summary   /api/metrics   /api/history              │
+│  /api/forecast  /api/pods      /api/waste                │
+│  /api/efficiency /api/incidents /health                  │
+│  /status        /docs          /openapi.yaml             │
+│                                                          │
+│  Dashboard: KPIs → tiles → drawers → rightsizing         │
+└──────────────────────────┬───────────────────────────────┘
+                           │ REST API
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│        Intelligence Layer  (optional — v1.1)             │
+│                                                          │
+│  /api/incidents → LLM orchestrator                       │
+│    tool calls: describe · logs · top · events            │
+│    evidence accumulation → root-cause synthesis          │
+│    action proposal → user confirms / modifies / rejects  │
+│    dry-run → execution → workflow trace → report         │
+│                                                          │
+│  Disabled gracefully if SENTINEL_LLM_API_KEY is absent  │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -102,7 +108,7 @@ As part of our commitment to transparency and battle-tested engineering, we main
 | Agent | Go 1.25 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
-| LLM Agent | Optional — any LLM agent (Claude, Gemini, Minimax…) |
+| Intelligence Layer | Optional (v1.1) — provider-agnostic cloud LLM as agentic orchestrator over kubectl tools |
 
 ---
 
@@ -191,11 +197,11 @@ export RETENTION_DAILY_DAYS=365     # daily aggregates
 ```
 Checks Minikube and starts the Go agent if needed.
 
-**Incident analysis:**
+**Incident investigation (Intelligence Layer — v1.1):**
 ```
 /incident
 ```
-Consumes the Go agent API, applies LLM reasoning and generates a runbook via harness (requires LLM agent).
+Opens the Intelligence window: the LLM reads `/api/incidents`, calls kubectl tools to collect evidence, synthesises root cause and proposes a remediation step. Requires `SENTINEL_LLM_API_KEY`. Falls back to deterministic summary when unavailable.
 
 ---
 
@@ -326,10 +332,10 @@ The Sentinel Go Agent can be configured via environment variables. If using Helm
 | `RETENTION_RAW_HOURS`| `24` | Hours to keep minute-level raw data. |
 | `RETENTION_HOURLY_DAYS`| `30` | Days to keep hourly aggregated data. |
 | `RETENTION_DAILY_DAYS`| `365` | Days to keep daily aggregated data. |
-| **Intelligence (Optional LLM)** | | |
-| `LLM_PROVIDER` | *(unset — deterministic mode)* | LLM provider to use for incident narrative enrichment. Supported value: `ollama`. If unset or unsupported, Sentinel operates in deterministic-only mode. |
-| `OLLAMA_ENDPOINT` | `http://ollama.default.svc.cluster.local:11434` | Ollama API base URL. Only used when `LLM_PROVIDER=ollama`. |
-| `OLLAMA_MODEL` | `llama3` | Model name to request from Ollama. Only used when `LLM_PROVIDER=ollama`. |
+| **Intelligence Layer (v1.1 — planned)** | | |
+| `SENTINEL_LLM_PROVIDER` | *(unset — deterministic mode)* | Cloud LLM provider for the Intelligence Layer (e.g. `gemini`, `openai`, or any compatible provider). If unset, Sentinel operates in deterministic-only mode and the Intelligence window is disabled. |
+| `SENTINEL_LLM_API_KEY` | *(required when provider set)* | API key for the configured cloud provider. |
+| `SENTINEL_LLM_MODEL` | *(provider default)* | Model name to request from the provider. |
 
 ---
 
@@ -360,8 +366,8 @@ sentinel/
 │   │   ├── k8s/                     # Kubernetes client + Metrics API wrappers
 │   │   │   ├── k8s.go
 │   │   │   └── k8s_test.go
-│   │   ├── llm/                     # LLM provider interface + Ollama skeleton
-│   │   │   ├── client.go            # Provider interface, NewClient(), ollamaProvider
+│   │   ├── llm/                     # Provider interface (cloud LLM implementation in v1.1)
+│   │   │   ├── client.go            # Provider interface + NewClient()
 │   │   │   └── client_test.go
 │   │   └── store/                   # PostgreSQL: schema, aggregation, retention
 │   │       ├── store.go
