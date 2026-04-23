@@ -5,10 +5,10 @@ import "testing"
 func TestNewClient_NoProvider(t *testing.T) {
 	c := NewClient()
 	if c.Enabled {
-		t.Error("expected Enabled=false in v1.0-rc2")
+		t.Error("expected Enabled=false in v1.0.0-rc.2")
 	}
 	if c.ActiveProvider != nil {
-		t.Error("expected ActiveProvider=nil in v1.0-rc2")
+		t.Error("expected ActiveProvider=nil in v1.0.0-rc.2")
 	}
 }
 

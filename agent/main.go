@@ -31,7 +31,7 @@ var (
 	usdPerGbHour   float64
 )
 
-const agentVersion = "1.0-rc2"
+const agentVersion = "1.0.0-rc.2"
 const collectorStaleThreshold = 30 * time.Second
 
 var (

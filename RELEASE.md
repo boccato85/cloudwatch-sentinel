@@ -1,10 +1,10 @@
-# Sentinel v1.0-rc2 Release Notes
+# Sentinel v1.0.0-rc.2 Release Notes
 
 Release date: 2026-04-23
 
 ## Operational Summary
 
-`v1.0-rc2` is a release-readiness hardening candidate. It focuses on consistent versioning, secure-by-default Helm installation, production-first exposure guidance and clearer v1.0 support boundaries.
+`v1.0.0-rc.2` is a release-readiness hardening candidate. It focuses on consistent versioning, secure-by-default Helm installation, production-first exposure guidance and clearer v1.0 support boundaries.
 
 ## Breaking / Operator-Visible Changes
 
@@ -35,7 +35,7 @@ helm install sentinel helm/sentinel -n sentinel --create-namespace \
 ```bash
 helm upgrade sentinel helm/sentinel -n sentinel \
   --reuse-values \
-  --set image.tag=1.0-rc2 \
+  --set image.tag=1.0.0-rc.2 \
   --set agent.auth.token="$AUTH_TOKEN" \
   --set database.password="$DB_PASSWORD"
 ```
