@@ -51,19 +51,23 @@
 </div>
 
 <!-- STATUS RIBBON -->
-<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:6px 20px;display:flex;align-items:center;gap:16px;font-size:.75em;color:var(--text-dim)">
+<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:2px 20px;display:flex;align-items:center;gap:16px;font-size:.75em;color:var(--text-dim)">
   <span style="color:var(--text-bright);font-weight:600;font-size:1.1em;letter-spacing:0.5px">Overview</span>
-  <span class="badge b-ok" id="ctx-ns" style="font-size:1em;padding:3px 10px;text-transform:none">All Namespaces</span>
+  <span class="badge b-ok" id="ctx-ns" style="font-size:1em;padding:2px 10px;text-transform:none">All Namespaces</span>
   <span style="color:var(--border)">|</span>
   <span id="ctx-pods" style="font-family:'JetBrains Mono',monospace;font-size:1.05em">-- pods</span>
+  
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <span class="badge b-ok ver-badge" id="sttVer" style="cursor:help;font-size:0.85em;padding:3px 10px;opacity:0.8;transition:all 0.2s">sentinel-agent v0.50</span>
+  </div>
 </div>
 
 <!-- ===== OVERVIEW ===== -->
 <div id="tab-overview" class="tab-content active">
-<div class="main">
+<div class="main" style="padding-top:10px">
 
   <!-- KPI STRIP -->
-  <div class="kpi-row">
+  <div class="kpi-row" style="margin-bottom:10px">
     <div class="kpi c-cyan kpi-clickable" id="kNodesCard">
       <div class="kpi-lbl">Total Nodes</div>
       <div class="kpi-val" id="kN">--</div>
@@ -221,7 +225,7 @@
 
       <!-- FINOPS CONTENT -->
       <div id="fino-content" style="display:flex;flex-direction:column">
-        <div class="range-bar" style="justify-content:space-between">
+        <div class="range-bar" style="justify-content:flex-start;gap:12px;align-items:center">
           <div style="display:flex;gap:4px">
             <button class="range-btn active" data-range="30m">30m</button>
             <button class="range-btn" data-range="1h">1h</button>
@@ -233,7 +237,7 @@
             <button class="range-btn" data-range="365d">1y</button>
             <button class="range-btn" data-range="custom">Custom</button>
           </div>
-          <a href="#" class="help-link" id="finopsHelp" style="margin-right:10px">ⓘ What these metrics mean</a>
+          <button class="grade-info-btn" id="finopsHelp" style="padding:3px 10px;font-size:11px;margin-top:0">ⓘ What these metrics mean</button>
           <div id="custom-range-wrap" class="custom-range-wrap" style="display:none">
             <input type="datetime-local" id="customFrom" />
             <span style="color:var(--text-dim);font-size:.75em">→</span>
@@ -286,14 +290,6 @@
   <div id="wasteList" style="display:none"></div>
 
 </div><!-- /main overview -->
-
-<footer class="dash-footer">
-  <span id="footer-ns"></span>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span id="footer-version"></span>
-    <div class="ver-badge" id="verBadge" title="Sentinel&#10;Kubernetes Observability&#10;© 2026 Sentinel Project">v--</div>
-  </div>
-</footer>
 
 </div><!-- /tab-overview -->
 
