@@ -14,7 +14,7 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 
 | Version | Supported |
 |---|---|
-| `v0.34` (current) | ✅ Yes |
+| `v0.50.x` (current) | ✅ Yes |
 | `v0.12.x` | ✅ Yes |
 | `< v0.12` | ❌ No |
 
@@ -67,7 +67,7 @@ We aim to acknowledge reports within 48 hours and release a fix within 14 days d
 
 | Variable | Default | Notes |
 |---|---|---|
-| `AUTH_ENABLED` | `false` | Enable/disable authentication |
+| `AUTH_ENABLED` | `true` | Enable/disable authentication |
 | `AUTH_TOKEN` | (none) | Required if `AUTH_ENABLED=true` |
 | `DB_SSLMODE` | `disable` | Set to `require` in production |
 | `DB_PASSWORD` | (required) | Use a strong, unique password |
