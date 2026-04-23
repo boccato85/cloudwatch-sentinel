@@ -31,18 +31,27 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    if: ${{ secrets.PROJECT_TOKEN != '' }}
     steps:
       - name: Sync Project Fields
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.PROJECT_TOKEN }}
+          # Prefer a PAT when available (needed for user-owned Projects v2).
+          # Fall back to GITHUB_TOKEN so the workflow can still run without failing;
+          # the script will no-op on Project permission errors.
+          github-token: ${{ secrets.PROJECT_TOKEN || github.token }}
           script: |
             const owner = process.env.PROJECT_OWNER;
             const projectNumber = Number(process.env.PROJECT_NUMBER);
 
             function uniq(arr) {
               return [...new Set(arr)];
+            }
+
+            function isPermissionError(err) {
+              const msg = String(err?.message || "");
+              if (msg.includes("Resource not accessible by integration")) return true;
+              const errs = err?.errors || err?.response?.errors || [];
+              return Array.isArray(errs) && errs.some(e => e?.type === "FORBIDDEN");
             }
 
             function extractClosingIssueNumbers(text) {
@@ -124,10 +133,15 @@ jobs:
                   }
                 }
               `;
-              const add = await github.graphql(m, { projectId, contentId: contentNodeId });
-              const itemId = add?.addProjectV2ItemById?.item?.id;
-              if (!itemId) throw new Error("Failed to add content to project");
-              return itemId;
+              try {
+                const add = await github.graphql(m, { projectId, contentId: contentNodeId });
+                const itemId = add?.addProjectV2ItemById?.item?.id;
+                if (!itemId) throw new Error("Failed to add content to project");
+                return itemId;
+              } catch (err) {
+                if (isPermissionError(err)) return null;
+                throw err;
+              }
             }
 
             async function setSingleSelect({ projectId, itemId, fieldId, optionId }) {
@@ -173,9 +187,23 @@ jobs:
             }
 
             async function syncIssueToProject(issue, statusNameOverride) {
-              const meta = await getProjectMeta();
+              let meta;
+              try {
+                meta = await getProjectMeta();
+              } catch (err) {
+                if (isPermissionError(err)) {
+                  core.info("Project Sync: insufficient permissions to read Project. Configure PROJECT_TOKEN to enable.");
+                  return;
+                }
+                throw err;
+              }
+
               const projectId = meta.projectId;
               const itemId = await addOrGetItemId({ projectId, contentNodeId: issue.node_id, isIssue: true });
+              if (!itemId) {
+                core.info("Project Sync: cannot add issue to Project (missing permissions). Configure PROJECT_TOKEN to enable.");
+                return;
+              }
 
               const desiredStatusName = statusNameOverride
                 ? statusNameOverride
