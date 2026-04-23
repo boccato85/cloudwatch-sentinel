@@ -104,7 +104,7 @@ As part of our commitment to transparency and battle-tested engineering, we main
 
 | Layer | Technology |
 |---|---|
-| Cluster | Minikube (KVM2) — Kubernetes v1.35.1 |
+| Cluster | Any Kubernetes cluster (v1.19+, Metrics Server required) |
 | Agent | Go 1.25 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
@@ -114,7 +114,9 @@ As part of our commitment to transparency and battle-tested engineering, we main
 
 ## Prerequisites
 
-- Minikube running with Metrics Server enabled
+- A Kubernetes cluster (v1.19+) with Metrics Server enabled
+- `kubectl` configured with access to the target cluster
+- Helm 3
 - Go 1.25+ (only for local development without Helm)
 
 > **Note:** PostgreSQL is **not a local prerequisite**. It is provisioned automatically as a pod in the `sentinel` namespace by the Helm chart.
@@ -135,25 +137,25 @@ cd Sentinel
 **Option A: deploy on Kubernetes via Helm (recommended)**
 
 ```bash
-# Build the image
-podman build -t localhost/sentinel:1.0-rc1 agent/
-podman save localhost/sentinel:1.0-rc1 | minikube image load -
+# Generate a secure auth token
+AUTH_TOKEN=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 
-# Deploy (PostgreSQL spins up automatically as a pod)
-# IMPORTANT: The deployment name MUST be 'sentinel'
-helm install sentinel helm/sentinel -n sentinel-gemini --create-namespace \
+# Deploy — pulls image from GHCR, PostgreSQL spins up automatically as a pod
+helm install sentinel helm/sentinel -n sentinel --create-namespace \
+  --set image.repository=ghcr.io/boccato85/sentinel \
   --set image.tag=1.0-rc1 \
-  --set image.pullPolicy=Never \
-  --set agent.auth.token=<your-secret-token>
+  --set agent.auth.token=$AUTH_TOKEN
 
 # Check pods
-kubectl get pods -n sentinel-gemini
+kubectl get pods -n sentinel
 
-# Access (default NodePort: 30080)
-minikube ip   # → use http://<minikube-ip>:30080
+# Get the access endpoint
+kubectl get svc -n sentinel
+# NodePort default: 30080 — access via http://<node-ip>:30080/?token=<AUTH_TOKEN>
+# For production: configure an Ingress with TLS (see SECURITY.md)
 ```
 
-**Option B: docker-compose (local development — no Minikube required)**
+**Option B: docker-compose (local development — no cluster required)**
 
 ```bash
 cp agent/.env.example agent/.env   # fill DB_PASSWORD and AUTH_TOKEN
@@ -162,7 +164,7 @@ docker compose up --build
 # Dashboard: http://localhost:8080/?token=<AUTH_TOKEN>
 ```
 
-Requires a kubeconfig at `~/.kube/config` for cluster collection. Without a cluster, the agent starts and serves the API with empty data — suitable for UI/API development.
+Requires a kubeconfig at `~/.kube/config` pointing to your cluster. Without a cluster, the agent starts and serves the API with empty data — suitable for UI/API development.
 
 **Option C: standalone binary (requires local PostgreSQL)**
 
@@ -191,17 +193,23 @@ export RETENTION_DAILY_DAYS=365     # daily aggregates
 
 ## Usage
 
-**Bootstrap:**
+**Access the dashboard:**
+```bash
+# Get the node IP and NodePort
+kubectl get svc -n sentinel
+
+# Open in browser
+# http://<node-ip>:30080/?token=<AUTH_TOKEN>
 ```
-/startup
+
+**API (authenticated):**
+```bash
+curl -H "Authorization: Bearer <AUTH_TOKEN>" http://<node-ip>:30080/api/incidents
+curl -H "Authorization: Bearer <AUTH_TOKEN>" http://<node-ip>:30080/api/summary
 ```
-Checks Minikube and starts the Go agent if needed.
 
 **Incident investigation (Intelligence Layer — v1.1):**
-```
-/incident
-```
-Opens the Intelligence window: the LLM reads `/api/incidents`, calls kubectl tools to collect evidence, synthesises root cause and proposes a remediation step. Requires `SENTINEL_LLM_API_KEY`. Falls back to deterministic summary when unavailable.
+When `SENTINEL_LLM_API_KEY` is configured, the Intelligence window activates automatically in the dashboard. The LLM reads `/api/incidents`, calls read-only kubectl tools to collect evidence, synthesises root cause and proposes remediation steps. The user confirms before any action executes. Without the key, Sentinel operates in deterministic-only mode.
 
 ---
 

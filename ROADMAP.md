@@ -1,17 +1,17 @@
-# Sentinel-Gemini Roadmap — 0.x → 1.0
+# Sentinel Roadmap — 0.x → 1.0
 
 > Last updated: 2026-04-23 | Current version: `v1.0-rc1`
 
 ## Product vision
 
-**Sentinel-Gemini is an SRE/FinOps tool for small engineering teams** — teams that need cost management and reliability without a dedicated specialist. Startups, scale-ups and platform squads that don't have the budget for Datadog/New Relic but need fast answers about cluster health and cost.
+**Sentinel is an SRE/FinOps tool for small engineering teams** — teams that need cost management and reliability without a dedicated specialist. Startups, scale-ups and platform squads that don't have the budget for Datadog/New Relic but need fast answers about cluster health and cost.
 
 > **Guiding principle:** Observability-first, intelligence-second. Didactic, lean, actionable.
 
 ## Product principles
 
 - **Standalone first** — no Prometheus, Grafana or AlertManager required
-- **Intelligence second** — if the analysis layer goes down, Sentinel-Gemini keeps working through deterministic rules
+- **Intelligence second** — if the analysis layer goes down, Sentinel keeps working through deterministic rules
 - **Collection doesn't decide** — collection, calculation and presentation are separate layers
 - **UI doesn't calculate** — business logic stays in the backend
 - **Deterministic rules before generative intelligence**

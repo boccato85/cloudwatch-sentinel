@@ -6,29 +6,27 @@ Thank you for your interest in contributing. Sentinel is a focused SRE/FinOps to
 
 ## Prerequisites
 
-- Go 1.23+
-- Minikube with Metrics Server enabled (`minikube addons enable metrics-server`)
+- Go 1.25+
 - Helm 3
-- Podman or Docker (for image builds)
+- Docker or Podman
+- A Kubernetes cluster with Metrics Server enabled (for cluster-based dev); or docker-compose for local UI/API dev without a cluster
 
 ---
 
 ## Dev setup
 
+**Local (no cluster required):**
 ```bash
 git clone https://github.com/boccato85/Sentinel
 cd Sentinel
-
-# Copy env template and fill in DB credentials
-cd agent
-make setup   # copies .env.example → .env
-
-# Build and run locally (requires local PostgreSQL)
-make start
-make logs
+cp agent/.env.example agent/.env   # fill DB_PASSWORD and AUTH_TOKEN
+docker compose up --build
+# Dashboard: http://localhost:8080/?token=<AUTH_TOKEN>
 ```
 
-For cluster-based development, see the Helm setup in [README.md](README.md#setup).
+**Cluster-based:**
+
+See the Helm setup in [README.md](README.md#setup). Ensure your kubeconfig points to the target cluster before running `helm install`.
 
 ---
 
