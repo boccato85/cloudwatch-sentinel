@@ -38,3 +38,8 @@ test_draft.py
 gemini_usage.py
 tools/check_quota.py
 docs/bugs_ajustes/
+
+# Local-only planning / tooling (keep out of version control)
+sentinel_v1_release_checklist.md
+tools/codex_quota.py
+tools/cquota
