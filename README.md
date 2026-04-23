@@ -13,7 +13,7 @@
 
 ![Status](https://img.shields.io/badge/status-v1.0--rc1-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
-![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
+![Go](https://img.shields.io/badge/Go-1.25-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
 ![Tests](https://img.shields.io/badge/tests-37%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
@@ -99,7 +99,7 @@ As part of our commitment to transparency and battle-tested engineering, we main
 | Layer | Technology |
 |---|---|
 | Cluster | Minikube (KVM2) — Kubernetes v1.35.1 |
-| Agent | Go 1.23 (client-go, net/http, slog, embed) |
+| Agent | Go 1.25 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
 | LLM Agent | Optional — any LLM agent (Claude, Gemini, Minimax…) |
@@ -109,7 +109,7 @@ As part of our commitment to transparency and battle-tested engineering, we main
 ## Prerequisites
 
 - Minikube running with Metrics Server enabled
-- Go 1.23+ (only for local development without Helm)
+- Go 1.25+ (only for local development without Helm)
 
 > **Note:** PostgreSQL is **not a local prerequisite**. It is provisioned automatically as a pod in the `sentinel` namespace by the Helm chart.
 
@@ -117,7 +117,7 @@ As part of our commitment to transparency and battle-tested engineering, we main
 
 ## Setup
 
-### 1. Clone and MCP Server
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/boccato85/Sentinel
@@ -130,13 +130,13 @@ cd Sentinel
 
 ```bash
 # Build the image
-podman build -t localhost/sentinel:0.50.6 agent/
-podman save localhost/sentinel:0.50.6 | minikube image load -
+podman build -t localhost/sentinel:1.0-rc1 agent/
+podman save localhost/sentinel:1.0-rc1 | minikube image load -
 
 # Deploy (PostgreSQL spins up automatically as a pod)
 # IMPORTANT: The deployment name MUST be 'sentinel'
 helm install sentinel helm/sentinel -n sentinel-gemini --create-namespace \
-  --set image.tag=0.50.6 \
+  --set image.tag=1.0-rc1 \
   --set image.pullPolicy=Never \
   --set agent.auth.token=<your-secret-token>
 
@@ -198,7 +198,7 @@ Consumes the Go agent API, applies LLM reasoning and generates a runbook via har
 | `GET /api/summary` | Nodes, pods, allocatable CPU/Mem |
 | `GET /api/metrics` | Per-pod metrics: usage, request, waste, memRequest |
 | `GET /api/pods` | Full pod list with phase and namespace |
-| `GET /api/history?range=X` | Cost history (30m/1h/6h/24h/7d/30d/90d/1y/custom) |
+| `GET /api/history?range=X` | Cost history (30m/1h/6h/24h/7d/30d/90d/365d/custom) |
 | `GET /api/forecast?range=X` | Linear forecast with ±1.5σ confidence band |
 | `GET /api/workloads` | Deployments and StatefulSets with replica status, image and age |
 | `GET /api/events` | Kubernetes events sorted by timestamp descending |
@@ -240,7 +240,7 @@ Waste table with two views in the drawer:
 - **By Deployment** — aggregated by `app` label: Deployment · Namespaces · Pods · CPU Saveable · Mem Not Used · Est. Saving
 
 ### Status Page (`/status`)
-Standalone page with 4 health cards: Sentinel Agent, Database, Metrics Collector, Kubernetes API. Dynamic green/orange/red banner from `/health`. Auto-refresh every 10s.
+Standalone page with 5 health cards: Sentinel Agent, Database, Metrics Collector, Kubernetes API, Metrics API. Dynamic green/orange/red banner from `/health`. Auto-refresh every 10s.
 
 ### Connected Badge
 Hover tooltip showing: Cluster, Endpoint, Version, Session uptime, Last sync, Database status.
@@ -379,9 +379,16 @@ sentinel/
 │   └── report_tool.py               # Safe write via harness
 ├── harness/
 │   ├── validador_saida.py           # Gatekeeper: blocks destructive commands
-│   └── test_validador_saida.py      # Unit tests (16 tests)
-└── docs/
-    └── screenshots/                 # Dashboard screenshots
+│   └── test_validador_saida.py      # Unit tests (23 tests)
+├── docs/
+│   ├── screenshots/                 # Dashboard screenshots (v1.0-rc1)
+│   └── reports/                     # Lab reports and chaos engineering evidence
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                   # Go tests + Helm lint on push/PR to main
+│       └── release.yml              # Build + push to GHCR on semver tags
+├── CONTRIBUTING.md                  # Dev setup, constraints, PR guidelines
+└── SECURITY.md                      # Vulnerability disclosure and secure deployment
 ```
 
 ---
@@ -404,6 +411,21 @@ Every final report passes through `harness/validador_saida.py` before being writ
 ---
 
 ## Changelog
+
+### v1.0-rc1 — M7: v1.0 preparation complete
+- **OpenAPI spec completed** — all 15 endpoints documented with full schemas, securitySchemes and reusable responses.
+- **README fully corrected** — setup instructions, env vars table (incl. LLM vars), API endpoint table, Go version, ranges.
+- **CONTRIBUTING.md** — dev setup, architecture constraints, commit conventions and PR scope boundaries.
+- **GHCR release pipeline** — `release.yml` builds and pushes `ghcr.io/boccato85/sentinel` on semver tags via `GITHUB_TOKEN`.
+- **i18n** — all incident narrative strings translated from PT-BR to English in the Go backend.
+- **CI fixed** — `go-version` bumped to `1.25` to match `go.mod` directive; `eval/gemini` added to CI triggers.
+- **Screenshots updated** — 5 new v1.0-rc1 screenshots replacing all v0.10.x references.
+- **SECURITY.md** — supported version and `AUTH_ENABLED` default corrected.
+
+### v0.50.6 — UI refinements and host security hardening
+- **Status Ribbon** — replaced context bar with persistent ribbon showing version, namespace and sync state.
+- **FinOps correlation chart** — enhanced Budget vs Actual visualization with forecast overlay.
+- **Host security** — hardened CSP headers and improved XSS mitigation across dashboard handlers.
 
 ### v0.50 — M6: Real Lab / Chaos Lab
 - **Milestone 6 (M6) officially closed** — Sentinel validated under 1000 users load using Online Boutique.
