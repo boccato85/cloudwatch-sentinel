@@ -11,7 +11,7 @@
   <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.35" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.50.6-brightgreen)
+![Status](https://img.shields.io/badge/status-v1.0--rc1-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
