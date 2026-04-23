@@ -1,6 +1,6 @@
 # Sentinel-Gemini Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-22 | Current version: `v1.0-rc1`
+> Last updated: 2026-04-23 | Current version: `v1.0-rc1`
 
 ## Product vision
 
@@ -33,6 +33,7 @@
 | M5 — Optional intelligence | ✅ Done | `v0.35` |
 | M6 — Real lab / QA / Prod-like | ✅ Done | `v0.50` |
 | M7 — v1.0 preparation | ✅ Done | `v1.0-rc1` |
+| M8 — Sentinel Intelligence (cloud LLM + agentic) | 🔵 Planned | `v1.1` |
 
 ---
 
@@ -158,13 +159,12 @@
 | **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.34`) |
 | **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.34`) |
 | Automatic runbooks based on templates + variables | ✅ Done (`v0.34`) |
-| **LLM provider interface** (`pkg/llm`): `Provider` interface + Ollama skeleton + graceful fallback | ✅ Done (`v0.35`) |
+| **LLM provider interface** (`pkg/llm`): `Provider` interface + graceful fallback | ✅ Done (`v0.35`) |
 | **Copy button XSS fix**: `data-runbook` + `addEventListener` (DOMPurify-safe) | ✅ Done (`v0.35`) |
 | **Runbook accuracy**: `ErrImagePull` / `CreateContainerConfigError` → `kubectl describe` | ✅ Done (`v0.35`) |
 | **Tests for `pkg/llm`**: 4 unit tests covering all `NewClient()` branches | ✅ Done (`v0.35`) |
-| Possible local model support (Ollama — full implementation) | Future (post-M6) |
 
-**Done criterion:** ✅ `/incident` works without external models and produces usable diagnosis with a visual-first UI that scales. LLM provider interface in place for future enrichment without blocking deterministic mode.
+**Done criterion:** ✅ `/incident` works without external models and produces usable diagnosis with a visual-first UI that scales. LLM provider interface in place for cloud enrichment in M8 without blocking deterministic mode.
 
 **Dependencies:** M4 ✅
 
@@ -217,6 +217,37 @@
 
 ---
 
+### M8 — Sentinel Intelligence 🔵 Planned (`v1.1`)
+
+**Goal:** Add a dedicated Intelligence interface to Sentinel — a separate window from the operational dashboard — that enriches incident data with cloud LLM narrative, generates runbooks and reports, and lays the foundation for agentic workflows.
+
+**Design constraints:**
+- Intelligence window is additive — operational dashboard keeps working if M8 features are disabled or the LLM is unreachable
+- All LLM output passes through `harness/output_validator.py` before being written or rendered
+- Agentic actions require explicit human confirmation and RBAC-scoped dry-run before execution
+- Cloud LLM is a paid/opt-in feature; `AUTH_ENABLED` already gates the API; no entitlement layer needed for MVP
+
+**Deliverables:**
+
+| Item | Status |
+|---|---|
+| Cloud LLM provider implementation (`pkg/llm`): Gemini and/or OpenAI concrete clients | 🔵 Planned |
+| `SENTINEL_LLM_PROVIDER`, `SENTINEL_LLM_API_KEY`, `SENTINEL_LLM_MODEL` env vars + Helm values | 🔵 Planned |
+| **Intelligence window** — new UI panel/page separate from dashboard | 🔵 Planned |
+| Incident narrative enrichment: LLM summary injected into incident drawer ("Why?" block) | 🔵 Planned |
+| On-demand report generation (Markdown, downloadable) via Intelligence window | 🔵 Planned |
+| On-demand runbook generation with template variables + LLM refinement | 🔵 Planned |
+| Agentic scaffolding: tool definitions (kubectl read-only), dry-run guard, human-in-the-loop confirmation | 🔵 Planned |
+| Agentic action execution (scoped: describe, top, logs — no destructive ops in MVP) | 🔵 Planned |
+| Harness integration: all LLM-generated content validated before render/write | 🔵 Planned |
+| Graceful degradation: Intelligence window shows deterministic fallback if LLM unavailable | 🔵 Planned |
+
+**Done criterion:** A user can open the Intelligence window, trigger LLM-enriched incident analysis, generate a runbook, and initiate a scoped agentic investigation — all without breaking the core operational dashboard.
+
+**Dependencies:** M7 ✅
+
+---
+
 ## Version → milestone mapping
 
 | Version | Milestone(s) | Main focus |
@@ -236,22 +267,23 @@
 | `v0.37` | M6 partial | ✅ Online Boutique lab injection; load generation testing; UI validation |
 | `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
 | `v1.0-rc1` | M7 | ✅ Docs, stable contracts, CONTRIBUTING, GHCR pipeline, CI fix |
+| `v1.1` | M8 | Intelligence window: cloud LLM enrichment, report/runbook generation, agentic scaffolding |
 
 ---
 
 ## Backlog by priority
 
 ### High priority (post-1.0)
+- **M8 — Sentinel Intelligence** (cloud LLM + agentic window) — see M8 deliverables
 - Integration tests for API contracts (deferred from M7)
 - Public image on GHCR via first `v1.0-rc1` tag push
 
 ### Medium priority (post-1.0)
-- CrashLoop pod + CPU correlation (refinamento)
-- M7: API stability & full OpenAPI coverage (after M6 reveals gaps)
+- CrashLoop pod + CPU correlation (refinement)
+- Multi-cluster support
 
 ### Low priority / future
-- Multi-cluster (post-1.0)
-- Local model / Ollama (post-1.0)
+- Additional agentic tools (write-path, scale recommendations with confirmation)
 
 ---
 
