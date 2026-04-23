@@ -107,10 +107,24 @@ chore: bump agentVersion to 0.51.0
 ## What we won't accept
 
 - Multi-cluster support (post-1.0 scope)
-- Local Ollama full implementation (post-1.0 scope)
+- Local LLM / Ollama (GPU dependency not viable for target environments — cloud LLM is M8 scope)
 - Prometheus or Grafana integration (violates standalone-first principle)
 - Breaking changes to existing API response schemas
 - Features that require the LLM layer to be useful
+
+---
+
+## Release tagging
+
+Tags trigger the GHCR image pipeline (`release.yml`). Always use three-part semver:
+
+```
+v1.0.0        # stable release
+v1.1.0-rc1    # release candidate
+v1.2.0-beta1  # beta
+```
+
+Two-part tags like `v1.0` cause the semver patterns in `metadata-action` to fail — the `type=ref,event=tag` fallback will still publish the image, but `{{version}}` and `{{major}}.{{minor}}` tags won't be generated.
 
 ---
 
