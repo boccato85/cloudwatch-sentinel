@@ -924,7 +924,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		st, hasStats := statsMap[p.Namespace+"/"+p.Name]
 		var cpuPct, memPct float64
 		var cpuLimPct, memLimPct float64
-		var cpuNodePct float64 // % do allocatable do nó — usado como fallback quando CPURequest == 0
+		var cpuNodePct float64 // % of node allocatable — fallback when CPURequest == 0
 		if hasStats {
 			if st.CPURequest > 0 {
 				cpuPct = float64(st.CPUUsage) / float64(st.CPURequest) * 100
@@ -949,7 +949,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				Type:      "Pending",
 				Severity:  "WARNING",
 				Message:   fmt.Sprintf("Pod stuck in Pending for %s", ageStr),
-				Narrative: "Pod aguardando agendamento. Causas comuns: falta de recursos nos nós, seletores de nós (labels) incompatíveis ou falha na montagem de volumes (PVC).",
+				Narrative: "Pod waiting for scheduling. Common causes: insufficient node resources, mismatched node selectors/labels, or PVC mount failure.",
 				Runbook:   fmt.Sprintf("kubectl describe pod %s -n %s", p.Name, p.Namespace),
 				Age:       ageStr,
 			})
@@ -964,9 +964,9 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 			if cs.State.Waiting != nil {
 				reason := cs.State.Waiting.Reason
 				if reason == "CrashLoopBackOff" || reason == "CreateContainerConfigError" || reason == "ErrImagePull" {
-					narrative := "Falha ao iniciar o container. Verifique os logs para erros fatais ou configurações ausentes."
+					narrative := "Container failed to start. Check logs for fatal errors or missing configuration."
 					if reason == "ErrImagePull" {
-						narrative = "O Kubernetes não conseguiu baixar a imagem. Verifique se o nome da imagem está correto e se o cluster tem permissão de acesso ao registro."
+						narrative = "Kubernetes could not pull the image. Verify the image name is correct and the cluster has access to the registry."
 					}
 
 					if reason == "CrashLoopBackOff" {
@@ -1006,7 +1006,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "OOMKilled",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("Container %s OOMKilled", cs.Name),
-					Narrative: "O container foi terminado por exceder o limite de memória. Se recorrente, aumente o resources.limits.memory.",
+					Narrative: "Container was terminated for exceeding its memory limit. If recurring, increase resources.limits.memory.",
 					Runbook:   fmt.Sprintf("kubectl describe pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
@@ -1015,7 +1015,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 
 		// Correlation: CrashLoop + CPU
 		if crashLoopFound {
-			narrative := "O container está falhando consecutivamente. Verifique os logs para erros fatais da aplicação ou configurações ausentes (env vars, secrets)."
+			narrative := "Container is failing repeatedly. Check logs for fatal application errors or missing configuration (env vars, secrets)."
 			runbook := fmt.Sprintf("kubectl logs pod/%s -n %s --previous", p.Name, p.Namespace)
 			if cpuPct >= a.Thresholds.CPU.Warning {
 				incs = append(incs, Incident{
@@ -1024,7 +1024,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "CrashLoopCpuThrottling",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("%s correlated with High CPU (%.1f%%)", crashLoopMsg, cpuPct),
-					Narrative: "O container está em CrashLoop e consumindo CPU excessiva durante o boot. Isso pode indicar um loop infinito no código de inicialização.",
+					Narrative: "Container is in CrashLoop and consuming excessive CPU during boot. This may indicate an infinite loop in initialization code.",
 					Runbook:   runbook,
 					Age:       ageStr,
 				})
@@ -1063,7 +1063,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "HighCPU",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("CPU usage at %.1f%% of LIMIT (danger of throttling)", cpuLimPct),
-					Narrative: "Uso de CPU atingiu o limite configurado. Isso causa throttling severo e degradação de performance. Aumente o limite de CPU.",
+					Narrative: "CPU usage has reached the configured limit. This causes severe throttling and performance degradation. Increase the CPU limit.",
 					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
@@ -1071,11 +1071,11 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				// Above request is always a warning, but only critical if it hits limit or is extremely high
 				sev := "WARNING"
 				msg := fmt.Sprintf("CPU usage at %.1f%% of request", cpuPct)
-				narrative := "O uso de CPU está acima da reserva solicitada. Isso pode causar latência se outros pods no mesmo nó também demandarem recursos."
+				narrative := "CPU usage is above the requested reservation. This may cause latency if other pods on the same node also contend for resources."
 				if cpuPct > 200 {
 					sev = "CRITICAL" // Extreme case, probably misconfigured
 					msg = fmt.Sprintf("CPU usage at %.1f%% of request (Extreme over-usage)", cpuPct)
-					narrative = "O uso de CPU está drasticamente acima da reserva. Risco alto de instabilidade. Revise o dimensionamento do pod."
+					narrative = "CPU usage is drastically above the reservation. High risk of instability. Review pod sizing."
 				}
 				incs = append(incs, Incident{
 					PodName:   p.Name,
@@ -1092,11 +1092,11 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				// Fallback para pods sem resources.requests.cpu — alerta baseado no allocatable do nó
 				sev := "WARNING"
 				msg := fmt.Sprintf("CPU usage at %.1f%% of node allocatable (no request defined)", cpuNodePct)
-				narrative := "Pod sem resources.requests.cpu consome CPU significativa do nó. Sem request, o Kubernetes não pode garantir recursos nem detectar starvation. Defina resources.requests.cpu."
+				narrative := "Pod has no resources.requests.cpu and is consuming significant node CPU. Without a request, Kubernetes cannot guarantee resources or detect starvation. Set resources.requests.cpu."
 				if cpuNodePct >= a.Thresholds.CPU.NodeAllocatableCriticalPct {
 					sev = "CRITICAL"
 					msg = fmt.Sprintf("CPU usage at %.1f%% of node allocatable (no request defined)", cpuNodePct)
-					narrative = "Pod sem resources.requests.cpu está consumindo fração crítica do nó. Isso priva outros pods de recursos e pode causar instabilidade. Defina resources.requests.cpu imediatamente."
+					narrative = "Pod has no resources.requests.cpu and is consuming a critical fraction of the node. This starves other pods and may cause instability. Set resources.requests.cpu immediately."
 				}
 				incs = append(incs, Incident{
 					PodName:   p.Name,
@@ -1118,18 +1118,18 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 					Type:      "HighMemory",
 					Severity:  "CRITICAL",
 					Message:   fmt.Sprintf("Memory usage at %.1f%% of LIMIT (danger of OOMKill)", memLimPct),
-					Narrative: "Uso de memória próximo ao limite fatal. O container corre risco iminente de OOMKill. Aumente o limite de memória imediatamente.",
+					Narrative: "Memory usage is near the fatal limit. The container faces imminent OOMKill risk. Increase the memory limit immediately.",
 					Runbook:   fmt.Sprintf("kubectl top pod %s -n %s", p.Name, p.Namespace),
 					Age:       ageStr,
 				})
 			} else if memPct >= a.Thresholds.Memory.Warning {
 				sev := "WARNING"
 				msg := fmt.Sprintf("Memory usage at %.1f%% of request", memPct)
-				narrative := "Uso de memória acima da reserva solicitada. Risco de expulsão (eviction) pelo Kubelet se o nó ficar sem memória livre."
+				narrative := "Memory usage is above the requested reservation. Risk of pod eviction by the Kubelet if the node runs out of free memory."
 				if st.MemLimit == 0 && memPct > 250 {
 					sev = "CRITICAL"
 					msg = fmt.Sprintf("Memory usage at %.1f%% of request (No limit set, risk of eviction)", memPct)
-					narrative = "O pod não possui limite de memória e está consumindo muito além da reserva. Isso ameaça a estabilidade de outros pods no nó."
+					narrative = "Pod has no memory limit and is consuming far beyond its reservation. This threatens the stability of other pods on the node."
 				}
 
 				incs = append(incs, Incident{
@@ -1167,7 +1167,7 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 				Type:      "ResourceWaste",
 				Severity:  sev,
 				Message:   wasteMsg,
-				Narrative: "Esta carga está superprovisionada. Reduzir as reservas de recursos para patamares mais próximos do uso real pode gerar economia significativa.",
+				Narrative: "This workload is overprovisioned. Reducing resource reservations closer to actual usage can generate significant cost savings.",
 				Runbook:   fmt.Sprintf("kubectl get pod %s -n %s -o yaml", s.Name, s.Namespace),
 				Age:       ageStr,
 				IsWaste:   true,
