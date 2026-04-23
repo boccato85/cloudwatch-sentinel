@@ -293,7 +293,7 @@
 |---|---|
 | **Core** | Kubernetes collection, waste calculation, pod/namespace analysis, history, dashboard, stable API, `/health`, behavior without LLM |
 | **Support** | Structured logs, health checks, retries, schema validation, internal metrics, degraded mode, Markdown/JSON export |
-| **Luxury** | LLM for narrative analysis, automatic runbooks, intelligent executive summary, local model, AI-driven trends, multi-cluster |
+| **Luxury** | Cloud LLM narrative analysis, automatic runbooks, intelligent executive summary, agentic workflows, AI-driven trends, multi-cluster |
 
 ---
 
