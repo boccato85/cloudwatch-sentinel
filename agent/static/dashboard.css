@@ -132,7 +132,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .util-pct{font-size:.74em;color:var(--text-dim);width:34px;text-align:right}
 .mono{font-family:'JetBrains Mono',monospace}
 /* LINE CHART */
-.line-area{height:150px;width:100%}
+.line-area{height:180px;width:100%}
 .workloads-scroll-pb{max-height:300px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .workloads-scroll-pb::-webkit-scrollbar{width:5px}
 .workloads-scroll-pb::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -211,7 +211,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar{width:5px}
 .events-panel .pb.workloads-scroll-pb::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .eff-panel{border-top:2px solid var(--cyan)!important}
-.ver-badge:hover{opacity:1!important;color:var(--cyan)!important;border-color:var(--cyan)!important}
+.ver-badge:hover{opacity:1!important;color:var(--cyan)!important;border-color:var(--cyan)!important;background:var(--surface2)!important}
 #eff-donut-legend .edl{display:flex;align-items:center;gap:5px;margin-bottom:3px}
 #eff-donut-legend .edl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 #eff-donut-legend .edl-name{color:var(--text-dim);flex:1}
