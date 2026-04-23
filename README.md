@@ -11,7 +11,7 @@
   <img src="docs/screenshots/sentinel_ss_0.10.33.png" alt="Sentinel Dashboard v0.35" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v0.50-brightgreen)
+![Status](https://img.shields.io/badge/status-v0.50.6-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
@@ -118,7 +118,6 @@ As part of our commitment to transparency and battle-tested engineering, we main
 ```bash
 git clone https://github.com/boccato85/Sentinel
 cd Sentinel
-cd Sentinel
 ```
 
 ### 2. Go Agent
@@ -127,13 +126,13 @@ cd Sentinel
 
 ```bash
 # Build the image
-podman build -t localhost/sentinel:0.12 agent/
-podman save localhost/sentinel:0.12 | minikube image load -
+podman build -t localhost/sentinel:0.50.6 agent/
+podman save localhost/sentinel:0.50.6 | minikube image load -
 
 # Deploy (PostgreSQL spins up automatically as a pod)
 # IMPORTANT: The deployment name MUST be 'sentinel'
 helm install sentinel helm/sentinel -n sentinel-gemini --create-namespace \
-  --set image.tag=0.12 \
+  --set image.tag=0.50.6 \
   --set image.pullPolicy=Never \
   --set agent.auth.token=<your-secret-token>
 
@@ -197,13 +196,16 @@ Consumes the Go agent API, applies LLM reasoning and generates a runbook via har
 | `GET /api/pods` | Full pod list with phase and namespace |
 | `GET /api/history?range=X` | Cost history (30m/1h/6h/24h/7d/30d/90d/1y/custom) |
 | `GET /api/forecast?range=X` | Linear forecast with ±1.5σ confidence band |
+| `GET /api/workloads` | Deployments and StatefulSets with replica status, image and age |
+| `GET /api/events` | Kubernetes events sorted by timestamp descending |
 | `GET /api/waste` | Per-pod waste: cpuUsage, cpuRequest, potentialSavingMCpu, appLabel, isSystem |
 | `GET /api/efficiency` | Namespace efficiency score (grade A→F + UNMANAGED) |
 | `GET /api/incidents` | Deterministic incidents: Pending, CrashLoop, OOMKilled, HighCPU, HighMemory, ResourceWaste |
+| `GET /api/pods/{ns}/{pod}/logs` | Last 100 log lines from a pod container (plain text) |
 | `GET /docs` | Swagger UI (CDN unpkg.com — no external build dependency) |
 | `GET /openapi.yaml` | OpenAPI spec embedded in binary, covers all endpoints |
 
-**Supported ranges:** `30m` `1h` `6h` `24h` `7d` `30d` `90d` `1y` `custom`
+**Supported ranges:** `30m` `1h` `6h` `24h` `7d` `30d` `90d` `365d` `custom`
 
 For custom range: `?range=custom&from=<ISO>&to=<ISO>`
 
@@ -309,6 +311,10 @@ The Sentinel Go Agent can be configured via environment variables. If using Helm
 | `RETENTION_RAW_HOURS`| `24` | Hours to keep minute-level raw data. |
 | `RETENTION_HOURLY_DAYS`| `30` | Days to keep hourly aggregated data. |
 | `RETENTION_DAILY_DAYS`| `365` | Days to keep daily aggregated data. |
+| **Intelligence (Optional LLM)** | | |
+| `LLM_PROVIDER` | *(unset — deterministic mode)* | LLM provider to use for incident narrative enrichment. Supported value: `ollama`. If unset or unsupported, Sentinel operates in deterministic-only mode. |
+| `OLLAMA_ENDPOINT` | `http://ollama.default.svc.cluster.local:11434` | Ollama API base URL. Only used when `LLM_PROVIDER=ollama`. |
+| `OLLAMA_MODEL` | `llama3` | Model name to request from Ollama. Only used when `LLM_PROVIDER=ollama`. |
 
 ---
 

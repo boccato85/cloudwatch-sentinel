@@ -2,15 +2,59 @@ openapi: 3.0.3
 info:
   title: Sentinel Agent API
   description: Sentinel is an SRE/FinOps intelligence agent for small teams running Kubernetes.
-  version: 0.10.17
+  version: 0.50.6
 servers:
   - url: http://localhost:30080
     description: Minikube Local Development
 paths:
+  /:
+    get:
+      summary: Interactive Dashboard
+      description: Returns the main HTML dashboard (embedded in binary). Public — no auth required.
+      responses:
+        '200':
+          description: HTML dashboard page
+          content:
+            text/html:
+              schema:
+                type: string
+  /status:
+    get:
+      summary: Status Page
+      description: Standalone status page with 4 component health cards (Sentinel Agent, Database, Metrics Collector, Kubernetes API). Auto-refreshes every 10s. Public — no auth required.
+      responses:
+        '200':
+          description: HTML status page
+          content:
+            text/html:
+              schema:
+                type: string
+  /docs:
+    get:
+      summary: Swagger UI
+      description: Interactive API documentation via Swagger UI (CDN). Public — no auth required.
+      responses:
+        '200':
+          description: Swagger UI HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+  /openapi.yaml:
+    get:
+      summary: OpenAPI Spec
+      description: Returns this OpenAPI specification embedded in the binary. Public — no auth required.
+      responses:
+        '200':
+          description: OpenAPI YAML spec
+          content:
+            application/yaml:
+              schema:
+                type: string
   /health:
     get:
       summary: Health check endpoint
-      description: Returns the health status of the agent, including database and collector states.
+      description: Returns the health status of the agent, including database and collector states. Public — no auth required.
       responses:
         '200':
           description: Agent is healthy
@@ -28,6 +72,8 @@ paths:
     get:
       summary: Cluster Summary
       description: Returns aggregated metrics and stats about the Kubernetes cluster.
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Successful response
@@ -35,10 +81,124 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClusterSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/metrics:
+    get:
+      summary: Per-Pod Metrics
+      description: Returns live per-pod metrics including CPU/memory usage, requests, waste analysis and severity.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PodStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/history:
+    get:
+      summary: Cost History
+      description: Returns historical cost data (CPU request vs actual usage) bucketed by time range.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: range
+          schema:
+            type: string
+            enum: [30m, 1h, 6h, 24h, 7d, 30d, 90d, 365d, custom]
+            default: 30m
+          description: Time range for history. Use `custom` with `from` and `to` for arbitrary ranges.
+        - in: query
+          name: namespace
+          schema:
+            type: string
+          description: Filter by namespace
+        - in: query
+          name: system
+          schema:
+            type: boolean
+            default: false
+          description: Include system namespaces (kube-system, etc.)
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+          description: Start of custom range (RFC3339 or YYYY-MM-DD). Required when range=custom.
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+          description: End of custom range (RFC3339 or YYYY-MM-DD). Required when range=custom.
+      responses:
+        '200':
+          description: Successful response
+          headers:
+            X-Sentinel-Data-Note:
+              schema:
+                type: string
+              description: Present when daily data is insufficient and hourly fallback was used.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryPoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/forecast:
+    get:
+      summary: Cost Forecast
+      description: Returns a linear cost forecast with ±1.5σ confidence bands, projected forward for the same duration as the selected history range.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: range
+          schema:
+            type: string
+            enum: [30m, 1h, 6h, 24h, 7d, 30d, 90d, 365d]
+            default: 30m
+          description: History range used as the basis for the forecast projection.
+        - in: query
+          name: namespace
+          schema:
+            type: string
+          description: Filter by namespace
+        - in: query
+          name: system
+          schema:
+            type: boolean
+            default: false
+          description: Include system namespaces
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ForecastPoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/incidents:
     get:
       summary: Active Incidents
-      description: Returns a list of active incidents based on pod states, correlated metrics (like CrashLoop + High CPU), and resource waste.
+      description: Returns a list of deterministic incidents based on pod states and resource thresholds. Incident types include Pending, CrashLoopBackOff, CrashLoopCpuThrottling, OOMKilled, ErrImagePull, CreateContainerConfigError, HighCPU, HighMemory, ResourceWaste.
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Successful response
@@ -48,10 +208,14 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Incident'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/pods:
     get:
       summary: List Pods
-      description: Returns a list of pods, optionally filtered by namespace.
+      description: Returns a list of pods with phase, readiness, restart count and age. Optionally filtered by namespace.
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: namespace
@@ -67,10 +231,44 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PodInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/pods/{namespace}/{pod}/logs:
+    get:
+      summary: Pod Logs
+      description: Streams the last 100 log lines from a pod container as plain text.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: namespace
+          required: true
+          schema:
+            type: string
+          description: Namespace of the pod
+        - in: path
+          name: pod
+          required: true
+          schema:
+            type: string
+          description: Name of the pod
+      responses:
+        '200':
+          description: Log stream (last 100 lines)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/namespaces:
     get:
       summary: List Namespaces
-      description: Returns a list of all namespaces in the cluster.
+      description: Returns a sorted list of all namespaces in the cluster.
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Successful response
@@ -80,10 +278,60 @@ paths:
                 type: array
                 items:
                   type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/workloads:
+    get:
+      summary: List Workloads
+      description: Returns Deployments and StatefulSets with replica status, image and age. Optionally filtered by namespace.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: namespace
+          schema:
+            type: string
+          description: Optional namespace filter
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkloadInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/events:
+    get:
+      summary: Cluster Events
+      description: Returns Kubernetes events sorted by timestamp descending. Optionally filtered by namespace.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: namespace
+          schema:
+            type: string
+          description: Optional namespace filter
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/waste:
     get:
       summary: Resource Waste Analysis
-      description: Returns a detailed analysis of resource waste and potential FinOps savings.
+      description: Returns a detailed analysis of resource waste and potential FinOps savings, sorted by largest saving first.
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Successful response
@@ -91,15 +339,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WasteResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/efficiency:
     get:
       summary: Namespace Efficiency
-      description: Returns efficiency scores and grades for namespaces based on resource utilization.
+      description: Returns efficiency scores and grades (A→F + UNMANAGED) for namespaces based on CPU and memory utilization ratios. Sorted worst-first.
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: system
           schema:
             type: boolean
+            default: false
           description: Include system namespaces (kube-system, etc.) in the results
       responses:
         '200':
@@ -110,8 +363,34 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/NamespaceEfficiency'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer token set via AUTH_TOKEN env var. Auth can be disabled with AUTH_ENABLED=false. The /health, /, /status, /docs, /openapi.yaml endpoints are always public.
+  responses:
+    Unauthorized:
+      description: Missing or invalid Bearer token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "invalid range; valid values: 30m, 1h, 6h, 24h, 7d, 30d, 90d, 365d, custom"
     HealthResponse:
       type: object
       properties:
@@ -120,7 +399,10 @@ components:
           example: "ok"
         version:
           type: string
-          example: "0.10.17"
+          example: "0.50.6"
+        dbBreakerState:
+          type: string
+          example: "CLOSED"
         checks:
           type: object
           additionalProperties:
@@ -180,6 +462,92 @@ components:
           type: string
         namespace:
           type: string
+    PodStats:
+      type: object
+      description: Live per-pod metric snapshot from the most recent collector cycle.
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        appLabel:
+          type: string
+          description: Value of the pod's `app` label, used for deployment grouping.
+        cpuUsage:
+          type: integer
+          description: Current CPU usage in mCPU.
+        cpuRequest:
+          type: integer
+          description: Configured CPU request in mCPU. 0 if unset (UNMANAGED).
+        memUsage:
+          type: integer
+          description: Current memory usage in MiB.
+        memRequest:
+          type: integer
+          description: Configured memory request in MiB. 0 if unset.
+        cpuLimit:
+          type: integer
+          description: Configured CPU limit in mCPU. 0 if unset.
+        memLimit:
+          type: integer
+          description: Configured memory limit in MiB. 0 if unset.
+        potentialSavingMCpu:
+          type: integer
+          description: Estimated CPU that could be freed (mCPU). Present only for overprovisioned pods.
+        wastePct:
+          type: number
+          format: float
+          description: Waste as a percentage of the CPU request.
+        severity:
+          type: string
+          example: "warning"
+        opportunity:
+          type: string
+          description: Human-readable rightsizing recommendation.
+    HistoryPoint:
+      type: object
+      description: Single bucket of cost history data.
+      properties:
+        time:
+          type: string
+          description: Formatted timestamp (format depends on range — HH:MM for short ranges, MM/DD for daily, YYYY-MM-DD for weekly).
+        reqCost:
+          type: number
+          format: float
+          description: Cost of CPU requests in USD for this bucket.
+        useCost:
+          type: number
+          format: float
+          description: Cost of actual CPU usage in USD for this bucket.
+    ForecastPoint:
+      type: object
+      description: Single projected future data point with confidence bands.
+      properties:
+        time:
+          type: string
+          description: Formatted future timestamp.
+        reqCost:
+          type: number
+          format: float
+        useCost:
+          type: number
+          format: float
+        reqLow:
+          type: number
+          format: float
+          description: Lower bound of the request cost confidence band (±1.5σ).
+        reqHigh:
+          type: number
+          format: float
+          description: Upper bound of the request cost confidence band.
+        useLow:
+          type: number
+          format: float
+          description: Lower bound of the usage cost confidence band.
+        useHigh:
+          type: number
+          format: float
+          description: Upper bound of the usage cost confidence band.
     Incident:
       type: object
       properties:
@@ -189,14 +557,24 @@ components:
           type: string
         type:
           type: string
-          example: "CrashLoopCpuThrottling"
+          enum: [Pending, CrashLoopBackOff, CrashLoopCpuThrottling, OOMKilled, ErrImagePull, CreateContainerConfigError, HighCPU, HighMemory, ResourceWaste]
         severity:
           type: string
-          example: "CRITICAL"
+          enum: [WARNING, CRITICAL]
         message:
           type: string
+        narrative:
+          type: string
+          description: Plain-language explanation of the incident cause. May be absent on older data.
+        runbook:
+          type: string
+          description: Suggested kubectl command to investigate.
         age:
           type: string
+          description: Human-readable pod age (e.g. "2h", "3d").
+        isWaste:
+          type: boolean
+          description: True for ResourceWaste incidents (used by UI to separate FinOps from operational alerts).
     PodInfo:
       type: object
       properties:
@@ -208,12 +586,57 @@ components:
           type: string
         ready:
           type: string
+          example: "2/2"
         restarts:
           type: integer
         node:
           type: string
         age:
           type: string
+    WorkloadInfo:
+      type: object
+      description: Deployment or StatefulSet with replica status.
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        kind:
+          type: string
+          enum: [Deployment, StatefulSet]
+        desired:
+          type: integer
+        ready:
+          type: integer
+        available:
+          type: integer
+        image:
+          type: string
+          description: Image of the first container.
+        age:
+          type: string
+    EventInfo:
+      type: object
+      description: Kubernetes event from the cluster event stream.
+      properties:
+        type:
+          type: string
+          example: "Warning"
+        reason:
+          type: string
+          example: "OOMKilling"
+        name:
+          type: string
+          description: Name of the involved object.
+        namespace:
+          type: string
+        message:
+          type: string
+        age:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
     WasteResponse:
       type: object
       properties:
@@ -294,7 +717,9 @@ components:
         grade:
           type: string
           example: "A"
+          description: "A (>=75%) → B (>=50%) → C (>=30%) → D (>=15%) → F (<15%). Empty string when unmanaged=true."
         unmanaged:
           type: boolean
+          description: True when the namespace has no pods with resources.requests set. Treated as worse than grade F.
         isSystem:
           type: boolean
