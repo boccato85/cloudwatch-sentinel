@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, eval/gemini ]
   pull_request:
     branches: [ main ]
 
