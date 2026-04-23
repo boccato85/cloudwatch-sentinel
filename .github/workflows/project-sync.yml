@@ -1,0 +1,234 @@
+name: Project Sync
+
+on:
+  issues:
+    types: [opened, reopened, labeled, unlabeled, assigned, unassigned, closed]
+  pull_request:
+    types: [opened, reopened, ready_for_review, converted_to_draft, closed]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  repository-projects: write
+
+concurrency:
+  group: project-sync-${{ github.event_name }}-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  PROJECT_OWNER: ${{ github.repository_owner }}
+  PROJECT_NUMBER: "1"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync Project Fields
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = process.env.PROJECT_OWNER;
+            const projectNumber = Number(process.env.PROJECT_NUMBER);
+
+            function uniq(arr) {
+              return [...new Set(arr)];
+            }
+
+            function extractClosingIssueNumbers(text) {
+              if (!text) return [];
+              const re = /\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)\b/ig;
+              const out = [];
+              let m;
+              while ((m = re.exec(text)) !== null) out.push(Number(m[1]));
+              return uniq(out).filter((n) => Number.isFinite(n) && n > 0);
+            }
+
+            async function getProjectMeta() {
+              const q = `
+                query($login: String!, $number: Int!) {
+                  user(login: $login) {
+                    projectV2(number: $number) {
+                      id
+                      fields(first: 50) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options { id name }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              const r = await github.graphql(q, { login: owner, number: projectNumber });
+              const project = r?.user?.projectV2;
+              if (!project?.id) throw new Error(`Project ${owner}#${projectNumber} not found or not accessible`);
+
+              const singleSelectFields = (project.fields.nodes || []).filter(Boolean);
+              const byName = Object.fromEntries(singleSelectFields.map(f => [f.name, f]));
+
+              const statusField = byName["Status"];
+              const phaseField = byName["Phase"];
+              if (!statusField?.id) throw new Error("Project field 'Status' not found");
+
+              const statusOptions = Object.fromEntries((statusField.options || []).map(o => [o.name, o.id]));
+              const phaseOptions = phaseField?.options ? Object.fromEntries(phaseField.options.map(o => [o.name, o.id])) : {};
+
+              return {
+                projectId: project.id,
+                statusFieldId: statusField.id,
+                phaseFieldId: phaseField?.id || null,
+                statusOptions,
+                phaseOptions,
+              };
+            }
+
+            async function addOrGetItemId({ projectId, contentNodeId, isIssue }) {
+              // First try to find an existing project item for this content.
+              const q = `
+                query($id: ID!) {
+                  node(id: $id) {
+                    ... on Issue {
+                      projectItems(first: 50) { nodes { id project { id } } }
+                    }
+                    ... on PullRequest {
+                      projectItems(first: 50) { nodes { id project { id } } }
+                    }
+                  }
+                }
+              `;
+              const r = await github.graphql(q, { id: contentNodeId });
+              const node = r?.node;
+              const nodes = node?.projectItems?.nodes || [];
+              const existing = nodes.find(n => n?.project?.id === projectId);
+              if (existing?.id) return existing.id;
+
+              // Not present: add.
+              const m = `
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                    item { id }
+                  }
+                }
+              `;
+              const add = await github.graphql(m, { projectId, contentId: contentNodeId });
+              const itemId = add?.addProjectV2ItemById?.item?.id;
+              if (!itemId) throw new Error("Failed to add content to project");
+              return itemId;
+            }
+
+            async function setSingleSelect({ projectId, itemId, fieldId, optionId }) {
+              if (!fieldId || !optionId) return;
+              const m = `
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { singleSelectOptionId: $optionId }
+                  }) {
+                    projectV2Item { id }
+                  }
+                }
+              `;
+              await github.graphql(m, { projectId, itemId, fieldId, optionId });
+            }
+
+            function desiredPhaseFromLabels(labels) {
+              const names = (labels || []).map(l => (typeof l === "string" ? l : l?.name)).filter(Boolean);
+              if (names.includes("phase:now")) return "Now";
+              if (names.includes("phase:next")) return "Next";
+              if (names.includes("phase:later")) return "Later";
+              return null;
+            }
+
+            async function ensureDefaultAssignee(issue) {
+              if (!issue) return;
+              const assignees = issue.assignees || [];
+              if (assignees.length > 0) return;
+
+              // Only auto-assign for active work items (phase:now), so we don't spam owner on backlog.
+              const phase = desiredPhaseFromLabels(issue.labels);
+              if (phase !== "Now") return;
+
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                assignees: [context.repo.owner],
+              });
+            }
+
+            async function syncIssueToProject(issue, statusNameOverride) {
+              const meta = await getProjectMeta();
+              const projectId = meta.projectId;
+              const itemId = await addOrGetItemId({ projectId, contentNodeId: issue.node_id, isIssue: true });
+
+              const desiredStatusName = statusNameOverride
+                ? statusNameOverride
+                : (issue.state === "closed" ? "Done" : "Todo");
+
+              const phaseName = desiredPhaseFromLabels(issue.labels);
+
+              await setSingleSelect({
+                projectId,
+                itemId,
+                fieldId: meta.statusFieldId,
+                optionId: meta.statusOptions[desiredStatusName],
+              });
+
+              if (phaseName && meta.phaseFieldId) {
+                await setSingleSelect({
+                  projectId,
+                  itemId,
+                  fieldId: meta.phaseFieldId,
+                  optionId: meta.phaseOptions[phaseName],
+                });
+              }
+            }
+
+            if (context.eventName === "issues") {
+              const issue = context.payload.issue;
+              await ensureDefaultAssignee(issue);
+              await syncIssueToProject(issue);
+              return;
+            }
+
+            if (context.eventName === "pull_request") {
+              const pr = context.payload.pull_request;
+
+              // Add the PR itself to the project (optional visibility), but the key is to move linked issues.
+              try {
+                const meta = await getProjectMeta();
+                await addOrGetItemId({ projectId: meta.projectId, contentNodeId: pr.node_id, isIssue: false });
+              } catch (e) {
+                // Ignore if PR cannot be added (permissions or settings); issues sync still works.
+              }
+
+              const text = `${pr.title}\n${pr.body || ""}`;
+              const linked = extractClosingIssueNumbers(text);
+              if (linked.length === 0) return;
+
+              const isMerged = Boolean(pr.merged_at);
+              const isDraft = Boolean(pr.draft);
+
+              // When PR is open and ready, mark issues In Progress.
+              // When merged/closed, issues will usually be closed via GitHub keywords; still set Done defensively.
+              const desiredStatus = isMerged ? "Done" : (isDraft ? "Todo" : "In Progress");
+
+              for (const n of linked) {
+                const issue = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: n,
+                });
+                await ensureDefaultAssignee(issue.data);
+                await syncIssueToProject(issue.data, desiredStatus);
+              }
+              return;
+            }
+
