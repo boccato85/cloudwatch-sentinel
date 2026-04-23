@@ -176,16 +176,14 @@ AUTH_TOKEN=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 DB_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
 
 # Deploy - pulls image from GHCR, PostgreSQL spins up automatically as a pod.
-# Assumes the TLS secret already exists and your ingress controller is installed.
-helm install sentinel helm/sentinel -n sentinel --create-namespace \
+# Assumes your ingress controller is installed and the TLS secret already exists.
+# Production example values: helm/sentinel/values.production.yaml
+helm install sentinel helm/sentinel -n sentinel --create-namespace -f helm/sentinel/values.production.yaml \
   --set image.repository=ghcr.io/boccato85/sentinel \
   --set image.tag=1.0.0-rc.2 \
   --set agent.auth.token=$AUTH_TOKEN \
   --set database.password=$DB_PASSWORD \
-  --set ingress.enabled=true \
-  --set ingress.className=nginx \
   --set ingress.hosts[0].host=sentinel.example.com \
-  --set ingress.tls[0].secretName=sentinel-tls \
   --set ingress.tls[0].hosts[0]=sentinel.example.com
 
 # Check pods

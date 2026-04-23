@@ -42,6 +42,8 @@ postgresql:
 database:
   name: sentinel_db
   user: sentinel
+  # If empty, Helm will generate a strong password and persist it in the Secret.
+  # For production, you should set this explicitly to control rotation and upgrades.
   password: ""
   sslmode: disable
 
@@ -52,8 +54,9 @@ agent:
   dbTimeoutSec: 5
   auth:
     enabled: true
-    # REQUIRED: set to a secret value — no default is provided intentionally.
+    # Recommended (production): set explicitly.
     # Override via: --set agent.auth.token=<your-secret>
+    # If empty, Helm will generate a strong token and persist it in the Secret (good for dev/lab).
     token: ""
 
 resources: {}

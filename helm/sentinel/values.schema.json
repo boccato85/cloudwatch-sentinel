@@ -2,15 +2,45 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "annotations": { "type": "object" },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": { "type": "string", "minLength": 1 },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": { "type": "string" },
+                    "pathType": { "type": "string" }
+                  },
+                  "required": ["path", "pathType"]
+                }
+              }
+            },
+            "required": ["host", "paths"]
+          },
+          "minItems": 1
+        },
+        "tls": { "type": "array" }
+      },
+      "required": ["enabled"]
+    },
     "database": {
       "type": "object",
       "properties": {
         "password": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         }
-      },
-      "required": ["password"]
+      }
     },
     "agent": {
       "type": "object",
@@ -35,14 +65,32 @@
           },
           "then": {
             "properties": {
-              "token": {
-                "minLength": 1
-              }
-            },
-            "required": ["token"]
+              "token": { "type": "string" }
+            }
           }
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ingress": {
+            "properties": {
+              "enabled": { "const": true }
+            },
+            "required": ["enabled"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "ingress": {
+            "required": ["hosts"]
+          }
+        }
+      }
+    }
+  ]
 }
