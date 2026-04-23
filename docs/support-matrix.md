@@ -1,6 +1,6 @@
 # Sentinel Support Matrix
 
-This matrix applies to Sentinel `v1.0-rc2`.
+This matrix applies to Sentinel `v1.0.0-rc.2`.
 
 ## Supported
 

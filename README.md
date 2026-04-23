@@ -11,7 +11,7 @@
   <img src="docs/screenshots/sentinel_ss_1.0-rc(1).png" alt="Sentinel Dashboard v1.0" width="900"/>
 </p>
 
-![Status](https://img.shields.io/badge/status-v1.0--rc2-brightgreen)
+![Status](https://img.shields.io/badge/status-v1.0.0--rc.2-brightgreen)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
@@ -147,7 +147,7 @@ Operational release notes are maintained in [RELEASE.md](RELEASE.md).
 
 The current support matrix is published in [docs/support-matrix.md](docs/support-matrix.md).
 
-| Category | v1.0-rc2 status |
+| Category | v1.0.0-rc.2 status |
 |---|---|
 | Supported | Kubernetes `v1.19+`, Helm 3, PostgreSQL 15, Metrics Server, deterministic rules |
 | Tested | Go unit tests, harness safety tests, Helm lint, chaos lab and capacity planning reports |
@@ -179,7 +179,7 @@ DB_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
 # Assumes the TLS secret already exists and your ingress controller is installed.
 helm install sentinel helm/sentinel -n sentinel --create-namespace \
   --set image.repository=ghcr.io/boccato85/sentinel \
-  --set image.tag=1.0-rc2 \
+  --set image.tag=1.0.0-rc.2 \
   --set agent.auth.token=$AUTH_TOKEN \
   --set database.password=$DB_PASSWORD \
   --set ingress.enabled=true \
@@ -487,7 +487,7 @@ Every final report passes through `harness/output_validator.py` before being wri
 
 ## Changelog
 
-### v1.0-rc2 — Release-readiness hardening
+### v1.0.0-rc.2 — Release-readiness hardening
 - **Docs/runtime alignment** — setup paths now use root `.env.example`; agent management docs match the real Makefile targets.
 - **Helm hardening** — GHCR image defaults, explicit database password requirement and cleaned `values.yaml` structure.
 - **Production-first deploy** — chart defaults to `ClusterIP`, adds Ingress rendering and documents NodePort as dev/lab only.

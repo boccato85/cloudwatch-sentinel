@@ -1,6 +1,6 @@
 # Sentinel Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-23 | Current version: `v1.0-rc1`
+> Last updated: 2026-04-23 | Current version: `v1.0.0-rc.2`
 
 ## Product vision
 
@@ -34,6 +34,8 @@
 | M6 — Real lab / QA / Prod-like | ✅ Done | `v0.50` |
 | M7 — v1.0 preparation | ✅ Done | `v1.0-rc1` |
 | M8 — Sentinel Intelligence (cloud LLM + agentic) | 🔵 Planned | `v1.1` |
+
+> Release-readiness hardening for `v1.0.0-rc.2` is tracked in the GitHub Project "Sentinel v1.0 Release Readiness" and covers version alignment, ingress-first deploy, support matrix, release notes and quality evidence.
 
 ---
 

@@ -1,4 +1,4 @@
-# Plano Step By Step: Correcoes Pos-Code Review para v1.0-rc2
+# Plano Step By Step: Correcoes Pos-Code Review para v1.0.0-rc.2
 
 ## Summary
 
@@ -19,17 +19,17 @@ Decisoes fechadas:
 2. Docs/runtime contract
 - Corrigir referencias de setup que apontam para `agent/.env.example`; a fonte real e `.env.example` na raiz.
 - Remover ou corrigir referencias a `make start`, `make stop` e `make logs`; o `agent/Makefile` so suporta `build`, `setup`, `clean` e `help`.
-- Atualizar docs para separar claramente `v1.0-rc2` implementado de M8 planejado.
+- Atualizar docs para separar claramente `v1.0.0-rc.2` implementado de M8 planejado.
 - Remover das docs de configuracao qualquer afirmacao de que `SENTINEL_LLM_*`, `LLM_PROVIDER`, `OLLAMA_*`, Gemini/OpenAI ou Ollama ativam funcionalidade hoje.
 - Manter M8 como backlog provider-agnostic: cloud LLM futuro, contrato final ainda TBD, sem LLM local.
 
 3. LLM package alignment
 - Ajustar `agent/pkg/llm` para nao expor Ollama como provider funcional.
-- Manter apenas a interface/fachada minima para futuro M8, sempre disabled em `v1.0-rc2`.
+- Manter apenas a interface/fachada minima para futuro M8, sempre disabled em `v1.0.0-rc.2`.
 - Atualizar testes de `pkg/llm` para cobrir: default disabled, provider/env desconhecido nao ativa, nenhuma dependencia de `OLLAMA_ENDPOINT` ou `OLLAMA_MODEL`.
 
 4. Helm hardening
-- Atualizar `helm/sentinel/Chart.yaml` para versao/appVersion coerentes com `1.0-rc2`.
+- Atualizar `helm/sentinel/Chart.yaml` para versao/appVersion coerentes com `1.0.0-rc.2`.
 - Atualizar `helm/sentinel/values.yaml`: imagem default para GHCR, tag coerente com RC, `pullPolicy: IfNotPresent`.
 - Remover `database.password: sentinel123`; deixar vazio e exigir valor no template com `required`.
 - Limpar ruido estrutural: remover `ons: []` e duplicidade de `affinity`.
@@ -46,7 +46,7 @@ Decisoes fechadas:
 - Setup local usa `.env.example` na raiz, nao `agent/.env.example`.
 - Comandos documentados refletem o Makefile real: `make build`, `make setup`, `make clean`, `make help`.
 - Helm install exige explicitamente `--set agent.auth.token=<secret>` e `--set database.password=<secret>`.
-- Nenhuma variavel LLM e documentada como funcional em `v1.0-rc2`.
+- Nenhuma variavel LLM e documentada como funcional em `v1.0.0-rc.2`.
 - `X-Real-IP` deixa de influenciar rate limit; `RemoteAddr` e a unica fonte.
 
 ## Test Plan
@@ -60,6 +60,6 @@ Decisoes fechadas:
 ## Assumptions
 
 - Nao implementar cloud LLM nesta rodada; isso permanece para M8.
-- Nao adicionar trusted proxies agora; a solucao de v1.0-rc2 e simples e segura: `RemoteAddr only`.
+- Nao adicionar trusted proxies agora; a solucao de v1.0.0-rc.2 e simples e segura: `RemoteAddr only`.
 - Nao mexer no OpenAPI salvo se alguma API publica mudar.
 - Nao alterar os arquivos staged preexistentes fora do necessario.
