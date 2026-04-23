@@ -42,6 +42,8 @@ postgresql:
 database:
   name: sentinel_db
   user: sentinel
+  # REQUIRED: set to a secret value — no default is provided intentionally.
+  # Override via: --set database.password=<your-secret>
   password: ""
   sslmode: disable
 

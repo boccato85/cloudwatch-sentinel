@@ -1,0 +1,35 @@
+# Sentinel Helm Chart Values (production example)
+#
+# This file is intentionally opinionated:
+# - ClusterIP service
+# - Ingress as the primary exposure path
+# - TLS enabled (expects the secret to exist)
+#
+# Usage:
+#   helm install sentinel helm/sentinel -n sentinel --create-namespace \
+#     -f helm/sentinel/values.production.yaml \
+#     --set agent.auth.token="$AUTH_TOKEN" \
+#     --set database.password="$DB_PASSWORD" \
+#     --set ingress.hosts[0].host=sentinel.example.com \
+#     --set ingress.tls[0].hosts[0]=sentinel.example.com
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  # Set to your ingress class (e.g. nginx, traefik). If your cluster has a
+  # default ingress class, you may omit this.
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: sentinel.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: sentinel-tls
+      hosts:
+        - sentinel.example.com
+

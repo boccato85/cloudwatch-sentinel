@@ -22,9 +22,10 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
+          {{- $paths := (.paths | default (list (dict "path" "/" "pathType" "Prefix"))) }}
+          {{- range $paths }}
+          - path: {{ .path | default "/" }}
+            pathType: {{ .pathType | default "Prefix" }}
             backend:
               service:
                 name: {{ include "sentinel.fullname" $ }}
