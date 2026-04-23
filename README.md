@@ -147,7 +147,18 @@ kubectl get pods -n sentinel-gemini
 minikube ip   # → use http://<minikube-ip>:30080
 ```
 
-**Option B: standalone (local development)**
+**Option B: docker-compose (local development — no Minikube required)**
+
+```bash
+cp agent/.env.example agent/.env   # fill DB_PASSWORD and AUTH_TOKEN
+# Generate AUTH_TOKEN: python3 -c "import secrets; print(secrets.token_hex(32))"
+docker compose up --build
+# Dashboard: http://localhost:8080/?token=<AUTH_TOKEN>
+```
+
+Requires a kubeconfig at `~/.kube/config` for cluster collection. Without a cluster, the agent starts and serves the API with empty data — suitable for UI/API development.
+
+**Option C: standalone binary (requires local PostgreSQL)**
 
 ```bash
 # Requires local PostgreSQL with database sentinel_db
@@ -387,6 +398,7 @@ sentinel/
 │   └── workflows/
 │       ├── ci.yml                   # Go tests + Helm lint on push/PR to main
 │       └── release.yml              # Build + push to GHCR on semver tags
+├── docker-compose.yml               # Local dev without Minikube (agent + PostgreSQL)
 ├── CONTRIBUTING.md                  # Dev setup, constraints, PR guidelines
 └── SECURITY.md                      # Vulnerability disclosure and secure deployment
 ```
@@ -417,6 +429,9 @@ Every final report passes through `harness/output_validator.py` before being wri
 - **README fully corrected** — setup instructions, env vars table (incl. LLM vars), API endpoint table, Go version, ranges.
 - **CONTRIBUTING.md** — dev setup, architecture constraints, commit conventions and PR scope boundaries.
 - **GHCR release pipeline** — `release.yml` builds and pushes `ghcr.io/boccato85/sentinel` on semver tags via `GITHUB_TOKEN`.
+- **docker-compose** — `docker-compose.yml` added to project root; enables local development without Minikube (agent + PostgreSQL).
+- **Dockerfile pinned** — builder image pinned to `golang:1.25-alpine` (matches `go.mod`); runtime updated to `alpine:3.21` (EOL fix from `alpine:3.19`).
+- **M8 agentic workflow model** — ROADMAP M8 rewritten to reflect agentic investigation workflow: LLM orchestrates read-only kubectl tools, proposes remediation steps, user confirms before execution.
 - **i18n** — all incident narrative strings translated from PT-BR to English in the Go backend.
 - **CI fixed** — `go-version` bumped to `1.25` to match `go.mod` directive; `eval/gemini` added to CI triggers.
 - **Screenshots updated** — 5 new v1.0-rc1 screenshots replacing all v0.10.x references.
