@@ -75,7 +75,7 @@ function updateSpillTip(dbStatus) {
               : Math.floor(upSec/3600) + 'h ' + Math.floor((upSec%3600)/60) + 'm';
   var cluster  = (document.querySelector('.ctag') || {}).textContent || 'minikube / local';
   var endpoint = window.location.host;
-  var ver      = (document.getElementById('verBadge') || {}).textContent || '--';
+  var ver      = (document.getElementById('ribbonVer') || {}).textContent || '--';
   var lastSync = (document.getElementById('lastUp') || {}).textContent || '--';
   var st = lastDbStatus;
   var dbTxt    = st === 'ok' ? '<span style="color:var(--green)">&#10003; OK</span>'

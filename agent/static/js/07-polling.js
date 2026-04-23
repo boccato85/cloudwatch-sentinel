@@ -111,29 +111,22 @@ async function loadVersion() {
     var data = await (await fetchAuth('/health')).json();
     var v = data && data.version ? data.version : null;
     if (!v) return;
-    var badge = document.getElementById('verBadge');
+    var badge = document.getElementById('ribbonVer');
     if (badge) {
-      badge.textContent = 'v' + v;
-      badge.title = 'Sentinel v' + v + '\nKubernetes Observability\n\u00a9 2026 Sentinel Project';
+      badge.textContent = 'sentinel-agent v' + v;
+      badge.title = 'Sentinel v' + v + '
+Kubernetes Intelligence
+© 2026 Sentinel Project';
     }
     // populate Connected tooltip with DB status from /health
     var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
     updateSpillTip(dbSt);
-    var fv = document.getElementById('footer-version');
-    if (fv) fv.textContent = 'sentinel-agent';
   } catch(e) { updateSpillTip('unknown'); }
 }
 
 loadNamespaces();
 loadVersion();
 setInterval(update, 5000);
-
-(function() {
-  var fn = document.getElementById('footer-ns');
-  if (!fn) return;
-  var ctx = (document.querySelector('.ctag') || {}).textContent || '';
-  fn.textContent = ctx ? 'cluster: ' + ctx.trim() : '';
-})();
 
 update();
 fetchChart();
