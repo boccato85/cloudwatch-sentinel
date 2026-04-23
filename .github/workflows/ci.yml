@@ -4,30 +4,54 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
-  test:
+  go-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.25'
+        go-version: "1.25"
     - name: Run Go Tests
       run: cd agent && go test -v ./...
+
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+    - name: Run Harness Tests
+      run: python3 harness/test_output_validator.py
 
   helm-lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
     - name: Install Helm
       uses: azure/setup-helm@v4
+    - name: Lint Helm Chart (expected failure without secrets)
+      shell: bash
+      run: |
+        set +e
+        helm lint helm/sentinel
+        status=$?
+        set -e
+        if [ "$status" -eq 0 ]; then
+          echo "ERROR: expected helm lint to fail without required secrets"
+          exit 1
+        fi
     - name: Lint Helm Chart
       run: helm lint helm/sentinel --set agent.auth.token=test-token --set database.password=test-password
     - name: Render Helm Chart with Ingress
+      shell: bash
       run: |
+        set -euo pipefail
         helm template sentinel helm/sentinel \
           --set agent.auth.token=test-token \
           --set database.password=test-password \
@@ -35,4 +59,16 @@ jobs:
           --set ingress.className=nginx \
           --set ingress.hosts[0].host=sentinel.example.com \
           --set ingress.tls[0].secretName=sentinel-tls \
-          --set ingress.tls[0].hosts[0]=sentinel.example.com
+          --set ingress.tls[0].hosts[0]=sentinel.example.com > /tmp/rendered.yaml
+        grep -q "^kind: Ingress$" /tmp/rendered.yaml
+        if grep -q "type: NodePort" /tmp/rendered.yaml; then
+          echo "ERROR: rendered output includes NodePort; production path should be ingress-first"
+          exit 1
+        fi
+
+  openapi-sync:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Assert OpenAPI Mirrors Are In Sync
+      run: diff -u agent/pkg/api/openapi.yaml docs/api/openapi.yaml
