@@ -9,6 +9,7 @@ All notable changes to Sentinel are documented in this file.
 - Public support matrix in `docs/support-matrix.md` with explicit dependencies, validated environments and limitations.
 - API smoke test harness usage documented in quality/release docs.
 - GitHub Project planning artifacts for post-v1.0 priorities (`P1`, `P2`, `P3`).
+- Compatibility and schema evolution docs: `docs/compatibility-policy.md`, `docs/schema-upgrade-strategy.md`.
 
 ### Changed
 - Security defaults hardened for Helm/database/auth paths (explicit production secrets).
@@ -17,6 +18,8 @@ All notable changes to Sentinel are documented in this file.
 - Roadmap updated with explicit execution track (`P0`-`P3`) and aligned M7 version (`v1.0.0-rc.2`).
 - README changelog section trimmed; full history centralized in this `CHANGELOG.md`.
 - Public documentation sanitized to keep the repository focused on Sentinel Core OSS.
+- Release workflow now generates signed images, SPDX SBOM, and SBOM attestations.
+- Helm values schema strengthened for deployment/security validation (service, sslmode, ingress, retention, auth).
 
 ### Fixed
 - CI quality gates and project sync workflow behavior for manual dispatch/token permissions.

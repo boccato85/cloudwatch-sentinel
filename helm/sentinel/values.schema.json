@@ -2,6 +2,29 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string", "minLength": 1 },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      },
+      "required": ["repository", "tag"]
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["ClusterIP", "NodePort"] },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "nodePort": {
+          "oneOf": [
+            { "type": "string", "maxLength": 0 },
+            { "type": "integer", "minimum": 30000, "maximum": 32767 }
+          ]
+        }
+      },
+      "required": ["type", "port"]
+    },
     "ingress": {
       "type": "object",
       "properties": {
@@ -40,13 +63,27 @@
         "password": {
           "type": "string",
           "minLength": 1
+        },
+        "sslmode": {
+          "type": "string",
+          "enum": ["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]
         }
       },
       "required": ["password"]
     },
+    "retention": {
+      "type": "object",
+      "properties": {
+        "rawHours": { "type": "integer", "minimum": 1 },
+        "hourlyDays": { "type": "integer", "minimum": 1 },
+        "dailyDays": { "type": "integer", "minimum": 1 }
+      }
+    },
     "agent": {
       "type": "object",
       "properties": {
+        "rateLimitRps": { "type": "integer", "minimum": 1 },
+        "dbTimeoutSec": { "type": "integer", "minimum": 1 },
         "auth": {
           "type": "object",
           "properties": {
@@ -81,6 +118,28 @@
     {
       "if": {
         "properties": {
+          "service": {
+            "properties": {
+              "type": { "const": "NodePort" }
+            },
+            "required": ["type"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "service": {
+            "required": ["nodePort"],
+            "properties": {
+              "nodePort": { "type": "integer", "minimum": 30000, "maximum": 32767 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
           "ingress": {
             "properties": {
               "enabled": { "const": true }
@@ -92,7 +151,11 @@
       "then": {
         "properties": {
           "ingress": {
-            "required": ["hosts"]
+            "required": ["hosts", "tls"],
+            "properties": {
+              "hosts": { "minItems": 1 },
+              "tls": { "type": "array", "minItems": 1 }
+            }
           }
         }
       }

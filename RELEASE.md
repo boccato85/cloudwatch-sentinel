@@ -68,6 +68,27 @@ helm lint helm/sentinel
 
 This should fail because production credentials are intentionally required.
 
+## Supply Chain Artifacts (Release Workflow)
+
+Tagged releases now publish:
+
+- Signed container image (cosign keyless/OIDC)
+- SPDX JSON SBOM (`sbom.spdx.json`) attached to GitHub Release
+- SBOM attestation bound to image digest
+
+Verification examples:
+
+```bash
+IMAGE=ghcr.io/boccato85/sentinel:1.0.0-rc.2
+cosign verify "$IMAGE"
+cosign verify-attestation --type spdxjson "$IMAGE"
+```
+
+Reference policy docs:
+
+- [docs/compatibility-policy.md](docs/compatibility-policy.md)
+- [docs/schema-upgrade-strategy.md](docs/schema-upgrade-strategy.md)
+
 ## Known Limitations
 
 - Metrics Server is required for production-quality metrics, incidents and FinOps calculations.

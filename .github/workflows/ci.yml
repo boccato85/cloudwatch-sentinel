@@ -65,6 +65,35 @@ jobs:
           echo "ERROR: rendered output includes NodePort; production path should be ingress-first"
           exit 1
         fi
+    - name: Validate Helm Schema (NodePort requires nodePort)
+      shell: bash
+      run: |
+        set +e
+        helm lint helm/sentinel \
+          --set database.password=test-password \
+          --set agent.auth.token=test-token \
+          --set service.type=NodePort
+        status=$?
+        set -e
+        if [ "$status" -eq 0 ]; then
+          echo "ERROR: expected helm lint to fail when service.type=NodePort and nodePort is missing"
+          exit 1
+        fi
+    - name: Validate Helm Schema (Ingress requires TLS block)
+      shell: bash
+      run: |
+        set +e
+        helm lint helm/sentinel \
+          --set database.password=test-password \
+          --set agent.auth.token=test-token \
+          --set ingress.enabled=true \
+          --set ingress.hosts[0].host=sentinel.example.com
+        status=$?
+        set -e
+        if [ "$status" -eq 0 ]; then
+          echo "ERROR: expected helm lint to fail when ingress.enabled=true and tls is missing"
+          exit 1
+        fi
 
   openapi-sync:
     runs-on: ubuntu-latest
