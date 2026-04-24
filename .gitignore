@@ -1,5 +1,6 @@
 *.json
 !helm/sentinel/values.schema.json
+!docs/datasets/synthetic/*.json
 __pycache__/
 *.pyc
 *.pyo

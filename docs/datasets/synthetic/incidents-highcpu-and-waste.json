@@ -1,0 +1,18 @@
+[
+  {
+    "namespace": "demo",
+    "pod_name": "checkoutservice-5d76f8b8dd-lp2x9",
+    "type": "HighCPU",
+    "severity": "critical",
+    "message": "CPU usage above configured critical threshold",
+    "narrative": "Pod is consuming CPU near saturation; check recent traffic and request sizing."
+  },
+  {
+    "namespace": "demo",
+    "pod_name": "emailservice-7d964fc5d9-8n4ks",
+    "type": "ResourceWaste",
+    "severity": "warning",
+    "message": "CPU request appears overprovisioned for current usage",
+    "narrative": "Workload request is consistently higher than observed usage; evaluate rightsizing."
+  }
+]

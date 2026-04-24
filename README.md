@@ -257,6 +257,7 @@ This OSS repository provides deterministic incident analysis only. Proprietary i
 - [Deterministic Core vs Optional LLM](docs/deterministic-core-vs-optional-llm.md) (scope boundaries and mode matrix)
 - [Compatibility Policy](docs/compatibility-policy.md) (API/chart/runtime compatibility expectations)
 - [Schema Upgrade Strategy](docs/schema-upgrade-strategy.md) (safe DB evolution and rollback posture)
+- [Reproducible Real-Use Examples](docs/reproducible-real-use-examples.md) (hello-cluster, incident walkthrough, troubleshooting, synthetic datasets)
 
 ---
 

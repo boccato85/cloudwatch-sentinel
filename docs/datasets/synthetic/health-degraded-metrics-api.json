@@ -1,0 +1,23 @@
+{
+  "status": "degraded",
+  "version": "synthetic-example",
+  "db_breaker_state": "CLOSED",
+  "checks": {
+    "database": {
+      "status": "ok",
+      "latency_ms": 8
+    },
+    "k8s_api": {
+      "status": "ok",
+      "latency_ms": 18
+    },
+    "metrics_api": {
+      "status": "unhealthy",
+      "message": "metrics api unreachable"
+    },
+    "collector": {
+      "status": "degraded",
+      "message": "last collect 75s ago (threshold: 30s)"
+    }
+  }
+}

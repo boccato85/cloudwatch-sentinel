@@ -1,0 +1,22 @@
+[
+  {
+    "deployment": "emailservice",
+    "namespaces": [
+      "demo"
+    ],
+    "pods": 3,
+    "cpu_saveable_mcpu": 180,
+    "mem_not_used_mib": 256,
+    "estimated_hourly_saving_usd": 0.0072
+  },
+  {
+    "deployment": "recommendationservice",
+    "namespaces": [
+      "demo"
+    ],
+    "pods": 2,
+    "cpu_saveable_mcpu": 110,
+    "mem_not_used_mib": 128,
+    "estimated_hourly_saving_usd": 0.0044
+  }
+]
