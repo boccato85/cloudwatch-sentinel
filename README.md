@@ -189,7 +189,7 @@ helm install sentinel helm/sentinel -n sentinel --create-namespace -f helm/senti
 # Check pods
 kubectl get pods -n sentinel
 
-# Access via https://sentinel.example.com/?token=<AUTH_TOKEN>
+# Access via https://sentinel.example.com and enter the token in the dashboard session prompt
 ```
 
 **Option B: Kubernetes dev/lab deploy via NodePort**
@@ -204,7 +204,7 @@ helm install sentinel helm/sentinel -n sentinel --create-namespace \
   --set service.type=NodePort \
   --set service.nodePort=30080
 
-# Dashboard: http://<node-ip>:30080/?token=<AUTH_TOKEN>
+# Dashboard: http://<node-ip>:30080 and enter the token in the dashboard session prompt
 ```
 
 **Option C: docker-compose (local development - no cluster required)**
@@ -213,7 +213,7 @@ helm install sentinel helm/sentinel -n sentinel --create-namespace \
 cp .env.example .env   # fill DB_PASSWORD and AUTH_TOKEN
 # Generate AUTH_TOKEN: python3 -c "import secrets; print(secrets.token_hex(32))"
 docker compose up --build
-# Dashboard: http://localhost:8080/?token=<AUTH_TOKEN>
+# Dashboard: http://localhost:8080 and enter the token in the dashboard session prompt
 ```
 
 Requires a kubeconfig at `~/.kube/config` pointing to your cluster. Without a cluster, the agent starts and serves the API with empty data — suitable for UI/API development.
@@ -250,7 +250,7 @@ export RETENTION_DAILY_DAYS=365     # daily aggregates
 # Production path: use the configured Ingress host.
 # Dev/lab path: use NodePort only when explicitly enabled.
 
-# https://sentinel.example.com/?token=<AUTH_TOKEN>
+# https://sentinel.example.com
 ```
 
 **API (authenticated):**

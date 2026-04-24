@@ -2,14 +2,27 @@ console.log('Sentinel Dashboard v0.12 Loaded');
 var charts = {};
 var PCOLS = ['#00cc8f','#00b4ff','#e54949','#fbbf24','#a855f7','#f5a623','#ec4899'];
 var pageLoadTime = Date.now();
-let AUTH_TOKEN = new URLSearchParams(window.location.search).get('token') || localStorage.getItem('sentinel_token') || null;
+var sessionToken = sessionStorage.getItem('sentinel_token');
+let AUTH_TOKEN = new URLSearchParams(window.location.search).get('token') || sessionToken || null;
 if (new URLSearchParams(window.location.search).has('token') && AUTH_TOKEN) {
-  localStorage.setItem('sentinel_token', AUTH_TOKEN);
+  sessionStorage.setItem('sentinel_token', AUTH_TOKEN);
   window.history.replaceState({}, document.title, window.location.pathname);
 }
 if (!AUTH_TOKEN) {
   document.addEventListener('DOMContentLoaded', function() {
-    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#090c12;color:#e2e8f0;font-family:Inter,sans-serif"><div style="text-align:center;max-width:520px;padding:40px;background:#131929;border:1px solid #1e2d4a;border-radius:10px"><div style="font-size:2.2em;margin-bottom:16px">&#128274;</div><h2 style="color:#f8fafc;margin-bottom:10px">Authentication Required</h2><p style="color:#8899aa;margin-bottom:20px;line-height:1.6">No auth token found in URL or local storage.<br>Open the dashboard with your token:</p><code style="display:block;background:#090c12;padding:10px 16px;border-radius:6px;color:#00cc8f;font-size:.9em;margin-bottom:20px">http://&lt;host&gt;:30080/?token=&lt;your-token&gt;</code><p style="color:#8899aa;font-size:.82em">To disable authentication, set <code style="background:#090c12;padding:2px 6px;border-radius:4px;color:#fbbf24">AUTH_ENABLED=false</code> in the agent environment.</p></div></div>';
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#090c12;color:#e2e8f0;font-family:Inter,sans-serif"><div style="text-align:center;max-width:520px;padding:40px;background:#131929;border:1px solid #1e2d4a;border-radius:10px"><div style="font-size:2.2em;margin-bottom:16px">&#128274;</div><h2 style="color:#f8fafc;margin-bottom:10px">Authentication Required</h2><p style="color:#8899aa;margin-bottom:20px;line-height:1.6">Enter your Bearer token to start a browser session.<br>The token is stored only for this tab session.</p><form id="token-form" style="display:flex;flex-direction:column;gap:12px"><input id="token-input" type="password" autocomplete="off" spellcheck="false" placeholder="Paste AUTH_TOKEN" style="background:#090c12;border:1px solid #1e2d4a;border-radius:6px;color:#f8fafc;padding:12px 14px;font-size:.95em"><button type="submit" style="background:#00cc8f;border:0;border-radius:6px;color:#03120e;cursor:pointer;font-size:.95em;font-weight:700;padding:12px 14px">Start session</button></form><p style="color:#8899aa;font-size:.82em;margin-top:18px">You can also open a controlled dev URL with <code style="background:#090c12;padding:2px 6px;border-radius:4px;color:#fbbf24">?token=...</code>; Sentinel removes it from the address bar and keeps it only in session storage.</p><p style="color:#8899aa;font-size:.82em">To disable authentication, set <code style="background:#090c12;padding:2px 6px;border-radius:4px;color:#fbbf24">AUTH_ENABLED=false</code> in the agent environment.</p></div></div>';
+    var form = document.getElementById('token-form');
+    var input = document.getElementById('token-input');
+    if (input) input.focus();
+    if (form && input) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var token = input.value.trim();
+        if (!token) return;
+        sessionStorage.setItem('sentinel_token', token);
+        window.location.reload();
+      });
+    }
   });
 }
 
