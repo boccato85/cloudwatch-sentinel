@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/dashboard.css?v=1006">
+<link rel="stylesheet" href="/static/dashboard.css?v=1007">
 </head>
 <body>
 
@@ -46,6 +46,7 @@
       <span class="hdr-alert-dot"></span>
       <span id="hdrAlertTxt">All OK</span>
     </div>
+    <button id="onboardingReopenBtn" class="onboarding-reopen-btn" title="Open first-run guide">First-run guide</button>
     <span id="lastUp">Updating...</span>
   </div>
 </div>
@@ -71,6 +72,39 @@
       Quick check: <code>kubectl get apiservices | grep metrics</code>
       <a href="/status" target="_blank" rel="noopener">Open status</a>
       <a href="https://github.com/boccato85/Sentinel/blob/develop/docs/operational-playbook.md#troubleshooting-quick-map" target="_blank" rel="noopener">Runbook</a>
+    </div>
+  </div>
+</div>
+
+<!-- FIRST-RUN ONBOARDING -->
+<div id="firstRunOnboarding" class="onboarding-shell" style="display:none">
+  <div class="onboarding-card">
+    <div class="onboarding-head">
+      <div class="onboarding-title">First-Run Checklist</div>
+      <div class="onboarding-sub">Authenticate, verify health, and confirm where to get support.</div>
+    </div>
+    <ol class="onboarding-list">
+      <li>
+        <b>Token and session scope</b>
+        <span>Use a valid <code>AUTH_TOKEN</code>. Sentinel keeps the token only in <code>sessionStorage</code> (current browser tab).</span>
+      </li>
+      <li>
+        <b>Quick health verification</b>
+        <span id="onboardingHealthSummary">Checking <code>/health</code>...</span>
+        <div id="onboardingHealthChecks" class="onboarding-health-checks"></div>
+      </li>
+      <li>
+        <b>Support and release docs</b>
+        <span class="onboarding-links">
+          <a href="https://github.com/boccato85/Sentinel/blob/develop/docs/support-matrix.md" target="_blank" rel="noopener">Support matrix</a>
+          <a href="https://github.com/boccato85/Sentinel/blob/develop/RELEASE.md" target="_blank" rel="noopener">Release process</a>
+          <a href="https://github.com/boccato85/Sentinel/blob/develop/docs/operational-playbook.md" target="_blank" rel="noopener">Operational runbook</a>
+        </span>
+      </li>
+    </ol>
+    <div class="onboarding-actions">
+      <button id="onboardingDismissBtn" class="onboarding-btn onboarding-btn-secondary">Hide for now</button>
+      <button id="onboardingCompleteBtn" class="onboarding-btn onboarding-btn-primary">Mark checklist as done</button>
     </div>
   </div>
 </div>
@@ -409,12 +443,12 @@
   <div class="gl-row" style="border-bottom:none"><span style="color:var(--text-dim);font-weight:600;min-width:80px">±1.5σ</span><span class="gl-desc">95% confidence band &mdash; statistical margin. Real value likely falls within this range.</span></div>
 </div>
 
-<script src="/static/js/01-init.js?v=1006"></script>
-<script src="/static/js/02-charts.js?v=1006"></script>
-<script src="/static/js/03-namespace.js?v=1006"></script>
-<script src="/static/js/04-overview.js?v=1006"></script>
-<script src="/static/js/05-workloads.js?v=1006"></script>
-<script src="/static/js/06-drawers.js?v=1006"></script>
-<script src="/static/js/07-polling.js?v=1006"></script>
+<script src="/static/js/01-init.js?v=1007"></script>
+<script src="/static/js/02-charts.js?v=1007"></script>
+<script src="/static/js/03-namespace.js?v=1007"></script>
+<script src="/static/js/04-overview.js?v=1007"></script>
+<script src="/static/js/05-workloads.js?v=1007"></script>
+<script src="/static/js/06-drawers.js?v=1007"></script>
+<script src="/static/js/07-polling.js?v=1007"></script>
 </body>
 </html>

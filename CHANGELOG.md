@@ -18,6 +18,7 @@ All notable changes to Sentinel are documented in this file.
 - Production deployment guidance updated to ingress-first; NodePort positioned as dev/lab-only.
 - Dashboard auth UX improved to avoid persistent token storage.
 - Dashboard now shows explicit degraded-mode banner when Metrics Server is unavailable, with impact and remediation pointers.
+- Dashboard now includes first-run onboarding with token/session guidance, live `/health` interpretation, and links to support/release/runbook docs.
 - Roadmap updated with explicit execution track (`P0`-`P3`) and aligned M7 version (`v1.0.0-rc.2`).
 - README changelog section trimmed; full history centralized in this `CHANGELOG.md`.
 - Public documentation sanitized to keep the repository focused on Sentinel Core OSS.

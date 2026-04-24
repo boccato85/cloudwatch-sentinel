@@ -114,6 +114,84 @@ function setVersionBadge(version) {
   badge.title = 'Sentinel v' + version + '\nKubernetes SRE/FinOps\n\u00a9 2026 Sentinel Project';
 }
 
+var ONBOARDING_DONE_KEY = 'sentinel_first_run_onboarding_done_v1';
+
+function isOnboardingDone() {
+  try {
+    return localStorage.getItem(ONBOARDING_DONE_KEY) === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+function setOnboardingDone(done) {
+  try {
+    if (done) localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+    else localStorage.removeItem(ONBOARDING_DONE_KEY);
+  } catch (e) {
+    // Ignore storage failures.
+  }
+}
+
+function setOnboardingVisible(visible) {
+  var shell = document.getElementById('firstRunOnboarding');
+  if (!shell) return;
+  shell.style.display = visible ? 'block' : 'none';
+}
+
+function updateOnboardingHealth(data) {
+  var summaryEl = document.getElementById('onboardingHealthSummary');
+  var checksEl = document.getElementById('onboardingHealthChecks');
+  if (!summaryEl || !checksEl) return;
+
+  if (!data || !data.checks) {
+    summaryEl.textContent = 'Health check unavailable right now. Open /health and confirm the API is responding before continuing.';
+    checksEl.innerHTML = '';
+    return;
+  }
+
+  var checks = data.checks;
+  var keys = Object.keys(checks);
+  var hasWarn = keys.some(function(key) {
+    return checks[key] && checks[key].status && checks[key].status !== 'ok';
+  });
+  summaryEl.textContent = hasWarn
+    ? 'Sentinel is reachable, but one or more checks are degraded. Inspect /health details and /status before trusting recommendations.'
+    : 'All core checks are OK. Sentinel is ready for regular incident and FinOps analysis.';
+
+  checksEl.innerHTML = keys.map(function(key) {
+    var check = checks[key] || {};
+    var st = String(check.status || 'unknown').toLowerCase();
+    var cls = st === 'ok' ? 'ok' : 'warn';
+    return '<span class="onboarding-health-pill ' + cls + '">' + esc(key) + ': ' + esc(st) + '</span>';
+  }).join('');
+}
+
+function initFirstRunOnboarding() {
+  var reopenBtn = document.getElementById('onboardingReopenBtn');
+  var completeBtn = document.getElementById('onboardingCompleteBtn');
+  var dismissBtn = document.getElementById('onboardingDismissBtn');
+
+  if (reopenBtn) {
+    reopenBtn.addEventListener('click', function() {
+      setOnboardingVisible(true);
+    });
+  }
+  if (dismissBtn) {
+    dismissBtn.addEventListener('click', function() {
+      setOnboardingVisible(false);
+    });
+  }
+  if (completeBtn) {
+    completeBtn.addEventListener('click', function() {
+      setOnboardingDone(true);
+      setOnboardingVisible(false);
+    });
+  }
+
+  setOnboardingVisible(!isOnboardingDone());
+}
+
 function updateMetricsDegradedBanner(data) {
   var banner = document.getElementById('degradedBanner');
   var msgEl = document.getElementById('degradedBannerMsg');
@@ -138,12 +216,15 @@ async function refreshHealthSignals() {
     var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
     updateSpillTip(dbSt);
     updateMetricsDegradedBanner(data);
+    updateOnboardingHealth(data);
   } catch(e) {
     updateSpillTip('unknown');
     updateMetricsDegradedBanner(null);
+    updateOnboardingHealth(null);
   }
 }
 
+initFirstRunOnboarding();
 loadNamespaces();
 refreshHealthSignals();
 setInterval(refreshHealthSignals, 5000);
