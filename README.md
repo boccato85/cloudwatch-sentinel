@@ -86,6 +86,7 @@ BASE_URL=https://sentinel.example.com AUTH_TOKEN=<token> ./harness/smoke_api.sh
 ```
 
 Operational release notes are maintained in [RELEASE.md](RELEASE.md).
+Version-by-version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

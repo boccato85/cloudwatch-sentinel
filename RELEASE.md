@@ -2,6 +2,8 @@
 
 Release date: 2026-04-23
 
+Cross-version change history: [CHANGELOG.md](CHANGELOG.md)
+
 ## Operational Summary
 
 `v1.0.0-rc.2` is a release-readiness hardening candidate. It focuses on consistent versioning, secure-by-default Helm installation, production-first exposure guidance and clearer v1.0 support boundaries.
