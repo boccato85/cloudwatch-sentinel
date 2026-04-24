@@ -11,6 +11,7 @@ All notable changes to Sentinel are documented in this file.
 - GitHub Project planning artifacts for post-v1.0 priorities (`P1`, `P2`, `P3`).
 - Compatibility and schema evolution docs: `docs/compatibility-policy.md`, `docs/schema-upgrade-strategy.md`.
 - Reproducible examples guide and synthetic dataset pack for docs/demos/tests (`docs/reproducible-real-use-examples.md`, `docs/datasets/synthetic/*`).
+- Self-observability product guide (`docs/self-observability-guide.md`) with `/health`/`/status` diagnostics and signal interpretation.
 
 ### Changed
 - Security defaults hardened for Helm/database/auth paths (explicit production secrets).
