@@ -123,12 +123,14 @@ var ONBOARDING_TOUR_STEPS = [
   {
     selector: '#nsFilter',
     title: 'Namespace Scope',
-    body: 'Start by choosing the namespace scope. Keep "All Namespaces" for global triage, then narrow to isolate a specific incident.'
+    body: 'Start by choosing the namespace scope. Keep "All Namespaces" for global triage, then narrow to isolate a specific incident.',
+    scrollBlock: 'start'
   },
   {
     selector: '#spillBadge',
     title: 'Header Status Controls',
-    body: 'Use header controls for quick orientation: Connected status (cluster/session health), Active Alerts badge (shortcut to incidents), and First-run guide (reopen this tour).'
+    body: 'Use header controls for quick orientation: Connected status (cluster/session health), Active Alerts badge (shortcut to incidents), and First-run guide (reopen this tour).',
+    autoScroll: false
   },
   {
     selector: '#kFailCard',
@@ -143,7 +145,8 @@ var ONBOARDING_TOUR_STEPS = [
   {
     selector: '#hdrAlertBadge',
     title: 'Live Alert Badge',
-    body: 'The header badge tracks current critical count. Click it any time to jump directly to active alerts.'
+    body: 'The header badge tracks current critical count. Click it any time to jump directly to active alerts.',
+    autoScroll: false
   },
   {
     selector: '#ph-events',
@@ -204,6 +207,12 @@ function isOnboardingTourActive() {
   return !!onboardingTourState.active;
 }
 
+function scheduleOnboardingTourReflow() {
+  [0, 80, 180, 320].forEach(function(ms) {
+    setTimeout(updateOnboardingTourPosition, ms);
+  });
+}
+
 function updateOnboardingTourPosition() {
   if (!onboardingTourState.active || !onboardingTourState.targetEl) return;
 
@@ -253,8 +262,8 @@ function renderOnboardingTourStep() {
   }
 
   onboardingTourState.targetEl = target;
-  if (typeof target.scrollIntoView === 'function') {
-    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+  if (step.autoScroll !== false && typeof target.scrollIntoView === 'function') {
+    target.scrollIntoView({ behavior: 'auto', block: step.scrollBlock || 'center', inline: 'nearest' });
   }
 
   var titleEl = document.getElementById('onboardingTourTitle');
@@ -268,7 +277,7 @@ function renderOnboardingTourStep() {
   if (prevBtn) prevBtn.disabled = idx === 0;
   if (nextBtn) nextBtn.textContent = idx === ONBOARDING_TOUR_STEPS.length - 1 ? 'Finish' : 'Next';
 
-  setTimeout(updateOnboardingTourPosition, 120);
+  scheduleOnboardingTourReflow();
 }
 
 function startOnboardingTour() {
