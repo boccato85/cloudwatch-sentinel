@@ -106,24 +106,47 @@ document.getElementById('wasteList').addEventListener('click', function(e) {
 });
 
 // ─── Version badge (dynamic) ──────────────────────────────────────────────────
-async function loadVersion() {
+function setVersionBadge(version) {
+  if (!version) return;
+  var badge = document.getElementById('ribbonVer');
+  if (!badge) return;
+  badge.textContent = 'sentinel-agent v' + version;
+  badge.title = 'Sentinel v' + version + '\nKubernetes SRE/FinOps\n\u00a9 2026 Sentinel Project';
+}
+
+function updateMetricsDegradedBanner(data) {
+  var banner = document.getElementById('degradedBanner');
+  var msgEl = document.getElementById('degradedBannerMsg');
+  if (!banner || !msgEl) return;
+
+  var metricsCheck = data && data.checks ? data.checks.metrics_api : null;
+  var isMetricsDegraded = metricsCheck && metricsCheck.status && metricsCheck.status !== 'ok';
+  if (!isMetricsDegraded) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  var detail = metricsCheck.message ? String(metricsCheck.message) : 'metrics api unavailable';
+  msgEl.textContent = 'Sentinel is online, but metrics-backed views (incidents, FinOps and efficiency) can be partial or empty until metrics.k8s.io recovers. Detail: ' + detail + '.';
+  banner.style.display = 'block';
+}
+
+async function refreshHealthSignals() {
   try {
     var data = await (await fetchAuth('/health')).json();
-    var v = data && data.version ? data.version : null;
-    if (!v) return;
-    var badge = document.getElementById('ribbonVer');
-    if (badge) {
-      badge.textContent = 'sentinel-agent v' + v;
-      badge.title = 'Sentinel v' + v + '\nKubernetes SRE/FinOps\n\u00a9 2026 Sentinel Project';
-    }
-    // populate Connected tooltip with DB status from /health
+    setVersionBadge(data && data.version ? data.version : null);
     var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
     updateSpillTip(dbSt);
-  } catch(e) { updateSpillTip('unknown'); }
+    updateMetricsDegradedBanner(data);
+  } catch(e) {
+    updateSpillTip('unknown');
+    updateMetricsDegradedBanner(null);
+  }
 }
 
 loadNamespaces();
-loadVersion();
+refreshHealthSignals();
+setInterval(refreshHealthSignals, 5000);
 setInterval(update, 5000);
 
 update();

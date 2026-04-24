@@ -6,6 +6,50 @@
   --text:#c8d0e0;--text-dim:#7a8499;--text-bright:#edf0f7;
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+.degraded-banner{
+  border-bottom:1px solid rgba(240,112,0,.35);
+  background:linear-gradient(90deg, rgba(240,112,0,.16), rgba(240,112,0,.08));
+}
+.degraded-banner-inner{
+  padding:9px 20px;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.degraded-banner-title{
+  color:var(--orange);
+  font-size:.78em;
+  font-weight:700;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+}
+.degraded-banner-msg{
+  color:var(--text-bright);
+  font-size:.86em;
+  line-height:1.4;
+}
+.degraded-banner-runbook{
+  color:var(--text-dim);
+  font-size:.77em;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.degraded-banner-runbook code{
+  background:rgba(0,0,0,.24);
+  border:1px solid var(--border);
+  border-radius:4px;
+  color:var(--text-bright);
+  font-family:'JetBrains Mono',monospace;
+  padding:1px 6px;
+}
+.degraded-banner-runbook a{
+  color:var(--cyan);
+  text-decoration:none;
+  font-weight:600;
+}
+.degraded-banner-runbook a:hover{text-decoration:underline}
 /* HEADER */
 .hdr{background:#090c12;border-bottom:1px solid var(--border);padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .logo{font-size:1em;font-weight:700;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
