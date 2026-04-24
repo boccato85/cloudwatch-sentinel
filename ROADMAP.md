@@ -1,6 +1,6 @@
 # Sentinel Roadmap — 0.x → 1.0
 
-> Last updated: 2026-04-23 | Current version: `v1.0.0-rc.2`
+> Last updated: 2026-04-24 | Current version: `v1.0.0-rc.2`
 
 ## Product vision
 

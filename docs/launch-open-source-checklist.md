@@ -15,7 +15,7 @@ Launch Sentinel publicly with a credible technical baseline, clear onboarding, a
 
 ## Definition of Done (Launch)
 
-- [ ] Public repo has clear Quick Start + Quick Demo.
+- [ ] Public repo has clear Quick Start + external Live Demo reference.
 - [ ] Release artifacts are coherent (`README`, `CHANGELOG`, `RELEASE`, tags/images).
 - [ ] Security/operations docs are explicit enough for first adopters.
 - [ ] UX launch gate is complete (`#42`, `#43`, `#44`, `#45`).
@@ -34,12 +34,11 @@ Launch Sentinel publicly with a credible technical baseline, clear onboarding, a
 Done criteria:
 - [ ] No ambiguous scope items remain for launch week.
 
-### Day 2 - Quick demo production
+### Day 2 - Live demo preparation
 
 - [ ] Record dashboard flow (overview -> incidents -> waste -> status).
-- [ ] Export `MP4` and optimized `GIF`.
-- [ ] Add demo assets under `docs/assets/`.
-- [ ] Embed Quick Demo section in `README.md`.
+- [ ] Publish/host demo video externally (YouTube/other).
+- [ ] Add Live Demo link in `README.md` (external URL).
 
 Done criteria:
 - [ ] New visitor understands product value in under 60 seconds.
@@ -136,7 +135,7 @@ Done criteria:
 
 ### Now
 
-- [ ] Demo asset capture and README embed.
+- [ ] Live demo link and short launch storyline in README.
 - [ ] Install path validation (Helm + compose).
 - [ ] UX launch gate (`#42`, `#43`, `#44`, `#45`).
 - [ ] Release flow dry run.
