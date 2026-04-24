@@ -486,77 +486,8 @@ Every final report passes through `harness/output_validator.py` before being wri
 
 ## Changelog
 
-### v1.0.0-rc.2 — Release-readiness hardening
-- **Docs/runtime alignment** — setup paths now use root `.env.example`; agent management docs match the real Makefile targets.
-- **Helm hardening** — GHCR image defaults, explicit database password requirement and cleaned `values.yaml` structure.
-- **Production-first deploy** — chart defaults to `ClusterIP`, adds Ingress rendering and documents NodePort as dev/lab only.
-- **Release operations** — support matrix, smoke test and operational release notes added for v1.0 adoption.
-- **Rate limiting** — client identity now uses the remote address observed by the agent; forwarded IP headers are ignored in v1.0.
-- **Intelligence contract** — v1.0 remains deterministic-only; provider-agnostic cloud intelligence is M8 scope.
-
-### v1.0-rc1 — M7: v1.0 preparation complete
-- **OpenAPI spec completed** — all 15 endpoints documented with full schemas, securitySchemes and reusable responses.
-- **README fully corrected** — setup instructions, API endpoint table, Go version, ranges.
-- **CONTRIBUTING.md** — dev setup, architecture constraints, commit conventions and PR scope boundaries.
-- **GHCR release pipeline** — `release.yml` builds and pushes `ghcr.io/boccato85/sentinel` on semver tags via `GITHUB_TOKEN`.
-- **docker-compose** — `docker-compose.yml` added to project root; enables local development without Minikube (agent + PostgreSQL).
-- **Dockerfile pinned** — builder image pinned to `golang:1.25-alpine` (matches `go.mod`); runtime updated to `alpine:3.21` (EOL fix from `alpine:3.19`).
-- **M8 agentic workflow model** — ROADMAP M8 rewritten to reflect agentic investigation workflow: LLM orchestrates read-only kubectl tools, proposes remediation steps, user confirms before execution.
-- **i18n** — all incident narrative strings translated from PT-BR to English in the Go backend.
-- **CI fixed** — `go-version` bumped to `1.25` to match `go.mod` directive; `eval/gemini` added to CI triggers.
-- **Screenshots updated** — 5 new v1.0-rc1 screenshots replacing all v0.10.x references.
-- **SECURITY.md** — supported version and `AUTH_ENABLED` default corrected.
-
-### v0.50.6 — UI refinements and host security hardening
-- **Status Ribbon** — replaced context bar with persistent ribbon showing version, namespace and sync state.
-- **FinOps correlation chart** — enhanced Budget vs Actual visualization with forecast overlay.
-- **Host security** — hardened CSP headers and improved XSS mitigation across dashboard handlers.
-
-### v0.50 — M6: Real Lab / Chaos Lab
-- **Milestone 6 (M6) officially closed** — Sentinel validated under 1000 users load using Online Boutique.
-- **Chaos Lab Report** — Comprehensive baseline/chaos analysis report generated documenting Throttling, OOMKill risk and Resource Waste escalation.
-- **UI Scaling** — Verified visual prioritization logic (CRITICAL/HighCPU) under extreme cluster stress.
-
-### v0.36 — Issue #13 & #18: UX & Incident Polish
-- **Issue #13 (HighCPU fallback):** Logic to detect pods without `resources.requests.cpu` using node allocatable percentages.
-- **Issue #18 (Prioritization):** `CRITICAL` and `HighCPU` incidents now bypass "System NS" and time filters in drawers.
-- **UI Enhancements:** Sortable column headers in Recent Incidents; fixed negative waste messages and "Age" display for ResourceWaste items.
-- **Cleanup:** Removal of redundant local namespace selectors; fixed cache-busting system for JS modules.
-
-### v0.35 — M5 code review fixes
-- **Security (JS):** Copy button in Alerts drawer now uses `data-runbook` + `addEventListener` — previously the `onclick` attribute was silently stripped by DOMPurify, rendering the button non-functional.
-- **Runbooks:** `ErrImagePull` and `CreateContainerConfigError` now produce `kubectl describe pod` instead of `kubectl logs` (container never started; logs return nothing).
-- **Intelligence skeleton:** Fixed latent nil-pointer risk in the disabled provider facade.
-- **Tests:** Added unit tests for `pkg/llm` disabled-mode branches (Go: 14 tests; harness: 23 tests; total: 37).
-- **Roadmap:** Swapped M6/M7 — Real lab/QA before docs/polish; rationale in ROADMAP.md.
-
-### v0.34
-- **Auto-scaling Honeycomb Map** — Datadog-inspired visual density map for cluster health.
-- **Node Detail Drawer** — Individual node analysis with CPU/Memory saturation bars and pod list.
-- **Improved UX** — Back buttons for seamless navigation between node details and global lists.
-- **Event Delegation** — Robust UI interactions that survive dynamic re-renders and DOM sanitization.
-
-### v0.12 — Security hardening + M5 foundation + JS modularization
-- **Security (M4 gap closure):** `AUTH_TOKEN` fail-fast, `/health` disclosure fix, XSS hardening, Helm `required` guard.
-- **M5 foundation:** `Narrative` field on `Incident` struct, Harness M5 remediation guard (23 automated tests).
-- **Infrastructure:** JS modularization (7 modules), `embed.FS` + `http.FileServer`.
-
-### v0.11 — Dashboard v2: no-scroll layout
-- **Dashboard v2 layout** — scroll-free overview optimized for single-screen monitoring.
-- **FinOps/Efficiency toggle** — line chart + donut breakdown.
-- **Recent Events tile** — full drawer with search and filters.
-
-### v0.10.15 — M2: Waste by Deployment
-- **By Deployment view** in Waste Intelligence drawer — aggregates by `app` label.
-- **By Pod | By Deployment toggle** with tab-style UI.
-
-### v0.10.14 — Namespace Efficiency Score + UX Polish
-- **Namespace Efficiency Score** — full-width panel with A→F grades.
-- **"ⓘ What these metrics mean" card** — inline glossary.
-
-### v0.10.1 — M1 closed
-- `/health` endpoint with DB and collector status.
-- **22 automated tests**.
+The full version history is maintained in [CHANGELOG.md](CHANGELOG.md).
+For operator-facing guidance (install, upgrade, rollback, known limitations), see [RELEASE.md](RELEASE.md).
 
 ---
 
