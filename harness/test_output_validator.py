@@ -75,7 +75,7 @@ class TestValidadorSaida(unittest.TestCase):
         errors = validate(huge)
         self.assertTrue(any("limite máximo" in e.lower() for e in errors))
 
-    # ===== M5 remediation guard tests =====
+    # ===== Operational remediation guard tests =====
     def test_blocks_kubectl_apply_stdin(self):
         errors = validate(valid_report_with("Run: kubectl apply -f - < manifest.yaml"))
         self.assertTrue(any("kubectl apply -f -" in e for e in errors))

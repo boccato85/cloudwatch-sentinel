@@ -434,9 +434,9 @@ sentinel/
 │   └── thresholds.yaml              # Operational thresholds
 ├── tools/
 │   ├── monitor.py                   # Monitor via Go agent API
-│   └── report_tool.py               # Safe write via harness
+│   └── report_tool.py               # Safe report/runbook writes via harness
 ├── harness/
-│   ├── output_validator.py          # Gatekeeper: blocks destructive commands
+│   ├── output_validator.py          # Operational safety validator
 │   └── test_output_validator.py     # Unit tests (23 tests)
 ├── docs/
 │   ├── screenshots/                 # Dashboard screenshots
@@ -452,14 +452,14 @@ sentinel/
 
 ---
 
-## Harness Engineering
+## Operational Safety Harness
 
-Every final report passes through `harness/output_validator.py` before being written:
+Reports and runbooks can pass through `harness/output_validator.py` before being written. This keeps deterministic operational output from recommending destructive commands by accident.
 
 | Rule | Behavior |
 |---|---|
 | Blocks destructive commands | `rm -rf`, `kubectl delete`, `DROP TABLE`, fork bombs, `> /dev/` redirects |
-| Blocks M5 remediation risks | `kubectl exec`, `kubectl apply -f -` (stdin), `kubectl scale --replicas=0`, `kubectl patch` with `replicas: 0`, `helm uninstall`, `helm delete` |
+| Blocks remediation risks | `kubectl exec`, `kubectl apply -f -` (stdin), `kubectl scale --replicas=0`, `kubectl patch` with `replicas: 0`, `helm uninstall`, `helm delete` |
 | Requires `## Resumo Executivo` | Reports without this section are rejected |
 | Minimum size | Content under 100 characters is rejected |
 | Maximum size | Content over 10 MB is rejected |

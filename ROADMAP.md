@@ -173,7 +173,7 @@ Execution order: `P1` -> `P2` -> `P3`.
 | `Narrative string` field in `Incident` struct (`omitempty`, backward-compatible) | ✅ Done (`v0.12`) |
 | Narrative rendered in Alerts drawer when populated (collapsible "Why?" block) | ✅ Done (`v0.12`) |
 | Degraded mode: incident endpoint returns deterministic analysis | ✅ Done |
-| Harness M5 remediation guard: block `kubectl exec`, `kubectl scale --replicas=0`, `helm uninstall`, `kubectl apply -f -`, `kubectl patch replicas:0` | ✅ Done (`v0.12`) |
+| Operational Safety Harness: block `kubectl exec`, `kubectl scale --replicas=0`, `helm uninstall`, `kubectl apply -f -`, `kubectl patch replicas:0` | ✅ Done (`v0.12`) |
 | **Honeycomb UI**: Datadog-style auto-scaling visual maps | ✅ Done (`v0.34`) |
 | **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.34`) |
 | **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.34`) |

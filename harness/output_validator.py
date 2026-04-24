@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-Harness Engineering — Output Validator
-sentinel
+Operational Safety Harness - Output Validator
 
 Lê conteúdo do stdin, aplica regras de segurança e conformidade,
 e escreve em stdout se válido. Encerra com exit(1) em caso de violação.
 
 Uso:
-    echo "<conteúdo>" | python3 harness/validador_saida.py > reports/relatorio.md
+    echo "<conteudo>" | python3 harness/output_validator.py > reports/relatorio.md
 """
 
 import sys
@@ -29,7 +28,7 @@ FORBIDDEN_PATTERNS = [
     "> /dev/",
     "format c:",
     ":(){:|:&};:",  # fork bomb
-    # M5 remediation guard: commands that appear safe but are destructive in runbook context
+    # Remediation guard: commands that are destructive in report/runbook context.
     "kubectl apply -f -",          # applying manifests piped from stdin (untrusted input)
     "kubectl scale --replicas=0",  # scaling down to zero (service outage)
     "helm uninstall",              # uninstalling a release (data loss risk)
@@ -48,7 +47,7 @@ FORBIDDEN_REGEX_PATTERNS = [
     (r">\s*/dev/", "> /dev/"),
     (r"\bformat\s+c:", "format c:"),
     (r":\(\)\{\s*:\|:&\s*\};:", ":(){:|:&};:"),
-    # M5 remediation guard: regex equivalents for runbook command blocks
+    # Remediation guard: regex equivalents for report/runbook command blocks.
     (r"\bkubectl\s+apply\s+-f\s+-\b", "kubectl apply -f -"),
     (r"\bkubectl\s+scale\b.*--replicas\s*=\s*0\b", "kubectl scale --replicas=0"),
     (r"\bhelm\s+(?:uninstall|delete)\b", "helm uninstall/delete"),
@@ -127,7 +126,7 @@ def main():
     errors = validate(text)
 
     if errors:
-        sys.stderr.write("❌ Validador bloqueou a gravação:\n")
+        sys.stderr.write("Validador bloqueou a gravação:\n")
         for i, err in enumerate(errors, 1):
             sys.stderr.write(f"  {i}. {err}\n")
         sys.exit(1)
