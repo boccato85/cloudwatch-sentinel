@@ -251,6 +251,11 @@ curl -H "Authorization: Bearer <AUTH_TOKEN>" https://sentinel.example.com/api/su
 **Incident investigation note:**
 This OSS repository provides deterministic incident analysis only. Proprietary investigation capabilities are developed and distributed separately.
 
+**Operator guides (P1):**
+- [Operational Playbook](docs/operational-playbook.md) (backup/restore, upgrade, rollback, troubleshooting)
+- [Security Hardening Guide](docs/security-hardening.md) (token rotation, baseline hardening, TLS to DB, audit logging status)
+- [Deterministic Core vs Optional LLM](docs/deterministic-core-vs-optional-llm.md) (scope boundaries and mode matrix)
+
 ---
 
 ## API Endpoints

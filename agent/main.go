@@ -38,11 +38,37 @@ var (
 	latestStats   []api.PodStats
 	latestSummary api.ClusterSummary
 	statsMutex    sync.Mutex
-	db            *sql.DB
 
 	lastCollectTime time.Time
 	collectMutex    sync.Mutex
 )
+
+type runtimeConfig struct {
+	LogLevel slog.Level
+
+	USDPerVcpuHour float64
+	USDPerGbHour   float64
+
+	DBUser           string
+	DBPass           string
+	DBName           string
+	DBHost           string
+	DBPort           string
+	DBSSLMode        string
+	DBConnectRetries int
+
+	Thresholds incidents.Thresholds
+
+	RetentionRawHours   int
+	RetentionHourlyDays int
+	RetentionDailyDays  int
+
+	AuthEnabled bool
+	AuthToken   string
+
+	ListenAddr string
+	RateLimit  int
+}
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
@@ -86,6 +112,25 @@ func getEnvFloat(key string, fallback float64) float64 {
 	return parsed
 }
 
+func resolveLogLevel(value string) slog.Level {
+	switch value {
+	case "debug":
+		return slog.LevelDebug
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
+func configureLogging(level slog.Level) {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	})))
+}
+
 func logCollectorError(op string, err error) {
 	slog.Error("collector error", "component", "collector", "op", op, "err", err)
 }
@@ -103,48 +148,60 @@ func getPodRequest(m map[string]map[string]int64, ns, pod string) (int64, bool) 
 	return 0, false
 }
 
-func main() {
-	logLevel := slog.LevelInfo
-	switch getEnv("LOG_LEVEL", "info") {
-	case "debug":
-		logLevel = slog.LevelDebug
-	case "warn":
-		logLevel = slog.LevelWarn
-	case "error":
-		logLevel = slog.LevelError
+func loadRuntimeConfig() runtimeConfig {
+	cfg := runtimeConfig{
+		LogLevel: resolveLogLevel(getEnv("LOG_LEVEL", "info")),
+
+		USDPerVcpuHour: getEnvFloat("USD_PER_VCPU_HOUR", 0.04),
+		USDPerGbHour:   getEnvFloat("USD_PER_GB_HOUR", 0.005),
+
+		DBUser:           requireEnv("DB_USER"),
+		DBPass:           requireEnv("DB_PASSWORD"),
+		DBName:           getEnv("DB_NAME", "sentinel_db"),
+		DBHost:           getEnv("DB_HOST", "localhost"),
+		DBPort:           getEnv("DB_PORT", "5432"),
+		DBSSLMode:        getEnv("DB_SSLMODE", "disable"),
+		DBConnectRetries: getEnvInt("DB_CONNECT_RETRIES", 10),
+
+		RetentionRawHours:   getEnvInt("RETENTION_RAW_HOURS", 24),
+		RetentionHourlyDays: getEnvInt("RETENTION_HOURLY_DAYS", 30),
+		RetentionDailyDays:  getEnvInt("RETENTION_DAILY_DAYS", 365),
+
+		AuthEnabled: getEnv("AUTH_ENABLED", "true") == "true",
+		AuthToken:   getEnv("AUTH_TOKEN", ""),
+
+		ListenAddr: getEnv("LISTEN_ADDR", "127.0.0.1:8080"),
+		RateLimit:  getEnvInt("RATE_LIMIT_RPS", 100),
 	}
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: logLevel,
-	})))
 
-	usdPerVcpuHour = getEnvFloat("USD_PER_VCPU_HOUR", 0.04)
-	usdPerGbHour = getEnvFloat("USD_PER_GB_HOUR", 0.005)
-
-	dbUser := requireEnv("DB_USER")
-	dbPass := requireEnv("DB_PASSWORD")
-	dbName := getEnv("DB_NAME", "sentinel_db")
-	dbHost := getEnv("DB_HOST", "localhost")
-	dbPort := getEnv("DB_PORT", "5432")
-	sslMode := getEnv("DB_SSLMODE", "disable")
 	store.DBTimeout = time.Duration(getEnvInt("DB_TIMEOUT_SEC", 5)) * time.Second
 
 	thresholdsPath := getEnv("THRESHOLDS_PATH", "../config/thresholds.yaml")
-	thresholds := incidents.LoadThresholds(thresholdsPath)
+	cfg.Thresholds = incidents.LoadThresholds(thresholdsPath)
 
-	retentionRawHours := getEnvInt("RETENTION_RAW_HOURS", 24)
-	retentionHourlyDays := getEnvInt("RETENTION_HOURLY_DAYS", 30)
-	retentionDailyDays := getEnvInt("RETENTION_DAILY_DAYS", 365)
+	if cfg.AuthEnabled && cfg.AuthToken == "" {
+		slog.Error("AUTH_TOKEN must be set when AUTH_ENABLED=true — refusing to start with no token", "component", "app")
+		os.Exit(1)
+	}
 
-	if sslMode == "disable" {
+	return cfg
+}
+
+func buildDBConnString(cfg runtimeConfig) string {
+	return fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=10",
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName, cfg.DBSSLMode,
+	)
+}
+
+func initDatabase(cfg runtimeConfig) {
+	if cfg.DBSSLMode == "disable" {
 		slog.Warn("PostgreSQL SSL is disabled — set DB_SSLMODE=require for production", "component", "db")
 	}
 
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=10",
-		dbHost, dbPort, dbUser, dbPass, dbName, sslMode)
-
-	slog.Info("connecting to PostgreSQL", "component", "db", "host", dbHost, "port", dbPort, "database", dbName)
+	slog.Info("connecting to PostgreSQL", "component", "db", "host", cfg.DBHost, "port", cfg.DBPort, "database", cfg.DBName)
 	var err error
-	store.DB, err = sql.Open("postgres", connStr)
+	store.DB, err = sql.Open("postgres", buildDBConnString(cfg))
 	if err != nil {
 		slog.Error("database connection failed", "component", "db", "err", err)
 		os.Exit(1)
@@ -155,7 +212,18 @@ func main() {
 	store.DB.SetConnMaxLifetime(5 * time.Minute)
 	store.DB.SetConnMaxIdleTime(1 * time.Minute)
 
-	maxRetries := getEnvInt("DB_CONNECT_RETRIES", 10)
+	waitForDBReady(cfg.DBConnectRetries)
+
+	schemaCtx, schemaCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	if err = store.EnsureSchema(schemaCtx); err != nil {
+		slog.Warn("failed to create database schema (starting in DEGRADED state)", "component", "db", "err", err)
+	} else {
+		slog.Info("database schema verified", "component", "db")
+	}
+	schemaCancel()
+}
+
+func waitForDBReady(maxRetries int) {
 	var lastErr error
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		pingCtx, pingCancel := store.WithDBTimeout(context.Background())
@@ -164,12 +232,12 @@ func main() {
 
 		if lastErr == nil {
 			slog.Info("database connection established", "component", "db", "attempt", attempt)
-			break
+			return
 		}
 
 		if attempt == maxRetries {
 			slog.Warn("database ping failed after all retries, starting in DEGRADED state", "component", "db", "attempts", maxRetries, "err", lastErr)
-			break
+			return
 		}
 
 		backoff := time.Duration(1<<(attempt-1)) * time.Second
@@ -179,34 +247,20 @@ func main() {
 		slog.Warn("database not ready, retrying...", "component", "db", "attempt", attempt, "maxRetries", maxRetries, "backoff", backoff, "err", lastErr)
 		time.Sleep(backoff)
 	}
+}
 
-	schemaCtx, schemaCancel := context.WithTimeout(context.Background(), 30*time.Second)
-	if err = store.EnsureSchema(schemaCtx); err != nil {
-		slog.Warn("failed to create database schema (starting in DEGRADED state)", "component", "db", "err", err)
-	} else {
-		slog.Info("database schema verified", "component", "db")
+func nextCollectorBackoff(current time.Duration, hadError bool) time.Duration {
+	if !hadError {
+		return 10 * time.Second
 	}
-	schemaCancel()
-
-	slog.Info("Sentinel Agent: Active", "component", "app", "version", agentVersion)
-
-	if err := k8s.InitClients(); err != nil {
-		slog.Error("failed to initialize k8s clients", "component", "k8s", "err", err)
-		os.Exit(1)
+	next := current * 2
+	if next > 60*time.Second {
+		next = 60 * time.Second
 	}
+	return next
+}
 
-	appCtx, appCancel := context.WithCancel(context.Background())
-	defer appCancel()
-
-	authEnabled := getEnv("AUTH_ENABLED", "true") == "true"
-	authToken := getEnv("AUTH_TOKEN", "")
-	if authEnabled && authToken == "" {
-		slog.Error("AUTH_TOKEN must be set when AUTH_ENABLED=true — refusing to start with no token", "component", "app")
-		os.Exit(1)
-	}
-
-	go store.StartRetentionWorker(appCtx, retentionRawHours, retentionHourlyDays, retentionDailyDays)
-
+func startCollectorLoop(appCtx context.Context, thresholds incidents.Thresholds) {
 	go func() {
 		backoff := 10 * time.Second
 		for {
@@ -363,14 +417,9 @@ func main() {
 			collectMutex.Unlock()
 
 			cancel()
+			backoff = nextCollectorBackoff(backoff, hadError)
 			if hadError {
-				backoff *= 2
-				if backoff > 60*time.Second {
-					backoff = 60 * time.Second
-				}
 				slog.Warn("collector backoff increased due to error", "component", "collector", "backoff", backoff)
-			} else {
-				backoff = 10 * time.Second
 			}
 			select {
 			case <-appCtx.Done():
@@ -379,16 +428,16 @@ func main() {
 			}
 		}
 	}()
+}
 
-	mux := http.NewServeMux()
-
-	apiService := &api.API{
+func newAPIService(cfg runtimeConfig) *api.API {
+	return &api.API{
 		AgentVersion:            agentVersion,
 		CollectorStaleThreshold: collectorStaleThreshold,
-		USDPerVcpuHour:          usdPerVcpuHour,
-		Thresholds:              thresholds,
-		AuthEnabled:             authEnabled,
-		AuthToken:               authToken,
+		USDPerVcpuHour:          cfg.USDPerVcpuHour,
+		Thresholds:              cfg.Thresholds,
+		AuthEnabled:             cfg.AuthEnabled,
+		AuthToken:               cfg.AuthToken,
 		GetLatestStats: func() ([]api.PodStats, api.ClusterSummary) {
 			statsMutex.Lock()
 			defer statsMutex.Unlock()
@@ -401,31 +450,33 @@ func main() {
 		},
 		StaticFS: staticFS,
 	}
+}
 
+func newHTTPServer(cfg runtimeConfig, apiService *api.API) *http.Server {
+	mux := http.NewServeMux()
 	apiService.RegisterHandlers(mux)
 
-	listenAddr := getEnv("LISTEN_ADDR", "127.0.0.1:8080")
-	rateLimit := getEnvInt("RATE_LIMIT_RPS", 100)
-
-	srv := &http.Server{
-		Addr:         listenAddr,
-		Handler:      api.WithMiddleware(mux, api.RecoverMiddleware, api.RequestLoggerMiddleware, api.RateLimitMiddleware(rateLimit), apiService.AuthMiddleware),
+	return &http.Server{
+		Addr:         cfg.ListenAddr,
+		Handler:      api.WithMiddleware(mux, api.RecoverMiddleware, api.RequestLoggerMiddleware, api.RateLimitMiddleware(cfg.RateLimit), apiService.AuthMiddleware),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
+}
 
-	slog.Info("Sentinel Cluster Overview", "component", "app", "url", fmt.Sprintf("http://%s", listenAddr))
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
+func startHTTPServer(srv *http.Server) {
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("server error", "component", "http", "err", err)
 			os.Exit(1)
 		}
 	}()
+}
+
+func waitForShutdown(appCancel context.CancelFunc, srv *http.Server) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sigChan
 	slog.Info("shutting down gracefully...", "component", "app")
@@ -439,4 +490,34 @@ func main() {
 	if err := store.DB.Close(); err != nil {
 		slog.Warn("database close failed", "component", "db", "err", err)
 	}
+}
+
+func main() {
+	cfg := loadRuntimeConfig()
+	configureLogging(cfg.LogLevel)
+
+	usdPerVcpuHour = cfg.USDPerVcpuHour
+	usdPerGbHour = cfg.USDPerGbHour
+
+	initDatabase(cfg)
+
+	slog.Info("Sentinel Agent: Active", "component", "app", "version", agentVersion)
+
+	if err := k8s.InitClients(); err != nil {
+		slog.Error("failed to initialize k8s clients", "component", "k8s", "err", err)
+		os.Exit(1)
+	}
+
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+
+	go store.StartRetentionWorker(appCtx, cfg.RetentionRawHours, cfg.RetentionHourlyDays, cfg.RetentionDailyDays)
+	startCollectorLoop(appCtx, cfg.Thresholds)
+
+	apiService := newAPIService(cfg)
+	srv := newHTTPServer(cfg, apiService)
+
+	slog.Info("Sentinel Cluster Overview", "component", "app", "url", fmt.Sprintf("http://%s", cfg.ListenAddr))
+	startHTTPServer(srv)
+	waitForShutdown(appCancel, srv)
 }

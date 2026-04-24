@@ -44,7 +44,7 @@ See [docs/support-matrix.md](docs/support-matrix.md) for supported Kubernetes, d
 - [ ] `AUTH_ENABLED=true` by default — do not disable in production
 - [ ] Provide a strong hex token via `AUTH_TOKEN` (generate with `python3 -c "import secrets; print(secrets.token_hex(32))"`)
 - [ ] The agent will refuse to start if `AUTH_ENABLED=true` and `AUTH_TOKEN` is empty
-- [ ] Dashboard reads the token from `localStorage` — clear it when decommissioning a browser session
+- [ ] Dashboard stores the token in `sessionStorage` (tab-scoped) — close tab/session on decommissioning
 
 ### Secrets
 - [ ] Never log the `connStr` variable — it contains the DB password in plaintext
@@ -70,6 +70,8 @@ See [docs/support-matrix.md](docs/support-matrix.md) for supported Kubernetes, d
 | CSRF protection | N/A — no state-changing browser-initiated endpoints |
 | Audit logging | Not implemented |
 | Proprietary extension runtime | Not part of the public v1.0 runtime contract |
+
+See [docs/security-hardening.md](docs/security-hardening.md) for operational hardening and rotation workflows.
 
 ---
 
