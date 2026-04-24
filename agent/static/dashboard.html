@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/dashboard.css?v=1007">
+<link rel="stylesheet" href="/static/dashboard.css?v=1008">
 </head>
 <body>
 
@@ -80,22 +80,22 @@
 <div id="firstRunOnboarding" class="onboarding-shell" style="display:none">
   <div class="onboarding-card">
     <div class="onboarding-head">
-      <div class="onboarding-title">First-Run Checklist</div>
-      <div class="onboarding-sub">Authenticate, verify health, and confirm where to get support.</div>
+      <div class="onboarding-title">First-Run Guide</div>
+      <div class="onboarding-sub">Use guided mode to learn where to click and what each key area means.</div>
     </div>
     <ol class="onboarding-list">
       <li>
-        <b>Token and session scope</b>
+        <b>Session and auth model</b>
         <span>Use a valid <code>AUTH_TOKEN</code>. Sentinel keeps the token only in <code>sessionStorage</code> (current browser tab).</span>
       </li>
       <li>
-        <b>Quick health verification</b>
+        <b>Health baseline</b>
         <span id="onboardingHealthSummary">Checking <code>/health</code>...</span>
         <div id="onboardingHealthChecks" class="onboarding-health-checks"></div>
       </li>
       <li>
         <b>Support and release docs</b>
-        <span class="onboarding-links">
+        <span id="onboardingLinks" class="onboarding-links">
           <a href="https://github.com/boccato85/Sentinel/blob/develop/docs/support-matrix.md" target="_blank" rel="noopener">Support matrix</a>
           <a href="https://github.com/boccato85/Sentinel/blob/develop/RELEASE.md" target="_blank" rel="noopener">Release process</a>
           <a href="https://github.com/boccato85/Sentinel/blob/develop/docs/operational-playbook.md" target="_blank" rel="noopener">Operational runbook</a>
@@ -104,7 +104,26 @@
     </ol>
     <div class="onboarding-actions">
       <button id="onboardingDismissBtn" class="onboarding-btn onboarding-btn-secondary">Hide for now</button>
-      <button id="onboardingCompleteBtn" class="onboarding-btn onboarding-btn-primary">Mark checklist as done</button>
+      <button id="onboardingCompleteBtn" class="onboarding-btn onboarding-btn-secondary">Mark checklist as done</button>
+      <button id="onboardingStartTourBtn" class="onboarding-btn onboarding-btn-primary">Start guided tour</button>
+    </div>
+  </div>
+</div>
+
+<!-- GUIDED TOUR OVERLAY -->
+<div id="onboardingTourOverlay" class="onboarding-tour-overlay" style="display:none">
+  <div id="onboardingTourSpotlight" class="onboarding-tour-spotlight"></div>
+  <div id="onboardingTourPopover" class="onboarding-tour-popover">
+    <div class="onboarding-tour-kicker">First-run guide</div>
+    <div id="onboardingTourTitle" class="onboarding-tour-title"></div>
+    <div id="onboardingTourBody" class="onboarding-tour-body"></div>
+    <div class="onboarding-tour-footer">
+      <span id="onboardingTourProgress" class="onboarding-tour-progress"></span>
+      <div class="onboarding-tour-actions">
+        <button id="onboardingTourSkipBtn" class="onboarding-btn onboarding-btn-secondary">Skip</button>
+        <button id="onboardingTourPrevBtn" class="onboarding-btn onboarding-btn-secondary">Back</button>
+        <button id="onboardingTourNextBtn" class="onboarding-btn onboarding-btn-primary">Next</button>
+      </div>
     </div>
   </div>
 </div>

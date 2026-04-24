@@ -2,6 +2,10 @@
 document.getElementById('drawer-close').addEventListener('click', closeDrawer);
 document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
 document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && isOnboardingTourActive()) {
+    stopOnboardingTour();
+    return;
+  }
   if (e.key === 'Escape' && drawerOpen) closeDrawer();
 });
 // KPI cards → open corresponding drawers
@@ -115,6 +119,38 @@ function setVersionBadge(version) {
 }
 
 var ONBOARDING_DONE_KEY = 'sentinel_first_run_onboarding_done_v1';
+var ONBOARDING_TOUR_STEPS = [
+  {
+    selector: '#nsFilter',
+    title: 'Namespace Scope',
+    body: 'Start by choosing the namespace scope. Keep "All Namespaces" for global triage, then narrow to isolate a specific incident.'
+  },
+  {
+    selector: '#kFailCard',
+    title: 'Critical/Warn Signal',
+    body: 'This card is your first severity signal. Click it to open the Alerts drawer and inspect incidents that are impacting service health.'
+  },
+  {
+    selector: '#kWasteCard',
+    title: 'FinOps Waste View',
+    body: 'Use this tile to focus cost hotspots. It summarizes waste opportunities and opens detailed savings candidates.'
+  },
+  {
+    selector: '#hdrAlertBadge',
+    title: 'Live Alert Badge',
+    body: 'The header badge tracks current critical count. Click it any time to jump directly to active alerts.'
+  },
+  {
+    selector: '#onboardingLinks',
+    title: 'Support and Runbooks',
+    body: 'Use support matrix, release process and runbook links when you need operating boundaries, release checks or remediation guidance.'
+  }
+];
+var onboardingTourState = {
+  active: false,
+  step: 0,
+  targetEl: null
+};
 
 function isOnboardingDone() {
   try {
@@ -137,6 +173,98 @@ function setOnboardingVisible(visible) {
   var shell = document.getElementById('firstRunOnboarding');
   if (!shell) return;
   shell.style.display = visible ? 'block' : 'none';
+}
+
+function isOnboardingTourActive() {
+  return !!onboardingTourState.active;
+}
+
+function updateOnboardingTourPosition() {
+  if (!onboardingTourState.active || !onboardingTourState.targetEl) return;
+
+  var overlay = document.getElementById('onboardingTourOverlay');
+  var spotlight = document.getElementById('onboardingTourSpotlight');
+  var popover = document.getElementById('onboardingTourPopover');
+  if (!overlay || !spotlight || !popover) return;
+
+  var rect = onboardingTourState.targetEl.getBoundingClientRect();
+  var pad = 8;
+  var left = Math.max(6, rect.left - pad);
+  var top = Math.max(6, rect.top - pad);
+  var width = Math.max(24, rect.width + (pad * 2));
+  var height = Math.max(24, rect.height + (pad * 2));
+  spotlight.style.left = left + 'px';
+  spotlight.style.top = top + 'px';
+  spotlight.style.width = width + 'px';
+  spotlight.style.height = height + 'px';
+
+  var popRect = popover.getBoundingClientRect();
+  var viewportW = window.innerWidth || document.documentElement.clientWidth || 1280;
+  var viewportH = window.innerHeight || document.documentElement.clientHeight || 720;
+  var popLeft = left;
+  if (popLeft + popRect.width + 8 > viewportW) popLeft = viewportW - popRect.width - 8;
+  if (popLeft < 8) popLeft = 8;
+  var popTop = top + height + 10;
+  if (popTop + popRect.height + 8 > viewportH) popTop = Math.max(8, top - popRect.height - 10);
+  popover.style.left = popLeft + 'px';
+  popover.style.top = popTop + 'px';
+}
+
+function renderOnboardingTourStep() {
+  var idx = onboardingTourState.step;
+  if (idx < 0 || idx >= ONBOARDING_TOUR_STEPS.length) return;
+
+  var step = ONBOARDING_TOUR_STEPS[idx];
+  var target = document.querySelector(step.selector);
+  if (!target) {
+    if (idx < ONBOARDING_TOUR_STEPS.length - 1) {
+      onboardingTourState.step = idx + 1;
+      renderOnboardingTourStep();
+    } else {
+      stopOnboardingTour();
+    }
+    return;
+  }
+
+  onboardingTourState.targetEl = target;
+  if (typeof target.scrollIntoView === 'function') {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+  }
+
+  var titleEl = document.getElementById('onboardingTourTitle');
+  var bodyEl = document.getElementById('onboardingTourBody');
+  var progressEl = document.getElementById('onboardingTourProgress');
+  var prevBtn = document.getElementById('onboardingTourPrevBtn');
+  var nextBtn = document.getElementById('onboardingTourNextBtn');
+  if (titleEl) titleEl.textContent = step.title;
+  if (bodyEl) bodyEl.textContent = step.body;
+  if (progressEl) progressEl.textContent = 'Step ' + (idx + 1) + ' of ' + ONBOARDING_TOUR_STEPS.length;
+  if (prevBtn) prevBtn.disabled = idx === 0;
+  if (nextBtn) nextBtn.textContent = idx === ONBOARDING_TOUR_STEPS.length - 1 ? 'Finish' : 'Next';
+
+  setTimeout(updateOnboardingTourPosition, 120);
+}
+
+function startOnboardingTour() {
+  var overlay = document.getElementById('onboardingTourOverlay');
+  if (!overlay) return;
+  onboardingTourState.active = true;
+  onboardingTourState.step = 0;
+  onboardingTourState.targetEl = null;
+  overlay.style.display = 'block';
+  renderOnboardingTourStep();
+}
+
+function stopOnboardingTour(markDone) {
+  var overlay = document.getElementById('onboardingTourOverlay');
+  if (overlay) overlay.style.display = 'none';
+  onboardingTourState.active = false;
+  onboardingTourState.step = 0;
+  onboardingTourState.targetEl = null;
+  if (markDone) {
+    setOnboardingDone(true);
+    setOnboardingVisible(false);
+  }
 }
 
 function updateOnboardingHealth(data) {
@@ -171,23 +299,62 @@ function initFirstRunOnboarding() {
   var reopenBtn = document.getElementById('onboardingReopenBtn');
   var completeBtn = document.getElementById('onboardingCompleteBtn');
   var dismissBtn = document.getElementById('onboardingDismissBtn');
+  var startTourBtn = document.getElementById('onboardingStartTourBtn');
+  var nextBtn = document.getElementById('onboardingTourNextBtn');
+  var prevBtn = document.getElementById('onboardingTourPrevBtn');
+  var skipBtn = document.getElementById('onboardingTourSkipBtn');
 
   if (reopenBtn) {
     reopenBtn.addEventListener('click', function() {
       setOnboardingVisible(true);
+      startOnboardingTour();
     });
   }
   if (dismissBtn) {
     dismissBtn.addEventListener('click', function() {
       setOnboardingVisible(false);
+      stopOnboardingTour(false);
     });
   }
   if (completeBtn) {
     completeBtn.addEventListener('click', function() {
       setOnboardingDone(true);
       setOnboardingVisible(false);
+      stopOnboardingTour(false);
     });
   }
+  if (startTourBtn) {
+    startTourBtn.addEventListener('click', function() {
+      startOnboardingTour();
+    });
+  }
+  if (prevBtn) {
+    prevBtn.addEventListener('click', function() {
+      if (!onboardingTourState.active) return;
+      if (onboardingTourState.step > 0) {
+        onboardingTourState.step -= 1;
+        renderOnboardingTourStep();
+      }
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', function() {
+      if (!onboardingTourState.active) return;
+      if (onboardingTourState.step >= ONBOARDING_TOUR_STEPS.length - 1) {
+        stopOnboardingTour(true);
+        return;
+      }
+      onboardingTourState.step += 1;
+      renderOnboardingTourStep();
+    });
+  }
+  if (skipBtn) {
+    skipBtn.addEventListener('click', function() {
+      stopOnboardingTour(false);
+    });
+  }
+  window.addEventListener('resize', updateOnboardingTourPosition);
+  window.addEventListener('scroll', updateOnboardingTourPosition, true);
 
   setOnboardingVisible(!isOnboardingDone());
 }
