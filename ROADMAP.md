@@ -35,7 +35,9 @@
 | M7 — v1.0 preparation | ✅ Done | `v1.0-rc1` |
 | M8 — Sentinel Intelligence (cloud LLM + agentic) | 🔵 Planned | `v1.1` |
 
-> Release-readiness hardening for `v1.0.0-rc.2` is tracked in the GitHub Project "Sentinel v1.0 Release Readiness" and covers version alignment, ingress-first deploy, support matrix, release notes and quality evidence. Current P0 status: `#19`, `#20`, `#21`, `#23` done; `#22` and `#24` pending.
+> Release-readiness hardening for `v1.0.0-rc.2` is tracked in the GitHub Project "Sentinel v1.0 Release Readiness" and covers version alignment, ingress-first deploy, support matrix, release notes and quality evidence. Current P0 status: `#19`–`#24` done (all P0 closed).
+>
+> Post-v1.0 execution order: finish `P1` then `P2`; UX hardening is tracked as `P3` (milestone `v1.1 (M8)`) in the GitHub Project.
 
 ---
 
