@@ -158,7 +158,12 @@ jobs:
                   }
                 }
               `;
-              await github.graphql(m, { projectId, itemId, fieldId, optionId });
+              try {
+                await github.graphql(m, { projectId, itemId, fieldId, optionId });
+              } catch (err) {
+                if (isPermissionError(err)) return;
+                throw err;
+              }
             }
 
             function desiredPhaseFromLabels(labels) {
@@ -186,6 +191,35 @@ jobs:
               });
             }
 
+            function isClosedState(state) {
+              if (!state) return false;
+              return String(state).toLowerCase() === "closed";
+            }
+
+            async function syncIssueItemFields({ meta, itemId, issue, statusNameOverride }) {
+              const desiredStatusName = statusNameOverride
+                ? statusNameOverride
+                : (isClosedState(issue.state) ? "Done" : "Todo");
+
+              const phaseName = desiredPhaseFromLabels(issue.labels);
+
+              await setSingleSelect({
+                projectId: meta.projectId,
+                itemId,
+                fieldId: meta.statusFieldId,
+                optionId: meta.statusOptions[desiredStatusName],
+              });
+
+              if (phaseName && meta.phaseFieldId) {
+                await setSingleSelect({
+                  projectId: meta.projectId,
+                  itemId,
+                  fieldId: meta.phaseFieldId,
+                  optionId: meta.phaseOptions[phaseName],
+                });
+              }
+            }
+
             async function syncIssueToProject(issue, statusNameOverride) {
               let meta;
               try {
@@ -205,27 +239,100 @@ jobs:
                 return;
               }
 
-              const desiredStatusName = statusNameOverride
-                ? statusNameOverride
-                : (issue.state === "closed" ? "Done" : "Todo");
+              await syncIssueItemFields({ meta, itemId, issue, statusNameOverride });
+            }
 
-              const phaseName = desiredPhaseFromLabels(issue.labels);
+            async function syncProjectSnapshot() {
+              const meta = await getProjectMeta();
 
-              await setSingleSelect({
-                projectId,
-                itemId,
-                fieldId: meta.statusFieldId,
-                optionId: meta.statusOptions[desiredStatusName],
-              });
+              const q = `
+                query($login: String!, $number: Int!, $first: Int!, $after: String) {
+                  user(login: $login) {
+                    projectV2(number: $number) {
+                      items(first: $first, after: $after) {
+                        pageInfo { hasNextPage endCursor }
+                        nodes {
+                          id
+                          content {
+                            __typename
+                            ... on Issue {
+                              number
+                              state
+                              labels(first: 50) { nodes { name } }
+                              assignees(first: 10) { nodes { login } }
+                            }
+                            ... on PullRequest {
+                              number
+                              state
+                              mergedAt
+                              isDraft
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
 
-              if (phaseName && meta.phaseFieldId) {
-                await setSingleSelect({
-                  projectId,
-                  itemId,
-                  fieldId: meta.phaseFieldId,
-                  optionId: meta.phaseOptions[phaseName],
-                });
+              let after = null;
+              let page = 0;
+              const maxPages = 5; // 5 * 100 = 500 items max
+              const first = 100;
+
+              while (page < maxPages) {
+                page++;
+                const r = await github.graphql(q, { login: owner, number: projectNumber, first, after });
+                const items = r?.user?.projectV2?.items;
+                const nodes = items?.nodes || [];
+
+                for (const it of nodes) {
+                  const itemId = it?.id;
+                  const c = it?.content;
+                  if (!itemId || !c) continue;
+
+                  if (c.__typename === "Issue") {
+                    const issue = {
+                      number: c.number,
+                      state: String(c.state || "").toLowerCase(),
+                      labels: (c.labels?.nodes || []).map(n => n?.name).filter(Boolean),
+                      assignees: (c.assignees?.nodes || []).map(n => ({ login: n?.login })).filter(a => a.login),
+                    };
+                    await ensureDefaultAssignee(issue);
+                    await syncIssueItemFields({ meta, itemId, issue });
+                    continue;
+                  }
+
+                  if (c.__typename === "PullRequest") {
+                    const desiredStatus = String(c.state || "").toUpperCase() === "OPEN" ? "In Progress" : "Done";
+                    await setSingleSelect({
+                      projectId: meta.projectId,
+                      itemId,
+                      fieldId: meta.statusFieldId,
+                      optionId: meta.statusOptions[desiredStatus],
+                    });
+                    continue;
+                  }
+                }
+
+                if (!items?.pageInfo?.hasNextPage) break;
+                after = items.pageInfo.endCursor;
               }
+
+              core.info("Project Sync: workflow_dispatch full sync completed.");
+            }
+
+            if (context.eventName === "workflow_dispatch") {
+              try {
+                await syncProjectSnapshot();
+              } catch (err) {
+                if (isPermissionError(err)) {
+                  core.info("Project Sync: insufficient permissions to update Project. Configure PROJECT_TOKEN to enable.");
+                  return;
+                }
+                throw err;
+              }
+              return;
             }
 
             if (context.eventName === "issues") {
