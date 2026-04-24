@@ -26,10 +26,12 @@ Sentinel is a standalone SRE and FinOps intelligence platform for Kubernetes. It
 
 **Philosophy:** Observability-first, intelligence-second. The v1.0 agent is fully useful through deterministic rules. If the dashboard fails, the API remains usable.
 
-**Two layers:**
+**Architecture direction:**
 
-- **Go Agent** — standalone binary that collects, persists and exposes a web dashboard and REST API (port 8080)
-- **Intelligence Layer (optional — v1.1)** — agentic investigation engine: the LLM orchestrates read-only kubectl tools (describe, logs, top, events), accumulates evidence, synthesises root cause and proposes remediation steps; the user confirms before any action executes
+- **Sentinel Core (OSS)** — standalone Go agent that collects, persists and exposes the dashboard, API and deterministic analysis pipeline
+- **Sentinel Intelligence (optional, planned)** — additive investigation layer for guided RCA, evidence correlation and controlled action planning on top of the OSS core
+
+Model selection is an internal backend concern. Sentinel Intelligence is designed to remain vendor-agnostic, so provider, model version, fallback and routing strategy can change without changing the public product contract.
 
 ---
 
@@ -93,31 +95,37 @@ Version-by-version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 ## Architecture
 
 ```
+sentinel-core (OSS)
 ┌──────────────────────────────────────────────────────────┐
-│                    Go Agent (port 8080)                  │
+│ Go Agent (port 8080)                                     │
 │                                                          │
-│  continuous collection (~10s) → PostgreSQL               │
-│  /api/summary   /api/metrics   /api/history              │
-│  /api/forecast  /api/pods      /api/waste                │
-│  /api/efficiency /api/incidents /health                  │
-│  /status        /docs          /openapi.yaml             │
+│ collection (~10s) -> PostgreSQL                          │
+│ rules engine -> deterministic incidents                  │
+│ /api/summary   /api/metrics   /api/history               │
+│ /api/forecast  /api/pods      /api/waste                 │
+│ /api/efficiency /api/incidents /health                   │
+│ /status        /docs          /openapi.yaml              │
 │                                                          │
-│  Dashboard: KPIs → tiles → drawers → rightsizing         │
+│ Dashboard: KPIs -> tiles -> drawers -> rightsizing       │
 └──────────────────────────┬───────────────────────────────┘
-                           │ REST API
+                           │ incident context + APIs
                            ▼
+sentinel-intelligence (planned)
 ┌──────────────────────────────────────────────────────────┐
-│        Intelligence Layer  (optional — v1.1)             │
+│ Intelligence window / investigation workspace            │
 │                                                          │
-│  /api/incidents → LLM orchestrator                       │
-│    tool calls: describe · logs · top · events            │
-│    evidence accumulation → root-cause synthesis          │
-│    action proposal → user confirms / modifies / rejects  │
-│    dry-run → execution → workflow trace → report         │
+│ incident intake -> model routing -> investigation loop   │
+│ tool calls: describe · logs · top · events               │
+│ evidence correlation -> RCA synthesis -> action plan     │
+│ user confirms / modifies / rejects                       │
+│ workflow trace -> report / audit trail                   │
 │                                                          │
-│  Planned for v1.1; no LLM runtime contract in v1.0      │
+│ Optional and additive: core remains usable without it    │
 └──────────────────────────────────────────────────────────┘
 ```
+
+Sentinel Intelligence is a product layer, not a dependency of the core runtime. The OSS agent remains useful with deterministic rules even when no LLM provider is configured.
+Provider choice, model versioning and workload routing are backend-controlled implementation details and are not part of the user-facing feature contract.
 
 ---
 
@@ -129,7 +137,7 @@ Version-by-version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 | Agent | Go 1.25 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
-| Intelligence Layer | Optional (v1.1) — provider-agnostic cloud LLM as agentic orchestrator over kubectl tools |
+| Intelligence Layer | Optional (planned) — provider-agnostic investigation layer over the OSS core, with backend-controlled model routing and guarded tool workflows |
 
 ---
 

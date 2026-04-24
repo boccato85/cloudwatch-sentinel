@@ -234,46 +234,70 @@ Execution order: `P1` -> `P2` -> `P3`.
 
 ---
 
-### M8 — Sentinel Intelligence 🔵 Planned (`v1.1`)
+### M8 — Sentinel Intelligence 🔵 Planned (`v1.1+`)
 
-**Goal:** Add a dedicated Intelligence interface to Sentinel — a separate window from the operational dashboard — that runs **agentic investigation workflows**: the LLM acts as an orchestrator that calls read-only kubectl tools, correlates evidence, and proposes remediation steps. The user confirms before any action executes. Narrative text and reports are workflow outputs, not the product.
+**Goal:** Add `Sentinel Intelligence` as an additive layer on top of the OSS core: a dedicated investigation interface that reduces MTTR through guided RCA, evidence correlation and guarded action planning. Narrative text and reports are outputs of the workflow, not the product itself.
 
-**Agentic workflow model:**
+**Product direction:**
+- Sentinel remains observability-first and deterministic-first; Intelligence augments decisions instead of replacing the core
+- Monetization, packaging and model strategy live outside the OSS runtime contract and should not leak vendor lock-in into the core architecture
+- Commercial value is MTTR reduction and operator efficiency, not "LLM integration"
 
-```
-User opens incident in Intelligence window
-  → LLM receives incident context from /api/incidents
-  → LLM calls tools (describe, logs, top, events) to collect evidence
-  → LLM synthesises root cause from tool outputs
-  → LLM proposes next action (e.g. "scale deployment X", "apply patch Y")
-  → User confirms / modifies / rejects
-  → Agent executes (dry-run first, then live on explicit confirm)
-  → Workflow trace written to report via harness
-```
+**Cross-cutting constraints:**
+- Intelligence is additive — dashboard and API remain useful if the layer is disabled or unreachable
+- All generated output passes through `harness/output_validator.py` before render or write
+- Every agentic action requires explicit human confirmation; any future write-path must support dry-run first
+- Initial tool scope stays read-only (`describe`, `logs`, `top`, `get events`) with RBAC scoping
+- Cloud LLM is opt-in; missing credentials disable Intelligence gracefully
+- Provider choice, model version and routing policy are backend-controlled implementation details; the roadmap should describe capability classes and workflow behavior, not bind the product to a specific vendor catalog
 
-**Design constraints:**
-- Intelligence window is additive — operational dashboard keeps working if M8 is disabled or the LLM is unreachable
-- All LLM-generated content passes through `harness/output_validator.py` before being written or rendered
-- Every agentic action requires explicit human confirmation; write-path ops require a dry-run step first
-- MVP tool scope is read-only (`describe`, `logs`, `top`, `get events`) — no destructive ops
-- Cloud LLM is opt-in; `SENTINEL_LLM_API_KEY` absence disables the Intelligence window gracefully
+#### M8-A — Foundation (`v1.1`)
 
-**Deliverables:**
+**Goal:** Establish the Intelligence runtime contract without coupling the OSS core to a specific commercial packaging or model vendor.
 
 | Item | Status |
 |---|---|
-| Cloud LLM provider implementation (`pkg/llm`): Gemini and/or OpenAI concrete clients | 🔵 Planned |
+| Cloud LLM provider implementation (`pkg/llm`): provider-agnostic concrete clients | 🔵 Planned |
 | `SENTINEL_LLM_PROVIDER`, `SENTINEL_LLM_API_KEY`, `SENTINEL_LLM_MODEL` env vars + Helm values | 🔵 Planned |
-| **Intelligence window** — new UI panel separate from operational dashboard | 🔵 Planned |
+| Intelligence window — new UI panel separate from operational dashboard | 🔵 Planned |
 | Agentic tool definitions: `kubectl_describe`, `kubectl_logs`, `kubectl_top`, `kubectl_events` (read-only, RBAC-scoped) | 🔵 Planned |
 | Workflow engine: tool-call loop, context accumulation, step trace displayed in UI | 🔵 Planned |
-| Human-in-the-loop: action proposal rendered with Confirm / Modify / Reject controls before execution | 🔵 Planned |
-| Dry-run guard: write-path actions execute as `--dry-run=client` first; live run requires second explicit confirm | 🔵 Planned |
-| Report generation: workflow trace + LLM synthesis exported as Markdown via `tools/report_tool.py` | 🔵 Planned |
-| Harness integration: all LLM output validated by `harness/output_validator.py` before render or write | 🔵 Planned |
+| Backend model policy layer: provider abstraction, fallback and capability-based routing | 🔵 Planned |
+| Report generation: workflow trace + synthesis exported as Markdown via `tools/report_tool.py` | 🔵 Planned |
+| Harness integration: all Intelligence output validated before render or write | 🔵 Planned |
 | Graceful degradation: Intelligence window shows deterministic fallback if LLM unavailable | 🔵 Planned |
 
-**Done criterion:** A user can open an incident in the Intelligence window, watch the agent collect evidence via kubectl tools, review the root-cause synthesis, confirm a remediation step, and export the full workflow trace as a report — without touching a terminal.
+**Done criterion:** A user can open an incident, watch the agent collect evidence via read-only tools, review the synthesis, and export the workflow trace as a report without touching a terminal.
+
+#### M8-B — Investigation Economics (`v1.2`)
+
+**Goal:** Improve cost efficiency and operational scalability of Intelligence workloads.
+
+| Item | Status |
+|---|---|
+| Incident fingerprinting and RCA cache for repeated investigations | 🔵 Planned |
+| Alert deduplication before LLM invocation | 🔵 Planned |
+| Token budgeting per investigation phase | 🔵 Planned |
+| Multi-stage reasoning pipeline (classification -> synthesis -> action proposal) | 🔵 Planned |
+| Model routing by task complexity behind provider-agnostic policy | 🔵 Planned |
+| Cost/usage telemetry for investigation runs | 🔵 Planned |
+
+**Done criterion:** Repeated or low-value investigations consume less model budget while preserving investigation quality and traceability.
+
+#### M8-C — Controlled Autonomy (`v1.3`)
+
+**Goal:** Introduce guarded action planning and limited execution without compromising operator control.
+
+| Item | Status |
+|---|---|
+| Human-in-the-loop controls: Confirm / Modify / Reject for proposed actions | 🔵 Planned |
+| Dry-run guard for write-path actions before any live execution | 🔵 Planned |
+| Policy engine / allowlist for permitted action classes | 🔵 Planned |
+| Audit trail for proposed and executed actions | 🔵 Planned |
+| Timeline reconstruction for incident investigation | 🔵 Planned |
+| Optional execution mode for tightly scoped remediations | 🔵 Planned |
+
+**Done criterion:** A user can review a proposed remediation, inspect the dry-run and audit context, and explicitly approve limited execution under policy control.
 
 **Dependencies:** M7 ✅
 
@@ -298,35 +322,39 @@ User opens incident in Intelligence window
 | `v0.37` | M6 partial | ✅ Online Boutique lab injection; load generation testing; UI validation |
 | `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
 | `v1.0.0-rc.2` | M7 | ✅ Docs, stable contracts, CONTRIBUTING, GHCR pipeline, CI fix + release hardening |
-| `v1.1` | M8 | Intelligence window: cloud LLM enrichment, report/runbook generation, agentic scaffolding |
+| `v1.1` | M8-A | Intelligence foundation: dedicated window, read-only tool loop, provider-agnostic scaffolding |
+| `v1.2` | M8-B | Investigation economics: routing, cache, dedup, token budgeting, cost telemetry |
+| `v1.3` | M8-C | Controlled autonomy: guarded action planning, dry-run, policy and audit trail |
 
 ---
 
 ## Backlog by priority
 
 ### High priority (post-1.0)
-- **M8 — Sentinel Intelligence** (cloud LLM + agentic window) — see M8 deliverables
+- **M8-A — Sentinel Intelligence Foundation** — provider-agnostic Intelligence window and read-only investigation workflow
 - Integration tests for API contracts (deferred from M7)
 - Public image on GHCR via first `v1.0-rc1` tag push
 
 ### Medium priority (post-1.0)
+- **M8-B — Investigation Economics** — routing, cache, dedup and cost controls
 - CrashLoop pod + CPU correlation (refinement)
 - Multi-cluster support
 
 ### Low priority / future
+- **M8-C — Controlled Autonomy** — policy, audit trail and optional guarded execution
 - Additional agentic tools (write-path, scale recommendations with confirmation)
 
 ---
 
 ## Core vs Support vs Intelligence
 
-> Feature classification for scope decisions — not sales tiers. Core and Support are open/free by design. Intelligence features (cloud LLM, agentic) require an external API key and will be opt-in; formal product tiers will be defined when M8 ships.
+> Feature classification for scope decisions — not sales tiers. Core and Support are open/free by design. Intelligence features are opt-in and additive; any commercial packaging, routing policy or tiering should remain outside the OSS runtime contract. Provider choice and model versioning remain backend concerns.
 
 | Category | Items |
 |---|---|
 | **Core** | Kubernetes collection, waste calculation, pod/namespace analysis, history, dashboard, stable API, `/health`, behavior without LLM |
 | **Support** | Structured logs, health checks, retries, schema validation, internal metrics, degraded mode, Markdown/JSON export |
-| **Intelligence** | Agentic investigation workflows (LLM orchestrates kubectl tools → proposes remediation → user confirms), cloud LLM enrichment, report/runbook generation from workflow trace, multi-cluster |
+| **Intelligence** | Guided RCA, investigation workflows, provider-agnostic model routing, report generation from workflow trace, guarded action planning, multi-cluster |
 
 ---
 
