@@ -11,7 +11,7 @@ This matrix applies to Sentinel `v1.0.0-rc.2`.
 | Exposure | Ingress with TLS in production; port-forward or NodePort for dev/lab only |
 | Database | PostgreSQL 15 via bundled chart or external PostgreSQL-compatible service |
 | Authentication | `AUTH_ENABLED=true` with explicit `AUTH_TOKEN` |
-| Intelligence layer | Not supported in v1.0; deterministic rules only |
+| Commercial investigation layer | Not supported in v1.0; deterministic rules only |
 
 ## Required Dependencies
 
@@ -46,7 +46,6 @@ This matrix applies to Sentinel `v1.0.0-rc.2`.
 | Area | Status |
 |---|---|
 | Prometheus/Grafana dependency mode | Not planned for v1.0; Sentinel is standalone-first |
-| Local LLM runtimes | Not supported; provider-agnostic cloud intelligence is future v1.1 scope |
 | Multi-cluster aggregation | Post-v1.0 scope |
 | Write-path remediation automation | Not supported in v1.0 |
 | Production NodePort exposure | Not recommended or supported as the main production path |
@@ -55,7 +54,7 @@ This matrix applies to Sentinel `v1.0.0-rc.2`.
 
 - Metrics freshness and incident quality depend on `metrics.k8s.io` availability.
 - No multi-cluster aggregation in v1.0.
-- No public runtime contract for the optional intelligence layer in v1.0.
+- No public runtime contract for proprietary investigation services in v1.0.
 - No write-path remediation automation in v1.0.
 
 ## Metrics Server Behavior

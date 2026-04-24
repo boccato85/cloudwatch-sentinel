@@ -14,7 +14,7 @@ Cross-version change history: [CHANGELOG.md](CHANGELOG.md)
 - `database.password` is required during Helm install/upgrade.
 - `agent.auth.token` is required when `agent.auth.enabled=true`.
 - The chart default service type is `ClusterIP`; use Ingress for production and explicitly opt into NodePort for dev/lab.
-- v1.0 has no public LLM runtime contract. Intelligence-layer work is v1.1 scope.
+- v1.0 has no public runtime contract for proprietary investigation services.
 
 ## Install
 

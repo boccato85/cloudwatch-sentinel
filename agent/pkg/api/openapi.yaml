@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Sentinel Agent API
-  description: Sentinel is an SRE/FinOps intelligence agent for small teams running Kubernetes.
+  description: Sentinel is an SRE/FinOps agent for small teams running Kubernetes.
   version: 1.0.0-rc.2
 servers:
   - url: http://localhost:30080

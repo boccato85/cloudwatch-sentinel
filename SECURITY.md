@@ -51,11 +51,11 @@ See [docs/support-matrix.md](docs/support-matrix.md) for supported Kubernetes, d
 - [ ] Use Kubernetes Secrets (provisioned by the Helm chart) for all credentials
 - [ ] The `.env` file is in `.gitignore` — never commit it
 
-### Intelligence features (M8 — planned)
-- [ ] Treat the v1.0 agent as deterministic-only; no public intelligence-layer runtime contract is supported yet
-- [ ] Future cloud-provider credentials must be stored as Kubernetes Secrets and scoped to the minimum required permissions
-- [ ] Future generated output must pass through `harness/output_validator.py` before being written or rendered
-- [ ] Future agentic actions must start with read-only kubectl operations and explicit human approval before any write-path action
+### Proprietary extensions
+- [ ] Treat the v1.0 agent as deterministic-only; no proprietary extension runtime contract is supported in this repository
+- [ ] Any external service credentials must be stored as Kubernetes Secrets and scoped to the minimum required permissions
+- [ ] Generated operational output must pass through `harness/output_validator.py` before being written or rendered
+- [ ] Automated operational actions must start with read-only kubectl operations and explicit human approval before any write-path action
 
 ### Pricing / cost configuration
 - [ ] `USD_PER_VCPU_HOUR` and `USD_PER_GB_HOUR` default to `0.04` and `0.005` — adjust via env vars to match your actual cloud pricing
@@ -69,7 +69,7 @@ See [docs/support-matrix.md](docs/support-matrix.md) for supported Kubernetes, d
 | TLS between agent and DB | Disabled by default (`DB_SSLMODE=disable`) — enable in production |
 | CSRF protection | N/A — no state-changing browser-initiated endpoints |
 | Audit logging | Not implemented |
-| Intelligence layer runtime | Planned for M8; no public v1.0 runtime contract |
+| Proprietary extension runtime | Not part of the public v1.0 runtime contract |
 
 ---
 

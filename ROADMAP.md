@@ -6,15 +6,15 @@
 
 **Sentinel is an SRE/FinOps tool for small engineering teams** — teams that need cost management and reliability without a dedicated specialist. Startups, scale-ups and platform squads that don't have the budget for Datadog/New Relic but need fast answers about cluster health and cost.
 
-> **Guiding principle:** Observability-first, intelligence-second. Didactic, lean, actionable.
+> **Guiding principle:** Observability-first, deterministic analysis by default. Didactic, lean, actionable.
 
 ## Product principles
 
 - **Standalone first** — no Prometheus, Grafana or AlertManager required
-- **Intelligence second** — if the analysis layer goes down, Sentinel keeps working through deterministic rules
+- **Deterministic analysis first** — Sentinel must remain useful with rules, thresholds and Kubernetes signals only
 - **Collection doesn't decide** — collection, calculation and presentation are separate layers
 - **UI doesn't calculate** — business logic stays in the backend
-- **Deterministic rules before generative intelligence**
+- **Rules before recommendations** — recommendations must be traceable to collected signals
 - **Didactic by default** — every metric must be self-explanatory; tooltips and legends are part of the product, not separate documentation
 - **No system noise** — k8s infra namespaces (`kube-system`, `kubernetes-dashboard`, etc.) are excluded by default from governance panels; users don't control them
 - **UNMANAGED is its own category** — pods without `resources.requests` are not "inefficient" (grade F), they are a scheduler blind spot and FinOps risk; they deserve their own badge and alert
@@ -28,14 +28,14 @@
 |---|---|---|
 | M1 — Stable core (+ M5 self-observability) | ✅ Done | `v0.10.1` |
 | M2 — Actionable FinOps | ✅ Done | `v0.10.15` |
-| M3 — Deterministic incident intelligence | ✅ Done | `v0.11` |
+| M3 — Deterministic incident analysis | ✅ Done | `v0.11` |
 | M4 — Critical Resilience & Security | ✅ Done | `v0.12` |
-| M5 — Optional intelligence | ✅ Done | `v0.35` |
+| M5 — Operational runbooks and UX resilience | ✅ Done | `v0.35` |
 | M6 — Real lab / QA / Prod-like | ✅ Done | `v0.50` |
 | M7 — v1.0 preparation | ✅ Done | `v1.0.0-rc.2` |
 
 > This public roadmap tracks OSS runtime evolution only (`M1`-`M7`).
-> Commercial Intelligence planning exists in a separate private roadmap.
+> Commercial investigation planning exists in a separate private roadmap.
 
 ## Execution Priority Track (P0-P3)
 
@@ -108,7 +108,7 @@ Execution order: `P1` -> `P2` -> `P3`.
 
 ---
 
-### M3 — Deterministic incident intelligence ✅ Done (`v0.11`)
+### M3 — Deterministic incident analysis ✅ Done (`v0.11`)
 
 **Goal:** Sentinel generates useful diagnosis even without AI, with APIs documented and individually monitored.
 
@@ -127,7 +127,7 @@ Execution order: `P1` -> `P2` -> `P3`.
 | `openapi.yaml` embedded in binary covering all endpoints | ✅ Done |
 | Swagger UI at `/docs` (via CDN, no external build dependency) | ✅ Done |
 
-**Done criterion:** Sentinel detects and classifies incidents via thresholds without needing the LLM, each endpoint has individually monitorable status, and any dev can explore the API via `/docs`.
+**Done criterion:** Sentinel detects and classifies incidents via thresholds, each endpoint has individually monitorable status, and any dev can explore the API via `/docs`.
 
 **Dependencies:** M1 ✅
 
@@ -161,9 +161,9 @@ Execution order: `P1` -> `P2` -> `P3`.
 
 ---
 
-### M5 — Optional intelligence ✅ Done (`v0.35`)
+### M5 — Operational runbooks and UX resilience ✅ Done (`v0.35`)
 
-**Goal:** The intelligence layer improves the experience but is not required for the core.
+**Goal:** Incident diagnosis remains useful through deterministic runbooks, graceful degradation and clearer operational UI.
 
 **Deliverables:**
 
@@ -172,18 +172,16 @@ Execution order: `P1` -> `P2` -> `P3`.
 | `/incident` consumes deterministic `/api/incidents` first | ✅ Done |
 | `Narrative string` field in `Incident` struct (`omitempty`, backward-compatible) | ✅ Done (`v0.12`) |
 | Narrative rendered in Alerts drawer when populated (collapsible "Why?" block) | ✅ Done (`v0.12`) |
-| Degraded mode: if intelligence layer unavailable, returns deterministic analysis | ✅ Done |
+| Degraded mode: incident endpoint returns deterministic analysis | ✅ Done |
 | Harness M5 remediation guard: block `kubectl exec`, `kubectl scale --replicas=0`, `helm uninstall`, `kubectl apply -f -`, `kubectl patch replicas:0` | ✅ Done (`v0.12`) |
 | **Honeycomb UI**: Datadog-style auto-scaling visual maps | ✅ Done (`v0.34`) |
 | **Node Detail**: Saturation bars + pod list per node | ✅ Done (`v0.34`) |
 | **UX Alignment**: Back buttons + event delegation | ✅ Done (`v0.34`) |
 | Automatic runbooks based on templates + variables | ✅ Done (`v0.34`) |
-| **LLM provider interface** (`pkg/llm`): `Provider` interface + graceful fallback | ✅ Done (`v0.35`) |
 | **Copy button XSS fix**: `data-runbook` + `addEventListener` (DOMPurify-safe) | ✅ Done (`v0.35`) |
 | **Runbook accuracy**: `ErrImagePull` / `CreateContainerConfigError` → `kubectl describe` | ✅ Done (`v0.35`) |
-| **Tests for `pkg/llm`**: 4 unit tests covering all `NewClient()` branches | ✅ Done (`v0.35`) |
 
-**Done criterion:** ✅ `/incident` works without external models and produces usable diagnosis with a visual-first UI that scales.
+**Done criterion:** ✅ `/incident` produces usable diagnosis with deterministic runbooks and a visual-first UI that scales.
 
 **Dependencies:** M4 ✅
 
@@ -221,12 +219,12 @@ Execution order: `P1` -> `P2` -> `P3`.
 |---|---|
 | Documentation for all endpoints (OpenAPI or Markdown) | ✅ Done — full OpenAPI spec (15 endpoints, all schemas, securitySchemes) |
 | Stable API contracts (no breaking changes) | ✅ Done — contracts frozen, documented in `openapi.yaml` |
-| Clean configuration (no undocumented env vars) | ✅ Done — README env vars table complete incl. LLM vars |
+| Clean configuration (no undocumented env vars) | ✅ Done — README env vars table complete |
 | README reflecting real project state | ✅ Done — badge, setup, ranges, endpoint table all corrected |
 | CONTRIBUTING.md for new contributors | ✅ Done — dev setup, constraints, commit conventions, PR guidelines |
 | GHCR release pipeline | ✅ Done — `release.yml` triggers on semver tags, pushes to `ghcr.io/boccato85/sentinel` |
 | CI fixed for Go 1.25 | ✅ Done — `ci.yml` updated; `go.mod` consistent with local toolchain |
-| Predictable failure behavior (graceful degradation) | ✅ Done (M5) — deterministic mode when LLM unavailable |
+| Predictable failure behavior (graceful degradation) | ✅ Done (M5) — deterministic incident mode |
 | Revised dashboard UX (visual consistency) | ✅ Done (M6) — Status Ribbon, FinOps correlation, validated under chaos load |
 | Integration tests for API contracts | Deferred → post-1.0 |
 
@@ -239,7 +237,7 @@ Execution order: `P1` -> `P2` -> `P3`.
 ### Post-v1.0 Boundary
 
 The public OSS roadmap after `M7` is intentionally limited to core runtime quality, reliability and UX hardening.
-Commercial Intelligence planning, tiering and implementation details are maintained in a private roadmap and private repositories.
+Commercial investigation planning, tiering and implementation details are maintained in a private roadmap and private repositories.
 
 ---
 
@@ -256,8 +254,8 @@ Commercial Intelligence planning, tiering and implementation details are maintai
 | `v0.11.3` | M4 | ✅ Resilience, PVC, Auth, CI, Cache Busting |
 | `v0.12` | M4 gaps + M5 foundation | ✅ Security fixes, Narrative hook, harness M5 guard, JS modularization |
 | `v0.23` | M5 | ✅ Honeycomb auto-scaling and dynamic packing |
-| `v0.34` | M5 | ✅ Deterministic runbooks + LLM provider skeleton |
-| `v0.35` | M5 | ✅ Code review fixes: copy button XSS, runbooks, nil-pointer, pkg/llm tests |
+| `v0.34` | M5 | ✅ Deterministic runbooks and operational UI resilience |
+| `v0.35` | M5 | ✅ Code review fixes: copy button XSS, runbooks, nil-pointer |
 | `v0.36` | M5 bug fixes | ✅ Issue #13: node-allocatable HighCPU fallback; Issue #18: incident tiles; UI Sort & UX fixes |
 | `v0.37` | M6 partial | ✅ Online Boutique lab injection; load generation testing; UI validation |
 | `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
@@ -282,19 +280,19 @@ Commercial Intelligence planning, tiering and implementation details are maintai
 
 ## Public Scope Boundary
 
-> Scope classification for this repository. Commercial Intelligence capabilities are intentionally private and not part of the OSS runtime contract.
+> Scope classification for this repository. Commercial investigation capabilities are intentionally private and not part of the OSS runtime contract.
 
 | Category | Items |
 |---|---|
-| **Core** | Kubernetes collection, waste calculation, pod/namespace analysis, history, dashboard, stable API, `/health`, behavior without LLM |
+| **Core** | Kubernetes collection, waste calculation, pod/namespace analysis, history, dashboard, stable API, `/health`, deterministic incident behavior |
 | **Support** | Structured logs, health checks, retries, schema validation, internal metrics, degraded mode, Markdown/JSON export |
-| **Private/Commercial (not in this repo)** | Advanced Intelligence workflows, commercial tiering, proprietary routing/policies, private connectors |
+| **Private/Commercial (not in this repo)** | Advanced investigation workflows, commercial tiering, proprietary routing/policies, private connectors |
 
 ---
 
 ## Product rules
 
-- If the LLM goes down, Sentinel stays useful
+- If commercial services go down, Sentinel Core stays useful
 - If the dashboard fails, the API must still be usable
 - If the cluster changes, the contracts must hold
 - If the project grows, the core must not lose simplicity

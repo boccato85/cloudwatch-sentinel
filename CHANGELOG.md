@@ -8,7 +8,7 @@ All notable changes to Sentinel are documented in this file.
 - Operational release notes in `RELEASE.md` with install/upgrade/rollback guidance.
 - Public support matrix in `docs/support-matrix.md` with explicit dependencies, validated environments and limitations.
 - API smoke test harness usage documented in quality/release docs.
-- GitHub Project planning artifacts for post-v1.0 priorities (`P1`, `P2`, `P3`) and milestone `v1.1 (M8)`.
+- GitHub Project planning artifacts for post-v1.0 priorities (`P1`, `P2`, `P3`).
 
 ### Changed
 - Security defaults hardened for Helm/database/auth paths (explicit production secrets).
@@ -16,10 +16,14 @@ All notable changes to Sentinel are documented in this file.
 - Dashboard auth UX improved to avoid persistent token storage.
 - Roadmap updated with explicit execution track (`P0`-`P3`) and aligned M7 version (`v1.0.0-rc.2`).
 - README changelog section trimmed; full history centralized in this `CHANGELOG.md`.
+- Public documentation sanitized to keep the repository focused on Sentinel Core OSS.
 
 ### Fixed
 - CI quality gates and project sync workflow behavior for manual dispatch/token permissions.
 - UI cleanup: removed debug leftovers and explicit no-op catches for safer frontend hygiene.
+
+### Removed
+- Unused optional enrichment package from the public OSS runtime.
 
 ## [v1.0.0-rc.2] - 2026-04-23
 
@@ -29,7 +33,7 @@ All notable changes to Sentinel are documented in this file.
 - Documentation clarified cluster assumptions (generic Kubernetes deployment, not Minikube-specific).
 
 ### Breaking / Operator-visible
-- v1.0 remains deterministic-only; provider-agnostic cloud intelligence is M8 scope.
+- v1.0 remains deterministic-only; proprietary investigation services are outside the public runtime contract.
 
 ### Known limitations
 - Metrics Server is required for production-quality metrics and incidents.
@@ -48,9 +52,9 @@ All notable changes to Sentinel are documented in this file.
 - GHCR release pipeline in `release.yml` builds and pushes `ghcr.io/boccato85/sentinel` on semver tags.
 - Added root `docker-compose.yml` for local development without Minikube (agent + PostgreSQL).
 - Dockerfile builder pinned to `golang:1.25-alpine`; runtime updated to `alpine:3.21`.
-- ROADMAP M8 rewritten to the agentic investigation workflow model.
+- ROADMAP updated for post-v1.0 planning.
 - Incident narrative strings translated from PT-BR to English in backend.
-- CI updated to `go-version: 1.25` and `eval/gemini` trigger path.
+- CI updated to `go-version: 1.25`.
 - Screenshots refreshed with v1.0-rc1 visuals (replacing v0.10.x references).
 - `SECURITY.md` supported version and `AUTH_ENABLED` default corrected.
 
@@ -81,8 +85,8 @@ All notable changes to Sentinel are documented in this file.
 ### Changed
 - Security (JS): copy button in Alerts drawer uses `data-runbook` + `addEventListener` (DOMPurify-safe).
 - Runbooks: `ErrImagePull` and `CreateContainerConfigError` now use `kubectl describe pod` instead of logs.
-- Fixed latent nil-pointer risk in disabled intelligence provider facade.
-- Added `pkg/llm` unit tests for disabled-mode branches (Go: 14; harness: 23; total: 37).
+- Fixed latent nil-pointer risk in optional enrichment facade.
+- Added disabled-mode tests for optional enrichment branches.
 - Swapped M6/M7 sequencing in roadmap (real lab before docs/polish stabilization).
 
 ## [v0.34]
@@ -110,7 +114,7 @@ All notable changes to Sentinel are documented in this file.
 ## [v0.10.15]
 
 ### Changed
-- Added "By Deployment" mode in Waste Intelligence drawer (aggregates by `app` label).
+- Added "By Deployment" mode in Waste Analysis drawer (aggregates by `app` label).
 - Added "By Pod | By Deployment" toggle.
 
 ## [v0.10.14]

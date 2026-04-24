@@ -15,7 +15,7 @@
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35.1-blue)
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8)
 ![Standalone](https://img.shields.io/badge/standalone-no%20Prometheus-green)
-![Tests](https://img.shields.io/badge/tests-37%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-34%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 ---
@@ -24,10 +24,10 @@
 
 Sentinel is a standalone SRE and FinOps platform for Kubernetes. It continuously collects metrics via the Kubernetes Metrics API, persists data in PostgreSQL, calculates waste per pod and deployment, scores namespace efficiency and serves an interactive real-time dashboard — with no dependency on Prometheus, Grafana or AlertManager.
 
-**Philosophy:** Observability-first, intelligence-second. The v1.0 agent is fully useful through deterministic rules. If the dashboard fails, the API remains usable.
+**Philosophy:** Observability-first, deterministic analysis by default. The v1.0 agent is fully useful through rules and Kubernetes signals. If the dashboard fails, the API remains usable.
 
 This repository contains the public `Sentinel Core (OSS)` runtime only.
-Commercial intelligence capabilities are intentionally out of scope for this repository and are developed in a private product codebase.
+Commercial investigation capabilities are intentionally out of scope for this repository and are developed in a private product codebase.
 
 ---
 
@@ -48,7 +48,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 |---|---|
 | ![Overview](docs/screenshots/sentinel_ss_1.0-rc(1).png) | ![Status](docs/screenshots/sentinel_ss_1.0-rc(2).png) |
 
-| Incident Detail (HighMemory) | Waste Intelligence |
+| Incident Detail (HighMemory) | Waste Analysis |
 |---|---|
 | ![Incident](docs/screenshots/sentinel_ss_1.0-rc(3).png) | ![Waste](docs/screenshots/sentinel_ss_1.0-rc(4).png) |
 
@@ -105,7 +105,7 @@ Version-by-version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 └──────────────────────────────────────────────────────────┘
 ```
 
-Commercial Intelligence is delivered outside this repository. The OSS runtime contract does not depend on proprietary investigation services.
+Commercial investigation services are delivered outside this repository. The OSS runtime contract does not depend on proprietary services.
 
 ---
 
@@ -117,7 +117,7 @@ Commercial Intelligence is delivered outside this repository. The OSS runtime co
 | Agent | Go 1.25 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
-| Intelligence Layer | Out of scope in this OSS repository (private product codebase) |
+| Commercial investigation layer | Out of scope in this OSS repository (private product codebase) |
 
 ---
 
@@ -140,7 +140,7 @@ The current support matrix is published in [docs/support-matrix.md](docs/support
 |---|---|
 | Supported | Kubernetes `v1.19+`, Helm 3, PostgreSQL 15, Metrics Server, deterministic rules |
 | Tested | Go unit tests, harness safety tests, Helm lint, chaos lab and capacity planning reports |
-| Not supported | Production NodePort exposure, local LLM runtimes, multi-cluster aggregation, write-path remediation automation |
+| Not supported | Production NodePort exposure, multi-cluster aggregation, write-path remediation automation |
 
 Metrics Server is required for production-quality metrics, incidents and FinOps calculations. Without it, Sentinel can serve the API/dashboard shell, but metrics-backed views are degraded or empty.
 
@@ -249,7 +249,7 @@ curl -H "Authorization: Bearer <AUTH_TOKEN>" https://sentinel.example.com/api/su
 ```
 
 **Incident investigation note:**
-This OSS repository provides deterministic incident analysis only. Proprietary Intelligence capabilities are developed and distributed separately.
+This OSS repository provides deterministic incident analysis only. Proprietary investigation capabilities are developed and distributed separately.
 
 ---
 
@@ -299,7 +299,7 @@ Full-width panel with A→F grades per namespace. Scoring based on CPU Usage/Req
 ### Financial Correlation
 Cost history chart (Budget vs Actual), dashed forecast line, ±1.5σ confidence bands and projected metric cards.
 
-### Waste Intelligence
+### Waste Analysis
 Waste table with two views in the drawer:
 - **By Pod** — individual list with CPU/Mem waste, severity, namespace/severity/search filters and system NS toggle
 - **By Deployment** — aggregated by `app` label: Deployment · Namespaces · Pods · CPU Saveable · Mem Not Used · Est. Saving
@@ -379,7 +379,7 @@ The Sentinel Go Agent can be configured via environment variables. If using Helm
 | `RETENTION_HOURLY_DAYS`| `30` | Days to keep hourly aggregated data. |
 | `RETENTION_DAILY_DAYS`| `365` | Days to keep daily aggregated data. |
 
-This OSS repository has no public LLM runtime contract.
+This OSS repository has no public contract for proprietary investigation services.
 
 ---
 
@@ -410,9 +410,6 @@ sentinel/
 │   │   ├── k8s/                     # Kubernetes client + Metrics API wrappers
 │   │   │   ├── k8s.go
 │   │   │   └── k8s_test.go
-│   │   ├── llm/                     # Optional provider abstraction used by deterministic fallback paths
-│   │   │   ├── client.go            # Provider interface + NewClient()
-│   │   │   └── client_test.go
 │   │   └── store/                   # PostgreSQL: schema, aggregation, retention
 │   │       ├── store.go
 │   │       └── store_test.go

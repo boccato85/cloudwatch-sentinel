@@ -188,7 +188,7 @@ func main() {
 	}
 	schemaCancel()
 
-	slog.Info("Sentinel Intelligence Engine: Active", "component", "app", "version", agentVersion)
+	slog.Info("Sentinel Agent: Active", "component", "app", "version", agentVersion)
 
 	if err := k8s.InitClients(); err != nil {
 		slog.Error("failed to initialize k8s clients", "component", "k8s", "err", err)

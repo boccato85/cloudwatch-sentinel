@@ -85,7 +85,7 @@ class TestValidadorSaida(unittest.TestCase):
         self.assertTrue(any("replicas=0" in e.lower() or "scale" in e.lower() for e in errors))
 
     def test_blocks_helm_uninstall(self):
-        errors = validate(valid_report_with("helm uninstall sentinel -n sentinel-gemini"))
+        errors = validate(valid_report_with("helm uninstall sentinel -n sentinel-test"))
         self.assertTrue(any("helm uninstall" in e.lower() or "helm" in e.lower() for e in errors))
 
     def test_blocks_helm_delete(self):

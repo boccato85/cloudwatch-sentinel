@@ -63,7 +63,7 @@ These constraints exist for operational reasons — do not work around them:
 
 | Constraint | Reason |
 |---|---|
-| Deterministic rules are the product baseline | Sentinel must stay useful without any intelligence layer |
+| Deterministic rules are the product baseline | Sentinel must stay useful without proprietary services |
 | No inline `onclick` in HTML | CSP `script-src-attr 'none'` blocks them — use `addEventListener` in a JS module |
 | All JS edits via Write tool or Python | Unicode characters in JS files cause silent corruption with some edit tools |
 | `agentVersion` is hardcoded | Increment it manually in `agent/main.go` on every release |
@@ -85,7 +85,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 
-Common scopes: `api`, `ui`, `k8s`, `store`, `incidents`, `llm`, `helm`, `m7`
+Common scopes: `api`, `ui`, `k8s`, `store`, `incidents`, `helm`, `docs`, `m7`
 
 Examples:
 ```
@@ -104,17 +104,17 @@ chore: bump agentVersion to 0.51.0
 3. If you add or change an API endpoint, update `agent/pkg/api/openapi.yaml`.
 4. If you add a new env var, document it in the Environment Variables table in `README.md`.
 5. Do not bump `agentVersion` in a feature PR — version bumps are done separately as release commits.
-6. Do not modify `.claude/`, `.gemini/`, or any AI skills files — these are dev tooling, not product artifacts.
+6. Do not commit local agent/tooling files — these are dev workflow artifacts, not product code.
 
 ---
 
 ## What we won't accept
 
 - Multi-cluster support (post-1.0 scope)
-- Local LLM runtimes (GPU dependency not viable for target environments — provider-agnostic cloud intelligence is M8 scope)
+- Local model runtimes or GPU-dependent features
 - Prometheus or Grafana integration (violates standalone-first principle)
 - Breaking changes to existing API response schemas
-- Features that require the LLM layer to be useful
+- Features that require proprietary services to be useful
 
 ---
 

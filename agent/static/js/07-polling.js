@@ -114,7 +114,7 @@ async function loadVersion() {
     var badge = document.getElementById('ribbonVer');
     if (badge) {
       badge.textContent = 'sentinel-agent v' + v;
-      badge.title = 'Sentinel v' + v + '\nKubernetes Intelligence\n\u00a9 2026 Sentinel Project';
+      badge.title = 'Sentinel v' + v + '\nKubernetes SRE/FinOps\n\u00a9 2026 Sentinel Project';
     }
     // populate Connected tooltip with DB status from /health
     var dbSt = (data.checks && data.checks.database) ? data.checks.database.status : 'unknown';
@@ -129,4 +129,3 @@ setInterval(update, 5000);
 update();
 fetchChart();
 updateEfficiency();
-

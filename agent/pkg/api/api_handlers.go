@@ -1181,11 +1181,8 @@ func (a *API) handleIncidents(w http.ResponseWriter, r *http.Request) {
 		incs = []Incident{}
 	}
 
-	// TODO(arch): LLM enrichment must NOT be called synchronously here.
-	// Calling GenerateEnrichment() inline would block this handler goroutine for
-	// the full LLM round-trip (potentially slow), degrading all
-	// concurrent dashboard requests. The correct pattern: enrich incidents in a
-	// background goroutine during the collector cycle and cache the result here.
+	// Keep any future enrichment async/background-only. This handler is on the
+	// dashboard hot path and must stay deterministic and fast.
 	slog.Debug("incidents computed", "component", "http", "count", len(incs))
 	json.NewEncoder(w).Encode(incs)
 }

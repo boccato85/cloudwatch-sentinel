@@ -692,10 +692,10 @@ async function renderCpuDrawer() {
   } catch(e) { drawerHTML('<div style="color:var(--red);padding:20px">Error: ' + esc(e.message) + '</div>'); }
 }
 
-// ─── Drawer: Waste Intelligence ───────────────────────────────────────────────
+// ─── Drawer: Waste Analysis ───────────────────────────────────────────────────
 function openWasteDrawer() {
   drawerSort = { col: 'potentialSavingMCpu', dir: 'desc' };
-  openDrawer('Waste Intelligence — Full Report', renderWasteDrawer);
+  openDrawer('Waste Analysis — Full Report', renderWasteDrawer);
 }
 
 async function renderWasteDrawer() {
@@ -718,7 +718,7 @@ async function renderWasteDrawer() {
     var wasteInfoCard =
       '<button class="grade-info-btn" id="waste-info-btn" style="margin-bottom:8px">ⓘ What these metrics mean</button>' +
       '<div id="waste-info-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;font-size:.82em;line-height:1.6">' +
-        '<div class="gl-title" style="margin-bottom:8px">Waste Intelligence — metric glossary</div>' +
+        '<div class="gl-title" style="margin-bottom:8px">Waste Analysis — metric glossary</div>' +
         '<div class="gl-row"><span style="color:var(--orange);font-weight:600;min-width:170px">Wasted Pods</span><span class="gl-desc">Pods consuming less CPU than they reserved. Waste = unused reserved capacity.</span></div>' +
         '<div class="gl-row"><span style="color:var(--orange);font-weight:600;min-width:170px">CPU Saveable</span><span class="gl-desc">Total mCPU that could be freed by right-sizing pod requests to actual usage.</span></div>' +
         '<div class="gl-row"><span style="color:var(--purple);font-weight:600;min-width:170px">Mem Allocated, Not Used</span><span class="gl-desc">Memory reserved (requests) but not consumed. Blocks scheduling of new pods.</span></div>' +

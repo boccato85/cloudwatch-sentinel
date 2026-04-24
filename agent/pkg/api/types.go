@@ -152,8 +152,8 @@ type Incident struct {
 	Type      string `json:"type"`
 	Severity  string `json:"severity"`
 	Message   string `json:"message"`
-	Narrative string `json:"narrative,omitempty"` // SRE narrative; deterministic in M5, LLM-enriched when provider is active
-	Runbook   string `json:"runbook,omitempty"`   // Remediation commands (deterministic or LLM-generated)
+	Narrative string `json:"narrative,omitempty"` // Deterministic SRE narrative
+	Runbook   string `json:"runbook,omitempty"`   // Deterministic remediation commands
 	Age       string `json:"age"`
 	IsWaste   bool   `json:"isWaste"`
 }
