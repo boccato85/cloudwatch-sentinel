@@ -126,6 +126,11 @@ var ONBOARDING_TOUR_STEPS = [
     body: 'Start by choosing the namespace scope. Keep "All Namespaces" for global triage, then narrow to isolate a specific incident.'
   },
   {
+    selector: '#spillBadge',
+    title: 'Header Status Controls',
+    body: 'Use header controls for quick orientation: Connected status (cluster/session health), Active Alerts badge (shortcut to incidents), and First-run guide (reopen this tour).'
+  },
+  {
     selector: '#kFailCard',
     title: 'Critical/Warn Signal',
     body: 'This card is your first severity signal. Click it to open the Alerts drawer and inspect incidents that are impacting service health.'
@@ -139,6 +144,26 @@ var ONBOARDING_TOUR_STEPS = [
     selector: '#hdrAlertBadge',
     title: 'Live Alert Badge',
     body: 'The header badge tracks current critical count. Click it any time to jump directly to active alerts.'
+  },
+  {
+    selector: '#ph-events',
+    title: 'Recent Incidents',
+    body: 'This panel shows the latest incident stream with severity, type, namespace and age. Use it for fast triage before drilling into drawers.'
+  },
+  {
+    selector: '#ph-finops',
+    title: 'Financial Correlation',
+    body: 'This tile correlates budget, actual usage and waste over time. Use namespace filter and period buttons (30m, 1h, 6h, 24h, 7d...) to analyze cost behavior.'
+  },
+  {
+    selector: '#fino-tab-btn',
+    title: 'FinOps View',
+    body: 'FinOps tab focuses on spend trends and waste forecast, including confidence bands and optimization opportunity.'
+  },
+  {
+    selector: '#eff-tab-btn',
+    title: 'Efficiency View',
+    body: 'Efficiency tab shows namespace grades (A-F) based on requested vs actual usage, helping prioritize right-sizing.'
   },
   {
     selector: '#onboardingLinks',
@@ -215,6 +240,7 @@ function renderOnboardingTourStep() {
   if (idx < 0 || idx >= ONBOARDING_TOUR_STEPS.length) return;
 
   var step = ONBOARDING_TOUR_STEPS[idx];
+  if (drawerOpen) closeDrawer();
   var target = document.querySelector(step.selector);
   if (!target) {
     if (idx < ONBOARDING_TOUR_STEPS.length - 1) {

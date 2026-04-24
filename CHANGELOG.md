@@ -19,6 +19,7 @@ All notable changes to Sentinel are documented in this file.
 - Dashboard auth UX improved to avoid persistent token storage.
 - Dashboard now shows explicit degraded-mode banner when Metrics Server is unavailable, with impact and remediation pointers.
 - Dashboard first-run onboarding now includes a guided step-by-step tour (spotlight + next/back/skip), plus token/session guidance, live `/health` interpretation, and support/release/runbook links.
+- Guided tour flow refined: closes open drawers between steps to avoid overlay conflicts, and now covers header controls, Recent Incidents, Financial Correlation, and FinOps/Efficiency tabs.
 - Roadmap updated with explicit execution track (`P0`-`P3`) and aligned M7 version (`v1.0.0-rc.2`).
 - README changelog section trimmed; full history centralized in this `CHANGELOG.md`.
 - Public documentation sanitized to keep the repository focused on Sentinel Core OSS.
