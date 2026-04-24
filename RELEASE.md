@@ -60,6 +60,11 @@ python3 harness/test_output_validator.py
 helm lint helm/sentinel --set agent.auth.token=test-token --set database.password=test-password
 ```
 
+Local validation note:
+
+- Avoid `minikube image build --all` on workstation multi-node profiles; it can saturate host resources and freeze the desktop.
+- Prefer a single-node Minikube profile for UI validation, or publish the image to a registry so nodes can pull it.
+
 Expected negative check:
 
 ```bash

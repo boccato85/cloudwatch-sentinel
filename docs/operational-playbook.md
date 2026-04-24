@@ -115,6 +115,17 @@ kubectl rollout status deployment/sentinel -n sentinel
     `kubectl logs deploy/sentinel -n sentinel --since=15m`.
   - Confirm Kubernetes API and Metrics API connectivity.
 
+## Local Minikube Guardrails (Workstation Safety)
+
+If you validate Sentinel on a local multi-node Minikube profile (especially VM-based drivers like `kvm2`/libvirt), treat distributed builds as a capacity risk.
+
+- Avoid `minikube image build --all` on workstations.
+  - It builds on every node and can saturate CPU/RAM/I/O (host oversubscription), causing desktop freezes and timeouts.
+- Prefer one of these options:
+  - Use a single-node Minikube profile for UI validation (fastest and safest).
+  - Push images to a registry (GHCR or a local registry addon) so every node can pull without per-node builds.
+  - If you must stay multi-node, build only on the scheduled node and pin/restart the workload accordingly (expect reschedules to fail if the image is missing on another node).
+
 ## Minimal release/maintenance checklist
 
 1. `cd agent && go test ./...`
@@ -122,4 +133,3 @@ kubectl rollout status deployment/sentinel -n sentinel
 3. `helm lint helm/sentinel --set agent.auth.token=test-token --set database.password=test-password`
 4. Run smoke probe against running environment:
    `BASE_URL=https://sentinel.example.com AUTH_TOKEN=<token> ./harness/smoke_api.sh`
-
