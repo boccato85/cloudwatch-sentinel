@@ -32,8 +32,21 @@
 | M4 — Critical Resilience & Security | ✅ Done | `v0.12` |
 | M5 — Optional intelligence | ✅ Done | `v0.35` |
 | M6 — Real lab / QA / Prod-like | ✅ Done | `v0.50` |
-| M7 — v1.0 preparation | ✅ Done | `v1.0-rc1` |
+| M7 — v1.0 preparation | ✅ Done | `v1.0.0-rc.2` |
 | M8 — Sentinel Intelligence (cloud LLM + agentic) | 🔵 Planned | `v1.1` |
+
+## Execution Priority Track (P0-P3)
+
+Milestones (`M1`-`M8`) define strategic product evolution. Priorities (`P0`-`P3`) define tactical execution order across issues/Project.
+
+| Priority | Scope | Current status | Roadmap mapping |
+|---|---|---|---|
+| P0 | v1.0 release hardening gate | ✅ Done | Final hardening after M7 (`v1.0.0-rc.2`) |
+| P1 | Immediate post-release operational strengthening | 🟡 Planned | Post-v1.0 track before M8 feature expansion |
+| P2 | Post-release maturity improvements | 🟡 Planned | Post-v1.0 maturity track, still before UX polish |
+| P3 | UX hardening and product polish | 🟡 Planned | Milestone `v1.1 (M8)` execution lane in GitHub Project |
+
+Execution order: `P1` -> `P2` -> `P3`.
 
 > Release-readiness hardening for `v1.0.0-rc.2` is tracked in the GitHub Project "Sentinel v1.0 Release Readiness" and covers version alignment, ingress-first deploy, support matrix, release notes and quality evidence. Current P0 status: `#19`–`#24` done (all P0 closed).
 >
@@ -196,7 +209,7 @@
 
 ---
 
-### M7 — v1.0 preparation ✅ Done (`v1.0-rc1`)
+### M7 — v1.0 preparation ✅ Done (`v1.0.0-rc.2`)
 
 **Goal:** You'd call it 1.0 without technical embarrassment. Stabilize and document based on what M6 revealed under real load.
 
@@ -284,7 +297,7 @@ User opens incident in Intelligence window
 | `v0.36` | M5 bug fixes | ✅ Issue #13: node-allocatable HighCPU fallback; Issue #18: incident tiles; UI Sort & UX fixes |
 | `v0.37` | M6 partial | ✅ Online Boutique lab injection; load generation testing; UI validation |
 | `v0.50` | M6 | Online Boutique lab (QA/Prod-like) — validate before stabilizing |
-| `v1.0-rc1` | M7 | ✅ Docs, stable contracts, CONTRIBUTING, GHCR pipeline, CI fix |
+| `v1.0.0-rc.2` | M7 | ✅ Docs, stable contracts, CONTRIBUTING, GHCR pipeline, CI fix + release hardening |
 | `v1.1` | M8 | Intelligence window: cloud LLM enrichment, report/runbook generation, agentic scaffolding |
 
 ---
