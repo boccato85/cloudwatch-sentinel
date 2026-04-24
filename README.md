@@ -26,8 +26,8 @@ Sentinel is a standalone SRE and FinOps platform for Kubernetes. It continuously
 
 **Philosophy:** Observability-first, deterministic analysis by default. The v1.0 agent is fully useful through rules and Kubernetes signals. If the dashboard fails, the API remains usable.
 
-This repository contains the public `Sentinel Core (OSS)` runtime only.
-Commercial investigation capabilities are intentionally out of scope for this repository and are developed in a private product codebase.
+This repository contains the public `Sentinel (OSS)` runtime only.
+`AlfGuard`, the commercial intelligence layer built on top of Sentinel, is intentionally out of scope for this repository and is developed in a private product codebase.
 
 ---
 
@@ -92,7 +92,7 @@ Version-by-version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│ Sentinel Core (OSS) — Go Agent (port 8080)              │
+│ Sentinel (OSS) — Go Agent (port 8080)                   │
 │                                                          │
 │ collection (~10s) -> PostgreSQL                          │
 │ rules engine -> deterministic incidents                  │
@@ -105,7 +105,7 @@ Version-by-version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 └──────────────────────────────────────────────────────────┘
 ```
 
-Commercial investigation services are delivered outside this repository. The OSS runtime contract does not depend on proprietary services.
+`AlfGuard` services are delivered outside this repository. The OSS runtime contract does not depend on `AlfGuard`.
 
 ---
 
@@ -117,7 +117,7 @@ Commercial investigation services are delivered outside this repository. The OSS
 | Agent | Go 1.25 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
-| Commercial investigation layer | Out of scope in this OSS repository (private product codebase) |
+| AlfGuard commercial layer | Out of scope in this OSS repository (private product codebase) |
 
 ---
 
@@ -379,7 +379,7 @@ The Sentinel Go Agent can be configured via environment variables. If using Helm
 | `RETENTION_HOURLY_DAYS`| `30` | Days to keep hourly aggregated data. |
 | `RETENTION_DAILY_DAYS`| `365` | Days to keep daily aggregated data. |
 
-This OSS repository has no public contract for proprietary investigation services.
+This OSS repository has no public runtime contract for `AlfGuard`.
 
 ---
 

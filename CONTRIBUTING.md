@@ -63,7 +63,7 @@ These constraints exist for operational reasons — do not work around them:
 
 | Constraint | Reason |
 |---|---|
-| Deterministic rules are the product baseline | Sentinel must stay useful without proprietary services |
+| Deterministic rules are the product baseline | Sentinel must stay useful without `AlfGuard` |
 | No inline `onclick` in HTML | CSP `script-src-attr 'none'` blocks them — use `addEventListener` in a JS module |
 | All JS edits via Write tool or Python | Unicode characters in JS files cause silent corruption with some edit tools |
 | `agentVersion` is hardcoded | Increment it manually in `agent/main.go` on every release |
@@ -114,7 +114,7 @@ chore: bump agentVersion to 0.51.0
 - Local model runtimes or GPU-dependent features
 - Prometheus or Grafana integration (violates standalone-first principle)
 - Breaking changes to existing API response schemas
-- Features that require proprietary services to be useful
+- Features that require `AlfGuard` to be useful
 
 ---
 

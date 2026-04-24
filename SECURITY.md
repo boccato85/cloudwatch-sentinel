@@ -52,7 +52,7 @@ See [docs/support-matrix.md](docs/support-matrix.md) for supported Kubernetes, d
 - [ ] The `.env` file is in `.gitignore` — never commit it
 
 ### Proprietary extensions
-- [ ] Treat the v1.0 agent as deterministic-only; no proprietary extension runtime contract is supported in this repository
+- [ ] Treat the v1.0 agent as deterministic-only; no `AlfGuard` runtime contract is supported in this repository
 - [ ] Any external service credentials must be stored as Kubernetes Secrets and scoped to the minimum required permissions
 - [ ] Generated operational output must pass through `harness/output_validator.py` before being written or rendered
 - [ ] Automated operational actions must start with read-only kubectl operations and explicit human approval before any write-path action

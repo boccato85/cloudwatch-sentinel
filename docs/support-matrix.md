@@ -54,7 +54,7 @@ This matrix applies to Sentinel `v1.0.0-rc.2`.
 
 - Metrics freshness and incident quality depend on `metrics.k8s.io` availability.
 - No multi-cluster aggregation in v1.0.
-- No public runtime contract for proprietary investigation services in v1.0.
+- No public runtime contract for `AlfGuard` in v1.0.
 - No write-path remediation automation in v1.0.
 
 ## Metrics Server Behavior

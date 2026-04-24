@@ -33,7 +33,7 @@ All notable changes to Sentinel are documented in this file.
 - Documentation clarified cluster assumptions (generic Kubernetes deployment, not Minikube-specific).
 
 ### Breaking / Operator-visible
-- v1.0 remains deterministic-only; proprietary investigation services are outside the public runtime contract.
+- v1.0 remains deterministic-only; `AlfGuard` is outside the public runtime contract.
 
 ### Known limitations
 - Metrics Server is required for production-quality metrics and incidents.

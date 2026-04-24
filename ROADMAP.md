@@ -35,7 +35,7 @@
 | M7 — v1.0 preparation | ✅ Done | `v1.0.0-rc.2` |
 
 > This public roadmap tracks OSS runtime evolution only (`M1`-`M7`).
-> Commercial investigation planning exists in a separate private roadmap.
+> `AlfGuard` planning exists in a separate private roadmap.
 
 ## Execution Priority Track (P0-P3)
 
@@ -237,7 +237,7 @@ Execution order: `P1` -> `P2` -> `P3`.
 ### Post-v1.0 Boundary
 
 The public OSS roadmap after `M7` is intentionally limited to core runtime quality, reliability and UX hardening.
-Commercial investigation planning, tiering and implementation details are maintained in a private roadmap and private repositories.
+`AlfGuard` planning, tiering and implementation details are maintained in a private roadmap and private repositories.
 
 ---
 
@@ -280,19 +280,19 @@ Commercial investigation planning, tiering and implementation details are mainta
 
 ## Public Scope Boundary
 
-> Scope classification for this repository. Commercial investigation capabilities are intentionally private and not part of the OSS runtime contract.
+> Scope classification for this repository. `AlfGuard` capabilities are intentionally private and not part of the OSS runtime contract.
 
 | Category | Items |
 |---|---|
 | **Core** | Kubernetes collection, waste calculation, pod/namespace analysis, history, dashboard, stable API, `/health`, deterministic incident behavior |
 | **Support** | Structured logs, health checks, retries, schema validation, internal metrics, degraded mode, Markdown/JSON export |
-| **Private/Commercial (not in this repo)** | Advanced investigation workflows, commercial tiering, proprietary routing/policies, private connectors |
+| **AlfGuard (private/commercial, not in this repo)** | Advanced investigation workflows, commercial tiering, routing/policies, private connectors |
 
 ---
 
 ## Product rules
 
-- If commercial services go down, Sentinel Core stays useful
+- If `AlfGuard` goes down, Sentinel stays useful
 - If the dashboard fails, the API must still be usable
 - If the cluster changes, the contracts must hold
 - If the project grows, the core must not lose simplicity
