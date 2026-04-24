@@ -4,8 +4,8 @@
   <img src="docs/assets/cw_sentinel_logo.png" alt="Sentinel Logo" width="180"/>
 </p>
 
-> **Kubernetes SRE intelligence for teams that can't afford a dedicated specialist.**
-> Incident detection, waste analysis, cost forecasting and agentic investigation — no Prometheus required.
+> **Kubernetes SRE and FinOps for teams that can't afford a dedicated specialist.**
+> Incident detection, waste analysis and cost forecasting — no Prometheus required.
 
 <p align="center">
   <img src="docs/screenshots/sentinel_ss_1.0-rc(1).png" alt="Sentinel Dashboard v1.0" width="900"/>
@@ -22,16 +22,12 @@
 
 ## What is Sentinel?
 
-Sentinel is a standalone SRE and FinOps intelligence platform for Kubernetes. It continuously collects metrics via the Kubernetes Metrics API, persists data in PostgreSQL, calculates waste per pod and deployment, scores namespace efficiency and serves an interactive real-time dashboard — with no dependency on Prometheus, Grafana or AlertManager.
+Sentinel is a standalone SRE and FinOps platform for Kubernetes. It continuously collects metrics via the Kubernetes Metrics API, persists data in PostgreSQL, calculates waste per pod and deployment, scores namespace efficiency and serves an interactive real-time dashboard — with no dependency on Prometheus, Grafana or AlertManager.
 
 **Philosophy:** Observability-first, intelligence-second. The v1.0 agent is fully useful through deterministic rules. If the dashboard fails, the API remains usable.
 
-**Architecture direction:**
-
-- **Sentinel Core (OSS)** — standalone Go agent that collects, persists and exposes the dashboard, API and deterministic analysis pipeline
-- **Sentinel Intelligence (optional, planned)** — additive investigation layer for guided RCA, evidence correlation and controlled action planning on top of the OSS core
-
-Model selection is an internal backend concern. Sentinel Intelligence is designed to remain vendor-agnostic, so provider, model version, fallback and routing strategy can change without changing the public product contract.
+This repository contains the public `Sentinel Core (OSS)` runtime only.
+Commercial intelligence capabilities are intentionally out of scope for this repository and are developed in a private product codebase.
 
 ---
 
@@ -41,7 +37,7 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 - **Zero external monitoring stack** — no Prometheus, no Grafana, no AlertManager
 - **FinOps native** — waste per pod and deployment, linear forecast, namespace efficiency grades
-- **Deterministic first** — rules detect problems without LLM; optional Intelligence Layer investigates and proposes remediation
+- **Deterministic first** — rules detect and classify incidents from metrics and thresholds
 - **Production-first deploy** — Helm chart, explicit secrets, ClusterIP service and Ingress/TLS guidance
 
 ---
@@ -94,10 +90,9 @@ Version-by-version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## Architecture
 
-```
-sentinel-core (OSS)
+```text
 ┌──────────────────────────────────────────────────────────┐
-│ Go Agent (port 8080)                                     │
+│ Sentinel Core (OSS) — Go Agent (port 8080)              │
 │                                                          │
 │ collection (~10s) -> PostgreSQL                          │
 │ rules engine -> deterministic incidents                  │
@@ -107,25 +102,10 @@ sentinel-core (OSS)
 │ /status        /docs          /openapi.yaml              │
 │                                                          │
 │ Dashboard: KPIs -> tiles -> drawers -> rightsizing       │
-└──────────────────────────┬───────────────────────────────┘
-                           │ incident context + APIs
-                           ▼
-sentinel-intelligence (planned)
-┌──────────────────────────────────────────────────────────┐
-│ Intelligence window / investigation workspace            │
-│                                                          │
-│ incident intake -> model routing -> investigation loop   │
-│ tool calls: describe · logs · top · events               │
-│ evidence correlation -> RCA synthesis -> action plan     │
-│ user confirms / modifies / rejects                       │
-│ workflow trace -> report / audit trail                   │
-│                                                          │
-│ Optional and additive: core remains usable without it    │
 └──────────────────────────────────────────────────────────┘
 ```
 
-Sentinel Intelligence is a product layer, not a dependency of the core runtime. The OSS agent remains useful with deterministic rules even when no LLM provider is configured.
-Provider choice, model versioning and workload routing are backend-controlled implementation details and are not part of the user-facing feature contract.
+Commercial Intelligence is delivered outside this repository. The OSS runtime contract does not depend on proprietary investigation services.
 
 ---
 
@@ -137,7 +117,7 @@ Provider choice, model versioning and workload routing are backend-controlled im
 | Agent | Go 1.25 (client-go, net/http, slog, embed) |
 | Persistence | PostgreSQL (`sentinel_db`) — runs as a pod in the cluster |
 | Dashboard | HTML + CSS + Chart.js (embedded in binary) |
-| Intelligence Layer | Optional (planned) — provider-agnostic investigation layer over the OSS core, with backend-controlled model routing and guarded tool workflows |
+| Intelligence Layer | Out of scope in this OSS repository (private product codebase) |
 
 ---
 
@@ -268,8 +248,8 @@ curl -H "Authorization: Bearer <AUTH_TOKEN>" https://sentinel.example.com/api/in
 curl -H "Authorization: Bearer <AUTH_TOKEN>" https://sentinel.example.com/api/summary
 ```
 
-**Incident investigation (Intelligence Layer — v1.1 planned):**
-The v1.0 agent is deterministic-only. M8 will add a provider-agnostic cloud LLM investigation layer over read-only Kubernetes tools, with human approval before any write-path action.
+**Incident investigation note:**
+This OSS repository provides deterministic incident analysis only. Proprietary Intelligence capabilities are developed and distributed separately.
 
 ---
 
@@ -399,7 +379,7 @@ The Sentinel Go Agent can be configured via environment variables. If using Helm
 | `RETENTION_HOURLY_DAYS`| `30` | Days to keep hourly aggregated data. |
 | `RETENTION_DAILY_DAYS`| `365` | Days to keep daily aggregated data. |
 
-The Intelligence Layer is planned for v1.1. v1.0 has no public LLM environment-variable contract.
+This OSS repository has no public LLM runtime contract.
 
 ---
 
@@ -430,7 +410,7 @@ sentinel/
 │   │   ├── k8s/                     # Kubernetes client + Metrics API wrappers
 │   │   │   ├── k8s.go
 │   │   │   └── k8s_test.go
-│   │   ├── llm/                     # Provider interface (cloud LLM implementation in v1.1)
+│   │   ├── llm/                     # Optional provider abstraction used by deterministic fallback paths
 │   │   │   ├── client.go            # Provider interface + NewClient()
 │   │   │   └── client_test.go
 │   │   └── store/                   # PostgreSQL: schema, aggregation, retention
