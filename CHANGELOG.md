@@ -2,29 +2,42 @@
 
 All notable changes to Sentinel are documented in this file.
 
-## [v1.0.0-rc.2] - 2026-04-23
+## [Unreleased]
 
 ### Added
 - Operational release notes in `RELEASE.md` with install/upgrade/rollback guidance.
-- Public support matrix in `docs/support-matrix.md` with supported, tested and not-supported boundaries.
-- API smoke test harness via `harness/smoke_api.sh`.
+- Public support matrix in `docs/support-matrix.md` with explicit dependencies, validated environments and limitations.
+- API smoke test harness usage documented in quality/release docs.
+- GitHub Project planning artifacts for post-v1.0 priorities (`P1`, `P2`, `P3`) and milestone `v1.1 (M8)`.
 
 ### Changed
-- Docs/runtime alignment: setup paths use root `.env.example`; agent management docs match real Makefile targets.
-- Helm hardening: GHCR image defaults, explicit database password requirement and cleaned `values.yaml` structure.
-- Production-first deploy: chart defaults to `ClusterIP`, adds Ingress rendering and documents NodePort as dev/lab only.
-- Rate limiting now uses the remote address observed by the agent; forwarded IP headers are ignored in v1.0.
+- Security defaults hardened for Helm/database/auth paths (explicit production secrets).
+- Production deployment guidance updated to ingress-first; NodePort positioned as dev/lab-only.
+- Dashboard auth UX improved to avoid persistent token storage.
+- Roadmap updated with explicit execution track (`P0`-`P3`) and aligned M7 version (`v1.0.0-rc.2`).
+- README changelog section trimmed; full history centralized in this `CHANGELOG.md`.
+
+### Fixed
+- CI quality gates and project sync workflow behavior for manual dispatch/token permissions.
+- UI cleanup: removed debug leftovers and explicit no-op catches for safer frontend hygiene.
+
+## [v1.0.0-rc.2] - 2026-04-23
+
+### Changed
+- Release alignment to `v1.0.0-rc.2` and final pre-release hardening.
+- Security fixes from static analysis findings (XSS and command-injection related paths).
+- Documentation clarified cluster assumptions (generic Kubernetes deployment, not Minikube-specific).
 
 ### Breaking / Operator-visible
-- `database.password` must be explicitly provided for Helm install/upgrade.
-- `agent.auth.token` must be explicitly provided when `agent.auth.enabled=true`.
-- NodePort is no longer the primary production exposure path.
 - v1.0 remains deterministic-only; provider-agnostic cloud intelligence is M8 scope.
 
 ### Known limitations
 - Metrics Server is required for production-quality metrics and incidents.
 - Multi-cluster aggregation is not supported in v1.0.
 - Write-path remediation automation is not supported in v1.0.
+
+### Notes
+- Tag-backed release: `v1.0.0-rc.2`.
 
 ## [v1.0-rc1]
 
@@ -111,3 +124,8 @@ All notable changes to Sentinel are documented in this file.
 ### Added
 - `/health` endpoint with DB and collector status.
 - 22 automated tests.
+
+## Historical notes
+
+- `v1.0.0-rc.2` and `v1.0-rc1` are the tag-backed release references used in this repository.
+- Earlier `v0.x` entries are maintained as historical milestone checkpoints from the project evolution and may not map 1:1 to git tags.
