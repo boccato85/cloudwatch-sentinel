@@ -43,3 +43,6 @@ docs/bugs_ajustes/
 sentinel_v1_release_checklist.md
 tools/codex_quota.py
 tools/cquota
+
+# Demo capture intermediates
+docs/assets/demo/frames/

@@ -18,6 +18,7 @@ Launch Sentinel publicly with a credible technical baseline, clear onboarding, a
 - [ ] Public repo has clear Quick Start + Quick Demo.
 - [ ] Release artifacts are coherent (`README`, `CHANGELOG`, `RELEASE`, tags/images).
 - [ ] Security/operations docs are explicit enough for first adopters.
+- [ ] UX launch gate is complete (`#42`, `#43`, `#44`, `#45`).
 - [ ] First promotion wave is published with links to install/demo/evidence.
 
 ---
@@ -61,7 +62,17 @@ Done criteria:
 Done criteria:
 - [ ] No conflicting versioning or support statements.
 
-### Day 5 - Candidate release dry run
+### Day 5 - UX launch gate (polish before public release)
+
+- [ ] `#42` Degraded-mode state for missing Metrics Server.
+- [ ] `#43` First-run onboarding for token + health verification.
+- [ ] `#44` Severity language/visual standardization across dashboard.
+- [ ] `#45` Action-first incident recommendation cards.
+
+Done criteria:
+- [ ] First-time users can understand state and next action without guesswork.
+
+### Day 6 - Candidate release dry run
 
 - [ ] Dry run tag/release notes workflow.
 - [ ] Validate GHCR image publication path.
@@ -74,7 +85,7 @@ Done criteria:
 
 ## Week 2 - Public Release + Promotion
 
-### Day 6 - Publish release candidate / release
+### Day 7 - Publish release candidate / release
 
 - [ ] Create tag and GitHub Release.
 - [ ] Publish final release notes.
@@ -83,7 +94,7 @@ Done criteria:
 Done criteria:
 - [ ] Public release is reachable with install + demo + docs links.
 
-### Day 7 - Promotion kit
+### Day 8 - Promotion kit
 
 - [ ] Prepare short launch copy (`problem -> solution -> proof -> CTA`).
 - [ ] Prepare one technical post and one product-style post.
@@ -92,7 +103,7 @@ Done criteria:
 Done criteria:
 - [ ] Launch communications are copy-paste ready.
 
-### Day 8 - Channel execution
+### Day 9 - Channel execution
 
 - [ ] Publish on selected channels (LinkedIn/X/communities).
 - [ ] Publish one deep technical thread/article.
@@ -101,7 +112,7 @@ Done criteria:
 Done criteria:
 - [ ] At least one discoverable public launch artifact per channel.
 
-### Day 9 - Feedback triage
+### Day 10 - Feedback triage
 
 - [ ] Triage incoming issues/questions.
 - [ ] Label feedback as bug/docs/ux/adoption.
@@ -110,7 +121,7 @@ Done criteria:
 Done criteria:
 - [ ] First wave feedback is structured into backlog, not lost in chat.
 
-### Day 10 - Week-1 post-launch update
+### Day 11 - Week-1 post-launch update
 
 - [ ] Publish short update with adoption signal and fixes.
 - [ ] Close solved launch issues and update roadmap pointers.
@@ -127,6 +138,7 @@ Done criteria:
 
 - [ ] Demo asset capture and README embed.
 - [ ] Install path validation (Helm + compose).
+- [ ] UX launch gate (`#42`, `#43`, `#44`, `#45`).
 - [ ] Release flow dry run.
 
 ### Next
@@ -137,5 +149,4 @@ Done criteria:
 ### Later
 
 - [ ] Continuous content (benchmarks, incident walkthroughs, case-style examples).
-- [ ] UX hardening (`priority:P3`) in milestone `v1.1 (M8)`.
-
+- [ ] UX continuity items after launch (`#46` and new `priority:P3` backlog).

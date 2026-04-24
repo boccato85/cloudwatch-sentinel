@@ -60,6 +60,14 @@ Most small engineering teams overpay for Kubernetes without knowing it. Tools li
 
 ---
 
+## Quick Demo
+
+[![Sentinel Quick Demo](docs/assets/demo/sentinel-quick-demo.gif)](docs/assets/demo/sentinel-quick-demo.mp4)
+
+Short product tour: status page, dashboard overview, incidents drawer and FinOps view.
+
+---
+
 ## Lab Reports & Evidence
 
 As part of our commitment to transparency and battle-tested engineering, we maintain a collection of technical reports from our chaos experiments and capacity planning sessions.
