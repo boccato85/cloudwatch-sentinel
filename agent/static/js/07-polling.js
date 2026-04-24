@@ -127,7 +127,7 @@ var ONBOARDING_TOUR_STEPS = [
     scrollBlock: 'start'
   },
   {
-    selector: '#spillBadge',
+    selector: '#hdrStatusControls',
     title: 'Header Status Controls',
     body: 'Use header controls for quick orientation: Connected status (cluster/session health), Active Alerts badge (shortcut to incidents), and First-run guide (reopen this tour).',
     autoScroll: false

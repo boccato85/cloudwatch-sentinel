@@ -21,6 +21,7 @@ All notable changes to Sentinel are documented in this file.
 - Dashboard first-run onboarding now includes a guided step-by-step tour (spotlight + next/back/skip), plus token/session guidance, live `/health` interpretation, and support/release/runbook links.
 - Guided tour flow refined: closes open drawers between steps to avoid overlay conflicts, and now covers header controls, Recent Incidents, Financial Correlation, and FinOps/Efficiency tabs.
 - Guided tour targeting hardened for sticky-header steps and scroll positioning (deterministic anchor/reflow without smooth-scroll drift).
+- Header controls tour step now highlights the full controls group (Connected, Active Alerts and First-run guide) instead of a single badge.
 - Roadmap updated with explicit execution track (`P0`-`P3`) and aligned M7 version (`v1.0.0-rc.2`).
 - README changelog section trimmed; full history centralized in this `CHANGELOG.md`.
 - Public documentation sanitized to keep the repository focused on Sentinel Core OSS.

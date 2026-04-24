@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/dashboard.css?v=1010">
+<link rel="stylesheet" href="/static/dashboard.css?v=1011">
 </head>
 <body>
 
@@ -28,25 +28,27 @@
     </label>
   </div>
   <div class="hdr-r">
-    <div class="spill" id="spillBadge">
-      Connected
-      <div class="spill-tip" id="spillTip">
-        <div class="stt-row"><span class="stt-lbl">Cluster</span><span class="stt-val" id="sttCluster">--</span></div>
-        <div class="stt-row"><span class="stt-lbl">Endpoint</span><span class="stt-val" id="sttEndpoint">--</span></div>
-        <div class="stt-row"><span class="stt-lbl">Version</span><span class="stt-val" id="sttVer">--</span></div>
-        <div class="stt-row stt-sep"><span class="stt-lbl">Session up</span><span class="stt-val" id="sttSession">--</span></div>
-        <div class="stt-row"><span class="stt-lbl">Last sync</span><span class="stt-val" id="sttSync">--</span></div>
-        <div class="stt-row"><span class="stt-lbl">Database</span><span class="stt-val" id="sttDb">--</span></div>
-        <div class="stt-row stt-sep" style="justify-content:flex-end">
-          <a href="/status" target="_blank" style="color:var(--cyan);font-size:.85em;text-decoration:none;font-weight:500">View full status →</a>
+    <div id="hdrStatusControls" class="hdr-status-controls">
+      <div class="spill" id="spillBadge">
+        Connected
+        <div class="spill-tip" id="spillTip">
+          <div class="stt-row"><span class="stt-lbl">Cluster</span><span class="stt-val" id="sttCluster">--</span></div>
+          <div class="stt-row"><span class="stt-lbl">Endpoint</span><span class="stt-val" id="sttEndpoint">--</span></div>
+          <div class="stt-row"><span class="stt-lbl">Version</span><span class="stt-val" id="sttVer">--</span></div>
+          <div class="stt-row stt-sep"><span class="stt-lbl">Session up</span><span class="stt-val" id="sttSession">--</span></div>
+          <div class="stt-row"><span class="stt-lbl">Last sync</span><span class="stt-val" id="sttSync">--</span></div>
+          <div class="stt-row"><span class="stt-lbl">Database</span><span class="stt-val" id="sttDb">--</span></div>
+          <div class="stt-row stt-sep" style="justify-content:flex-end">
+            <a href="/status" target="_blank" style="color:var(--cyan);font-size:.85em;text-decoration:none;font-weight:500">View full status →</a>
+          </div>
         </div>
       </div>
+      <div class="hdr-alert" id="hdrAlertBadge" title="Active Alerts — click to view">
+        <span class="hdr-alert-dot"></span>
+        <span id="hdrAlertTxt">All OK</span>
+      </div>
+      <button id="onboardingReopenBtn" class="onboarding-reopen-btn" title="Open first-run guide">First-run guide</button>
     </div>
-    <div class="hdr-alert" id="hdrAlertBadge" title="Active Alerts — click to view">
-      <span class="hdr-alert-dot"></span>
-      <span id="hdrAlertTxt">All OK</span>
-    </div>
-    <button id="onboardingReopenBtn" class="onboarding-reopen-btn" title="Open first-run guide">First-run guide</button>
     <span id="lastUp">Updating...</span>
   </div>
 </div>
@@ -462,12 +464,12 @@
   <div class="gl-row" style="border-bottom:none"><span style="color:var(--text-dim);font-weight:600;min-width:80px">±1.5σ</span><span class="gl-desc">95% confidence band &mdash; statistical margin. Real value likely falls within this range.</span></div>
 </div>
 
-<script src="/static/js/01-init.js?v=1010"></script>
-<script src="/static/js/02-charts.js?v=1010"></script>
-<script src="/static/js/03-namespace.js?v=1010"></script>
-<script src="/static/js/04-overview.js?v=1010"></script>
-<script src="/static/js/05-workloads.js?v=1010"></script>
-<script src="/static/js/06-drawers.js?v=1010"></script>
-<script src="/static/js/07-polling.js?v=1010"></script>
+<script src="/static/js/01-init.js?v=1011"></script>
+<script src="/static/js/02-charts.js?v=1011"></script>
+<script src="/static/js/03-namespace.js?v=1011"></script>
+<script src="/static/js/04-overview.js?v=1011"></script>
+<script src="/static/js/05-workloads.js?v=1011"></script>
+<script src="/static/js/06-drawers.js?v=1011"></script>
+<script src="/static/js/07-polling.js?v=1011"></script>
 </body>
 </html>

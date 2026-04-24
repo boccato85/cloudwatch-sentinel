@@ -233,6 +233,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .logo-tri{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--cyan)}
 .ctag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:0.75em;color:var(--text-dim);margin-left:14px}
 .hdr-r{display:flex;align-items:center;gap:16px;color:var(--text-dim);font-size:0.78em}
+.hdr-status-controls{display:flex;align-items:center;gap:16px}
 .spill{position:relative;display:flex;align-items:center;gap:6px;background:rgba(0,204,143,.1);border:1px solid rgba(0,204,143,.3);border-radius:20px;padding:3px 12px;color:var(--green);font-size:0.78em;font-weight:500;cursor:default}
 .spill-tip{display:none;position:absolute;top:100%;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 16px 8px;white-space:nowrap;z-index:200;min-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.7);color:var(--text-bright);font-size:11px}
 .spill:hover .spill-tip{display:block}
