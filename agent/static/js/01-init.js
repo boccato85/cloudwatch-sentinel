@@ -1,4 +1,3 @@
-console.log('Sentinel Dashboard v0.12 Loaded');
 var charts = {};
 var PCOLS = ['#00cc8f','#00b4ff','#e54949','#fbbf24','#a855f7','#f5a623','#ec4899'];
 var pageLoadTime = Date.now();

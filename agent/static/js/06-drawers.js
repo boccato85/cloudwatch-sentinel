@@ -97,7 +97,9 @@ function drawerHTML(html) {
     try {
       selStart = document.activeElement.selectionStart;
       selEnd = document.activeElement.selectionEnd;
-    } catch(e) {}
+    } catch (e) {
+      // No-op: some input types do not support selection range.
+    }
   }
   
   document.getElementById('drawer-body').innerHTML = clean;
@@ -106,7 +108,11 @@ function drawerHTML(html) {
     var el = document.getElementById(activeId);
     if (el) {
       el.focus();
-      try { el.setSelectionRange(selStart, selEnd); } catch(e) {}
+      try {
+        el.setSelectionRange(selStart, selEnd);
+      } catch (e) {
+        // No-op: browser can reject selection restore for some elements.
+      }
     }
   }
 }
@@ -1196,4 +1202,3 @@ function attachRunbookCopyHandlers() {
 function dstat(label, value, color) {
   return '<div class="dstat"><div class="dstat-lbl">'+esc(label)+'</div><div class="dstat-val" style="color:'+color+'">'+esc(String(value))+'</div></div>';
 }
-
