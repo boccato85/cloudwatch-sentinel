@@ -13,6 +13,24 @@ This matrix applies to Sentinel `v1.0.0-rc.2`.
 | Authentication | `AUTH_ENABLED=true` with explicit `AUTH_TOKEN` |
 | Intelligence layer | Not supported in v1.0; deterministic rules only |
 
+## Required Dependencies
+
+| Dependency | Requirement |
+|---|---|
+| Kubernetes API | Reachable from Sentinel agent service account |
+| Metrics API (`metrics.k8s.io`) | Required for production-quality metrics, incidents and FinOps |
+| PostgreSQL | PostgreSQL 15 compatible endpoint (bundled or external) |
+| Helm | Helm 3 for install/upgrade workflows |
+| Ingress controller | Required for production-first TLS exposure |
+
+## Validated Environments
+
+| Environment | Validation status |
+|---|---|
+| Local dev (`docker compose`) | Validated for API/dashboard development workflow |
+| Kubernetes dev/lab (`service.type=NodePort`) | Validated for non-production troubleshooting/lab usage |
+| Kubernetes production-style (`ClusterIP + Ingress + TLS`) | Validated and recommended primary path |
+
 ## Tested
 
 | Area | Evidence |
@@ -32,6 +50,13 @@ This matrix applies to Sentinel `v1.0.0-rc.2`.
 | Multi-cluster aggregation | Post-v1.0 scope |
 | Write-path remediation automation | Not supported in v1.0 |
 | Production NodePort exposure | Not recommended or supported as the main production path |
+
+## Known Limitations
+
+- Metrics freshness and incident quality depend on `metrics.k8s.io` availability.
+- No multi-cluster aggregation in v1.0.
+- No public runtime contract for the optional intelligence layer in v1.0.
+- No write-path remediation automation in v1.0.
 
 ## Metrics Server Behavior
 
